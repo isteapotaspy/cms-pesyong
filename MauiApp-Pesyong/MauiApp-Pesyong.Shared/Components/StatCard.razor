@@ -1,0 +1,12 @@
+﻿<div class="stat-card">
+    <div class="stat-label">@Label</div>
+    <div class="stat-value @AccentClass">@Value</div>
+</div>
+
+@code {
+    [Parameter] public string Label { get; set; } = "";
+    [Parameter] public string Value { get; set; } = "";
+    [Parameter] public bool Accent { get; set; }
+
+    private string AccentClass => Accent ? "stat-accent" : "";
+}

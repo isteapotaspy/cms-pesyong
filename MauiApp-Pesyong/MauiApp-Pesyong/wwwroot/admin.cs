@@ -1,0 +1,102 @@
+﻿:root {
+    --bg: #0f0f10;
+    --card: #1c1c1e;
+    --accent: #f3a06a;
+    --text: #ffffff;
+    --text - dim: #8e8e93;
+    --glass: rgba(255, 255, 255, 0.03);
+--border: rgba(255, 255, 255, 0.08);
+}
+
+.app - shell {
+display: flex;
+height: 100vh;
+background: var(--bg);
+color: var(--text);
+    font - family: 'Inter', system - ui, sans - serif;
+}
+
+/* SIDEBAR */
+.sidebar - canvas {
+width: 360px;
+background: #161618;
+    border - right: 1px solid var(--border);
+display: flex;
+    flex - direction: column;
+}
+
+.sidebar - header {
+padding: 40px 24px 20px;
+display: flex;
+    justify - content: space - between;
+    align - items: center;
+}
+
+.nav - title { font - size: 32px; font - weight: 800; margin: 0; letter - spacing: -1px; }
+.eyebrow { color: var(--accent); font - size: 11px; font - weight: 700; text - transform: uppercase; }
+
+.add - fab {
+width: 44px; height: 44px; border - radius: 14px;
+background: var(--accent); border: none; font - size: 24px; font - weight: bold;
+cursor: pointer; transition: 0.2s;
+}
+
+.glass - search {
+margin: 10px 24px 24px;
+background: var(--glass);
+border: 1px solid var(--border);
+    border - radius: 12px;
+padding: 12px 16px;
+}
+.glass - search input { background: transparent; border: none; color: white; width: 100 %; outline: none; }
+
+/* TILES */
+.order - feed { flex: 1; overflow - y: auto; padding: 0 16px 20px; }
+.order - tile {
+padding: 20px; border - radius: 20px; margin - bottom: 12px;
+background: transparent; border: 1px solid transparent;
+cursor: pointer; transition: 0.3s;
+}
+.order - tile.is -active {
+background: var(--card); border - color: var(--border);
+    box - shadow: 0 10px 30px rgba(0,0,0,0.3);
+}
+.tile - name { font - size: 16px; font - weight: 700; margin: 6px 0; }
+.tile - price { font - weight: 800; color: var(--accent); }
+
+/* EDITOR STAGE */
+.editor - stage { flex: 1; padding: 40px 60px; overflow - y: auto; }
+.hero - name { font - size: 48px; font - weight: 900; margin: 10px 0; letter - spacing: -2px; }
+
+/* BENTO BOX GRID */
+.bento - header { display: flex; gap: 20px; margin: 30px 0; }
+.bento - item {
+flex: 1; background: var(--card); padding: 24px; border - radius: 24px;
+border: 1px solid var(--border);
+}
+.bento - item.main {
+background: var(--accent); color: #000; border: none; }
+.bento - val { font - size: 24px; font - weight: 800; }
+
+/* FORM CARDS */
+.editor - grid { display: grid; grid - template - columns: 1fr 1fr; gap: 30px; }
+.form - card {
+    background: var(--card); padding: 30px; border - radius: 32px;
+    border: 1px solid var(--border);
+    }
+.card - title { font - size: 18px; font - weight: 800; margin - bottom: 24px; color: var(--accent); }
+
+.input - field { display: flex; flex - direction: column; gap: 8px; margin - bottom: 20px; }
+.input - field label { font - size: 12px; font - weight: 700; color: var(--text - dim); text - transform: uppercase; }
+.input - field input, .input - field select, .input - field textarea {
+    background: #252528; border: 1px solid #333; padding: 14px;
+    border - radius: 14px; color: white; font - size: 15px;
+    }
+
+.input - row { display: grid; grid - template - columns: 1fr 1fr; gap: 15px; }
+
+.btn - premium {
+    background: var(--accent); color: #000; padding: 14px 28px;
+    border - radius: 14px; border: none; font - weight: 800; cursor: pointer;
+        box - shadow: 0 8px 20px rgba(243, 160, 106, 0.2);
+    }

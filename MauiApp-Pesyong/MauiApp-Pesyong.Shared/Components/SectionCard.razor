@@ -1,0 +1,25 @@
+﻿<div class="section-box">
+    @if (!string.IsNullOrWhiteSpace(Title) || !string.IsNullOrWhiteSpace(Subtitle))
+    {
+        <div class="section-heading">
+            <div>
+                @if (!string.IsNullOrWhiteSpace(Title))
+                {
+                    <div class="section-title">@Title</div>
+                }
+                @if (!string.IsNullOrWhiteSpace(Subtitle))
+                {
+                    <div class="section-note">@Subtitle</div>
+                }
+            </div>
+        </div>
+    }
+
+    @ChildContent
+</div>
+
+@code {
+    [Parameter] public string Title { get; set; } = "";
+    [Parameter] public string Subtitle { get; set; } = "";
+    [Parameter] public RenderFragment? ChildContent { get; set; }
+}

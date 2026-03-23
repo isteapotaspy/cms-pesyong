@@ -1,0 +1,14 @@
+﻿<span class="badge @CssClass">@Text</span>
+
+@code {
+    [Parameter] public string Text { get; set; } = "";
+
+    private string CssClass => Text.ToLower() switch
+    {
+        "delivered" => "badge-success",
+        "pending" => "badge-warning",
+        "cancelled" => "badge-danger",
+        "in transit" => "badge-neutral",
+        _ => "badge-neutral"
+    };
+}

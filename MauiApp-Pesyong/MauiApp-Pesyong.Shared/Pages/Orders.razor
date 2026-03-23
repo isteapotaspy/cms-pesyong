@@ -1,0 +1,176 @@
+﻿@page "/orders"
+@inject AdminDataService DataService
+
+<div class="app-shell">
+    <aside class="sidebar-canvas">
+        <div class="sidebar-header">
+            <div class="brand-stack">
+                <span class="eyebrow">Pesyong Admin</span>
+                <h1 class="nav-title">Orders</h1>
+            </div>
+            <button class="add-fab" @onclick="CreateNewOrder">+</button>
+        </div>
+
+        <div class="search-area">
+            <div class="glass-search">
+                <input placeholder="Search orders..." @bind="searchText" @bind:event="oninput" />
+            </div>
+        </div>
+
+        <div class="order-feed">
+            @foreach (var order in FilteredOrders)
+            {
+                <div class="order-tile @(selectedOrder?.OrderId == order.OrderId ? "is-active" : "")"
+                     @onclick="() => SelectOrder(order)">
+                    <div class="tile-top">
+                        <span class="id-badge">#@(order.OrderId.Length > 6 ? order.OrderId.Substring(0, 6) : order.OrderId)</span>
+                        <span class="status-dot @(order.DeliveryStatus?.ToLower())"></span>
+                    </div>
+                    <div class="tile-name">@order.CustomerName</div>
+                    <div class="tile-footer">
+                        <span class="tile-meta">@order.DeliveryType</span>
+                        <span class="tile-price">₱@order.Total.ToString("N0")</span>
+                    </div>
+                </div>
+            }
+        </div>
+    </aside>
+
+    <main class="editor-stage">
+        @if (selectedOrder != null)
+        {
+            <header class="stage-nav">
+                <div class="title-group">
+                    <span class="status-pill">@selectedOrder.DeliveryStatus</span>
+                    <h2 class="hero-name">@(string.IsNullOrEmpty(selectedOrder.CustomerName) ? "Drafting New Order" : selectedOrder.CustomerName)</h2>
+                </div>
+                <div class="action-group">
+                    <button class="btn-ghost" @onclick="CreateNewOrder">Discard</button>
+                    <button class="btn-premium" @onclick="SaveOrder">Save Changes</button>
+                </div>
+            </header>
+
+            <div class="stage-body">
+                <div class="bento-header">
+                    <div class="bento-item main">
+                        <label>Grand Total</label>
+                        <div class="bento-val">₱@selectedOrder.Total.ToString("N2")</div>
+                    </div>
+                    <div class="bento-item">
+                        <label>Expected Date</label>
+                        <div class="bento-val">@selectedOrder.EstimatedDeliveryDate.ToString("MMM dd, yyyy")</div>
+                    </div>
+                    <div class="bento-item">
+                        <label>Tracking</label>
+                        <div class="bento-val">@(selectedOrder.TrackingNumber ?? "N/A")</div>
+                    </div>
+                </div>
+
+                <div class="editor-grid">
+                    <section class="form-card">
+                        <h3 class="card-title">Client Identity</h3>
+                        <div class="input-row">
+                            <div class="input-field">
+                                <label>First Name</label>
+                                <input @bind="selectedOrder.FirstName" placeholder="John" />
+                            </div>
+                            <div class="input-field">
+                                <label>Last Name</label>
+                                <input @bind="selectedOrder.LastName" placeholder="Doe" />
+                            </div>
+                        </div>
+                        <div class="input-field">
+                            <label>Email Address</label>
+                            <input @bind="selectedOrder.Email" type="email" placeholder="client@email.com" />
+                        </div>
+                        <div class="input-field">
+                            <label>Phone Number</label>
+                            <input @bind="selectedOrder.PhoneNumber" />
+                        </div>
+                    </section>
+
+                    <section class="form-card">
+                        <h3 class="card-title">Logistics & Method</h3>
+                        <div class="input-field">
+                            <label>Shipping Address</label>
+                            <textarea @bind="selectedOrder.Address" rows="2"></textarea>
+                        </div>
+                        <div class="input-row">
+                            <div class="input-field">
+                                <label>Delivery Type</label>
+                                <select @bind="selectedOrder.DeliveryType">
+                                    <option>Pickup</option>
+                                    <option>Delivery</option>
+                                    <option>Express</option>
+                                </select>
+                            </div>
+                            <div class="input-field">
+                                <label>Order Status</label>
+                                <select @bind="selectedOrder.DeliveryStatus">
+                                    <option>Pending</option>
+                                    <option>Delivered</option>
+                                    <option>Cancelled</option>
+                                </select>
+                            </div>
+                        </div>
+                        <div class="input-field">
+                            <label>Customer Notes</label>
+                            <textarea @bind="selectedOrder.CustomerNotes" rows="2"></textarea>
+                        </div>
+                    </section>
+                </div>
+            </div>
+        }
+    </main>
+</div>
+
+@code {
+    private List<OrderVm> orders = new();
+    private OrderVm selectedOrder = new();
+    private string searchText = "";
+
+    protected override void OnInitialized()
+    {
+        orders = DataService.GetOrders() ?? new();
+        if (orders.Any()) SelectOrder(orders.First());
+        else CreateNewOrder();
+    }
+
+    private IEnumerable<OrderVm> FilteredOrders => orders.Where(x =>
+        string.IsNullOrWhiteSpace(searchText) ||
+        x.CustomerName.Contains(searchText, StringComparison.OrdinalIgnoreCase));
+
+    private void SelectOrder(OrderVm order) => selectedOrder = Clone(order);
+
+    private void CreateNewOrder() => selectedOrder = new OrderVm
+    {
+        OrderId = "ORD-" + Guid.NewGuid().ToString().Substring(0, 8).ToUpper(),
+        DeliveryStatus = "Pending",
+        OrderDate = DateTime.Today
+    };
+
+    private void SaveOrder()
+    {
+        selectedOrder.CustomerName = $"{selectedOrder.FirstName} {selectedOrder.LastName}";
+        var idx = orders.FindIndex(x => x.OrderId == selectedOrder.OrderId);
+        if (idx != -1) orders[idx] = selectedOrder;
+        else orders.Add(selectedOrder);
+    }
+
+    private OrderVm Clone(OrderVm o) => new OrderVm
+    {
+        OrderId = o.OrderId,
+        FirstName = o.FirstName,
+        LastName = o.LastName,
+        CustomerName = o.CustomerName,
+        Address = o.Address,
+        Total = o.Total,
+        DeliveryStatus = o.DeliveryStatus,
+        DeliveryType = o.DeliveryType,
+        PhoneNumber = o.PhoneNumber,
+        Email = o.Email,
+        TrackingNumber = o.TrackingNumber,
+        EstimatedDeliveryDate = o.EstimatedDeliveryDate,
+        CustomerNotes = o.CustomerNotes
+    };
+}

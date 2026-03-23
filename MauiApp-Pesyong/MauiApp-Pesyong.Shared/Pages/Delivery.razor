@@ -1,0 +1,342 @@
+﻿@page "/delivery"
+@inject AdminDataService DataService
+
+<div class="page-head">
+    <div>
+        <h1 class="page-title">delivery</h1>
+        <p class="page-subtitle">track riders, schedules, and delivery route information with a much better visual flow</p>
+    </div>
+
+    <div class="page-head-actions">
+        <button type="button" class="btn-primary" @onclick="CreateNewDelivery">new delivery</button>
+        <button type="button" class="btn-outline">print</button>
+    </div>
+</div>
+
+<div class="hero-banner">
+    <div class="hero-inner">
+        <div>
+            <h2 class="hero-title">Monitor deliveries in a cleaner way</h2>
+            <div class="hero-text">
+                view status, tracking, destination, and rider information with a layout that feels more modern, realistic, and easy on the eyes.
+            </div>
+
+            <div class="hero-chips">
+                <span class="hero-chip">tracking</span>
+                <span class="hero-chip">status flow</span>
+                <span class="hero-chip">signature ready</span>
+            </div>
+        </div>
+
+        <div class="hero-side-card">
+            <div class="hero-side-title">selected delivery</div>
+            <div class="hero-side-value">@selectedDelivery.Status</div>
+            <div class="hero-side-actions">
+                <button type="button" class="btn-secondary" @onclick="SaveDelivery">save</button>
+                <button type="button" class="btn-outline" @onclick="CreateNewDelivery">clear</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="stats-grid">
+    <StatCard Label="delivery count" Value="@deliveries.Count.ToString()" Accent="true" />
+    <StatCard Label="pending" Value="@deliveries.Count(x => x.Status == "Pending").ToString()" />
+    <StatCard Label="delivered" Value="@deliveries.Count(x => x.Status == "Delivered").ToString()" />
+    <StatCard Label="shipping total" Value="@($"₱{deliveries.Sum(x => x.ShippingCost):F0}")" />
+</div>
+
+<div class="admin-grid">
+    <div class="list-panel-card">
+        <div class="toolbar">
+            <div class="section-title">delivery list</div>
+            <span class="chip active">@FilteredDeliveries.Count() item(s)</span>
+        </div>
+
+        <input class="search-box" placeholder="search id or address..." @bind="searchText" />
+
+        <div class="filter-row">
+            <span class="chip active">all</span>
+            <span class="chip">pending</span>
+            <span class="chip">in transit</span>
+            <span class="chip">delivered</span>
+        </div>
+
+        <div class="list-scroll">
+            @foreach (var item in FilteredDeliveries)
+            {
+                <div class="list-item @(selectedDelivery?.DeliveryId == item.DeliveryId ? "active" : "")"
+                     @onclick="() => SelectDelivery(item)">
+                    <div class="list-row">
+                        <div>
+                            <div class="list-title">@item.DeliveryId</div>
+                            <div class="list-subtitle">@item.DeliveryAddress</div>
+                        </div>
+                        <StatusBadge Text="@item.Status" />
+                    </div>
+                </div>
+            }
+        </div>
+    </div>
+
+    <div class="section-stack">
+        <div class="alert">order id is required before final delivery processing.</div>
+
+        <div class="section-box">
+            <div class="section-heading">
+                <div>
+                    <div class="section-title">delivery details</div>
+                    <div class="section-note">core routing and rider information</div>
+                </div>
+            </div>
+
+            <div class="mini-metric-grid">
+                <div class="mini-metric">
+                    <div class="mini-metric-label">status</div>
+                    <div class="mini-metric-value">@selectedDelivery.Status</div>
+                </div>
+                <div class="mini-metric">
+                    <div class="mini-metric-label">shipping</div>
+                    <div class="mini-metric-value">₱@selectedDelivery.ShippingCost.ToString("F2")</div>
+                </div>
+                <div class="mini-metric">
+                    <div class="mini-metric-label">carrier</div>
+                    <div class="mini-metric-value">@selectedDelivery.CarrierName</div>
+                </div>
+            </div>
+
+            <div class="form-grid-2" style="margin-top:14px;">
+                <div class="field">
+                    <label>delivery id</label>
+                    <input @bind="selectedDelivery.DeliveryId" />
+                </div>
+                <div class="field">
+                    <label>order id</label>
+                    <input @bind="selectedDelivery.OrderId" />
+                </div>
+            </div>
+
+            <div class="form-grid-2">
+                <div class="field">
+                    <label>delivery personnel id</label>
+                    <input @bind="selectedDelivery.DeliveryPersonnelId" />
+                </div>
+                <div class="field">
+                    <label>status</label>
+                    <select @bind="selectedDelivery.Status">
+                        <option>Pending</option>
+                        <option>In Transit</option>
+                        <option>Delivered</option>
+                    </select>
+                </div>
+            </div>
+
+            <div class="field">
+                <label>delivery address</label>
+                <textarea @bind="selectedDelivery.DeliveryAddress"></textarea>
+            </div>
+        </div>
+
+        <div class="section-box">
+            <div class="section-heading">
+                <div>
+                    <div class="section-title">shipping information</div>
+                    <div class="section-note">tracking, carrier, and shipping cost</div>
+                </div>
+            </div>
+
+            <div class="form-grid-2">
+                <div class="field">
+                    <label>tracking number</label>
+                    <input @bind="selectedDelivery.TrackingNumber" />
+                </div>
+                <div class="field">
+                    <label>shipping cost</label>
+                    <input type="number" step="0.01" @bind="selectedDelivery.ShippingCost" />
+                </div>
+            </div>
+
+            <div class="form-grid-2">
+                <div class="field">
+                    <label>shipping method</label>
+                    <input @bind="selectedDelivery.ShippingMethod" />
+                </div>
+                <div class="field">
+                    <label>carrier name</label>
+                    <input @bind="selectedDelivery.CarrierName" />
+                </div>
+            </div>
+        </div>
+
+        <div class="section-box">
+            <div class="section-heading">
+                <div>
+                    <div class="section-title">timeline and confirmation</div>
+                    <div class="section-note">delivery dates and receiving details</div>
+                </div>
+            </div>
+
+            <div class="form-grid-2">
+                <div class="field">
+                    <label>created date</label>
+                    <InputDate @bind-Value="selectedDelivery.CreatedDate" class="search-box input-date" />
+                </div>
+                <div class="field">
+                    <label class="check-item" style="margin-top:32px;">
+                        <input type="checkbox" @bind="selectedDelivery.SignatureRequired" />
+                        <span>signature required</span>
+                    </label>
+                </div>
+            </div>
+
+            <div class="form-grid-2">
+                <div class="field">
+                    <label>estimated delivery</label>
+                    <InputDate @bind-Value="selectedDelivery.EstimatedDelivery" class="search-box input-date" />
+                </div>
+                <div class="field">
+                    <label>actual delivery</label>
+                    <InputDate @bind-Value="selectedDelivery.ActualDelivery" class="search-box input-date" />
+                </div>
+            </div>
+
+            <div class="form-grid-2">
+                <div class="field">
+                    <label>received by</label>
+                    <input @bind="selectedDelivery.ReceivedBy" />
+                </div>
+                <div class="field">
+                    <label>received at</label>
+                    <InputDate @bind-Value="selectedDelivery.ReceivedAt" class="search-box input-date" />
+                </div>
+            </div>
+
+            <div class="form-grid-2">
+                <div class="field">
+                    <label>current location</label>
+                    <input @bind="selectedDelivery.CurrentLocation" />
+                </div>
+                <div class="field">
+                    <label>last location update</label>
+                    <InputDate @bind-Value="selectedDelivery.LastLocationUpdate" class="search-box input-date" />
+                </div>
+            </div>
+        </div>
+
+        <div class="section-box">
+            <div class="section-heading">
+                <div>
+                    <div class="section-title">notes and instructions</div>
+                    <div class="section-note">special handling and rider notes</div>
+                </div>
+            </div>
+
+            <div class="field">
+                <label>special instructions</label>
+                <textarea @bind="selectedDelivery.SpecialInstructions"></textarea>
+            </div>
+
+            <div class="field">
+                <label>delivery notes</label>
+                <textarea @bind="selectedDelivery.DeliveryNotes"></textarea>
+            </div>
+        </div>
+
+        <div class="btn-row">
+            <button type="button" class="btn-primary" @onclick="SaveDelivery">save delivery</button>
+            <button type="button" class="btn-secondary" @onclick="CreateNewDelivery">clear</button>
+        </div>
+    </div>
+</div>
+
+@code {
+    private List<DeliveryVm> deliveries = new();
+    private DeliveryVm selectedDelivery = new();
+    private string searchText = "";
+
+    protected override void OnInitialized()
+    {
+        deliveries = DataService.GetDeliveries();
+        selectedDelivery = CloneDelivery(deliveries.FirstOrDefault() ?? new DeliveryVm());
+    }
+
+    private IEnumerable<DeliveryVm> FilteredDeliveries =>
+        deliveries.Where(x =>
+            string.IsNullOrWhiteSpace(searchText) ||
+            (x.DeliveryId?.Contains(searchText, StringComparison.OrdinalIgnoreCase) ?? false) ||
+            (x.DeliveryAddress?.Contains(searchText, StringComparison.OrdinalIgnoreCase) ?? false));
+
+    private void SelectDelivery(DeliveryVm item)
+    {
+        selectedDelivery = CloneDelivery(item);
+    }
+
+    private void CreateNewDelivery()
+    {
+        selectedDelivery = new DeliveryVm
+        {
+            Status = "Pending",
+            CreatedDate = DateTime.Today,
+            EstimatedDelivery = DateTime.Today,
+            ActualDelivery = DateTime.Today,
+            ReceivedAt = DateTime.Today,
+            LastLocationUpdate = DateTime.Today,
+            SignatureRequired = true
+        };
+    }
+
+    private void SaveDelivery()
+    {
+        var existing = deliveries.FirstOrDefault(x => x.DeliveryId == selectedDelivery.DeliveryId);
+
+        if (existing is null)
+        {
+            deliveries.Add(CloneDelivery(selectedDelivery));
+        }
+        else
+        {
+            existing.DeliveryId = selectedDelivery.DeliveryId;
+            existing.OrderId = selectedDelivery.OrderId;
+            existing.DeliveryPersonnelId = selectedDelivery.DeliveryPersonnelId;
+            existing.Status = selectedDelivery.Status;
+            existing.DeliveryAddress = selectedDelivery.DeliveryAddress;
+            existing.TrackingNumber = selectedDelivery.TrackingNumber;
+            existing.ShippingCost = selectedDelivery.ShippingCost;
+            existing.ShippingMethod = selectedDelivery.ShippingMethod;
+            existing.CarrierName = selectedDelivery.CarrierName;
+            existing.CreatedDate = selectedDelivery.CreatedDate;
+            existing.EstimatedDelivery = selectedDelivery.EstimatedDelivery;
+            existing.ActualDelivery = selectedDelivery.ActualDelivery;
+            existing.SignatureRequired = selectedDelivery.SignatureRequired;
+            existing.ReceivedBy = selectedDelivery.ReceivedBy;
+            existing.ReceivedAt = selectedDelivery.ReceivedAt;
+            existing.CurrentLocation = selectedDelivery.CurrentLocation;
+            existing.LastLocationUpdate = selectedDelivery.LastLocationUpdate;
+            existing.SpecialInstructions = selectedDelivery.SpecialInstructions;
+            existing.DeliveryNotes = selectedDelivery.DeliveryNotes;
+        }
+    }
+
+    private static DeliveryVm CloneDelivery(DeliveryVm item) => new()
+    {
+        DeliveryId = item.DeliveryId,
+        OrderId = item.OrderId,
+        DeliveryPersonnelId = item.DeliveryPersonnelId,
+        Status = item.Status,
+        DeliveryAddress = item.DeliveryAddress,
+        TrackingNumber = item.TrackingNumber,
+        ShippingCost = item.ShippingCost,
+        ShippingMethod = item.ShippingMethod,
+        CarrierName = item.CarrierName,
+        CreatedDate = item.CreatedDate,
+        EstimatedDelivery = item.EstimatedDelivery,
+        ActualDelivery = item.ActualDelivery,
+        SignatureRequired = item.SignatureRequired,
+        ReceivedBy = item.ReceivedBy,
+        ReceivedAt = item.ReceivedAt,
+        CurrentLocation = item.CurrentLocation,
+        LastLocationUpdate = item.LastLocationUpdate,
+        SpecialInstructions = item.SpecialInstructions,
+        DeliveryNotes = item.DeliveryNotes
+    };
+}

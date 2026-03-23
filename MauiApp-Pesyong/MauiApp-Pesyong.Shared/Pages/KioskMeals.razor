@@ -1,0 +1,280 @@
+﻿@page "/kiosk-meals"
+@inject AdminDataService DataService
+
+<div class="page-head">
+    <div>
+        <h1 class="page-title">kiosk meals</h1>
+        <p class="page-subtitle">manage your meal catalog with a softer, premium, client-facing admin style</p>
+    </div>
+
+    <div class="page-head-actions">
+        <button type="button" class="btn-primary" @onclick="ClearForm">new meal</button>
+        <button type="button" class="btn-outline">preview kiosk</button>
+    </div>
+</div>
+
+<div class="hero-banner">
+    <div class="hero-inner">
+        <div>
+            <h2 class="hero-title">Curate your meal menu beautifully</h2>
+            <div class="hero-text">
+                update titles, delivery type, stock, pricing, and product details using a layout that feels modern and polished instead of plain.
+            </div>
+
+            <div class="hero-chips">
+                <span class="hero-chip">catalog control</span>
+                <span class="hero-chip">inventory ready</span>
+                <span class="hero-chip">orange brand style</span>
+            </div>
+        </div>
+
+        <div class="hero-side-card">
+            <div class="hero-side-title">selected meal</div>
+            <div class="hero-side-value">@selectedMeal.Title</div>
+            <div class="hero-side-actions">
+                <button type="button" class="btn-secondary" @onclick="SaveMeal">save</button>
+                <button type="button" class="btn-outline" @onclick="DeleteMeal">delete</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="stats-grid">
+    <StatCard Label="catalog items" Value="@meals.Count.ToString()" Accent="true" />
+    <StatCard Label="in stock" Value="@meals.Count(x => x.StockQuantity > 0).ToString()" />
+    <StatCard Label="avg. price" Value="@($"₱{(meals.Count == 0 ? 0 : meals.Average(x => x.Price)):F0}")" />
+    <StatCard Label="same day items" Value="@meals.Count(x => x.DeliveryType.Contains("Same", StringComparison.OrdinalIgnoreCase)).ToString()" />
+</div>
+
+<div class="admin-grid">
+    <div class="list-panel-card">
+        <div class="toolbar">
+            <div class="section-title">meal list</div>
+            <span class="chip active">@FilteredMeals.Count() item(s)</span>
+        </div>
+
+        <input class="search-box" placeholder="search meal or description..." @bind="searchText" />
+
+        <div class="filter-row">
+            <span class="chip active">all</span>
+            <span class="chip">delivery</span>
+            <span class="chip">pickup</span>
+            <span class="chip">same day</span>
+        </div>
+
+        <div class="list-scroll">
+            @foreach (var meal in FilteredMeals)
+            {
+                <div class="list-item @(selectedMeal?.MealId == meal.MealId ? "active" : "")"
+                     @onclick="() => SelectMeal(meal)">
+                    <div class="list-row">
+                        <div>
+                            <div class="list-title">@meal.Title</div>
+                            <div class="list-subtitle">@meal.DeliveryType</div>
+                            <div class="list-subtitle">@meal.Description</div>
+                        </div>
+                        <div class="price-text">₱@meal.Price.ToString("F2")</div>
+                    </div>
+                </div>
+            }
+        </div>
+    </div>
+
+    <div class="section-stack">
+        <div class="section-box">
+            <div class="section-heading">
+                <div>
+                    <div class="section-title">meal profile</div>
+                    <div class="section-note">visual identity and basic metadata</div>
+                </div>
+            </div>
+
+            <div style="display:flex; gap:20px; align-items:flex-start; flex-wrap:wrap;">
+                <div class="photo-bubble"></div>
+
+                <div style="flex:1; min-width:260px;">
+                    <div class="form-grid-2">
+                        <div class="field">
+                            <label>meal id</label>
+                            <input @bind="selectedMeal.MealId" />
+                        </div>
+                        <div class="field">
+                            <label>creator id</label>
+                            <input @bind="creatorId" />
+                        </div>
+                    </div>
+
+                    <div class="form-grid-2" style="margin-top:14px;">
+                        <div class="field">
+                            <label>creation date</label>
+                            <InputDate @bind-Value="mealCreatedDate" class="search-box input-date" />
+                        </div>
+                        <div class="field">
+                            <label>photo</label>
+                            <button type="button" class="btn-outline">change photo</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="section-box">
+            <div class="section-heading">
+                <div>
+                    <div class="section-title">meal details</div>
+                    <div class="section-note">what customers will see in the kiosk</div>
+                </div>
+            </div>
+
+            <div class="field">
+                <label>meal title</label>
+                <input @bind="selectedMeal.Title" />
+            </div>
+
+            <div class="field">
+                <label>description</label>
+                <textarea @bind="selectedMeal.Description"></textarea>
+            </div>
+
+            <div class="form-grid-2">
+                <div class="field">
+                    <label>price</label>
+                    <input type="number" step="0.01" @bind="selectedMeal.Price" />
+                </div>
+                <div class="field">
+                    <label>delivery type</label>
+                    <select @bind="selectedMeal.DeliveryType">
+                        <option>Delivery</option>
+                        <option>Pickup</option>
+                        <option>Same Day</option>
+                        <option>SameDay</option>
+                    </select>
+                </div>
+            </div>
+        </div>
+
+        <div class="section-box">
+            <div class="section-heading">
+                <div>
+                    <div class="section-title">stock management</div>
+                    <div class="section-note">inventory and ordering controls</div>
+                </div>
+            </div>
+
+            <div class="mini-metric-grid">
+                <div class="mini-metric">
+                    <div class="mini-metric-label">stock quantity</div>
+                    <div class="mini-metric-value">@selectedMeal.StockQuantity</div>
+                </div>
+                <div class="mini-metric">
+                    <div class="mini-metric-label">min order</div>
+                    <div class="mini-metric-value">@selectedMeal.MinOrder</div>
+                </div>
+                <div class="mini-metric">
+                    <div class="mini-metric-label">display price</div>
+                    <div class="mini-metric-value">₱@selectedMeal.Price.ToString("F2")</div>
+                </div>
+            </div>
+
+            <div class="form-grid-2" style="margin-top:14px;">
+                <div class="field">
+                    <label>stock quantity</label>
+                    <input type="number" @bind="selectedMeal.StockQuantity" />
+                </div>
+                <div class="field">
+                    <label>min order</label>
+                    <input type="number" @bind="selectedMeal.MinOrder" />
+                </div>
+            </div>
+        </div>
+
+        <div class="total-bar">
+            <div>
+                <div class="total-label">catalog pricing preview</div>
+                <div class="section-note">client-facing price emphasis</div>
+            </div>
+            <div class="total-text">₱@selectedMeal.Price.ToString("F2")</div>
+        </div>
+
+        <div class="btn-row">
+            <button type="button" class="btn-primary" @onclick="SaveMeal">save meal</button>
+            <button type="button" class="btn-secondary" @onclick="ClearForm">clear</button>
+            <button type="button" class="btn-danger" @onclick="DeleteMeal">delete</button>
+        </div>
+    </div>
+</div>
+
+@code {
+    private string searchText = "";
+    private List<MealVm> meals = new();
+    private MealVm selectedMeal = new();
+    private string creatorId = "";
+    private DateTime mealCreatedDate = DateTime.Today;
+
+    protected override void OnInitialized()
+    {
+        meals = DataService.GetMeals();
+        selectedMeal = meals.FirstOrDefault() is MealVm first ? CloneMeal(first) : new MealVm();
+    }
+
+    private IEnumerable<MealVm> FilteredMeals =>
+        meals.Where(x =>
+            string.IsNullOrWhiteSpace(searchText) ||
+            x.Title.Contains(searchText, StringComparison.OrdinalIgnoreCase) ||
+            x.Description.Contains(searchText, StringComparison.OrdinalIgnoreCase));
+
+    private void SelectMeal(MealVm meal)
+    {
+        selectedMeal = CloneMeal(meal);
+    }
+
+    private void ClearForm()
+    {
+        selectedMeal = new MealVm
+        {
+            DeliveryType = "Delivery"
+        };
+        creatorId = "";
+        mealCreatedDate = DateTime.Today;
+    }
+
+    private void SaveMeal()
+    {
+        var existing = meals.FirstOrDefault(x => x.MealId == selectedMeal.MealId);
+
+        if (existing is null)
+        {
+            meals.Add(CloneMeal(selectedMeal));
+        }
+        else
+        {
+            existing.Title = selectedMeal.Title;
+            existing.Description = selectedMeal.Description;
+            existing.Price = selectedMeal.Price;
+            existing.DeliveryType = selectedMeal.DeliveryType;
+            existing.StockQuantity = selectedMeal.StockQuantity;
+            existing.MinOrder = selectedMeal.MinOrder;
+        }
+    }
+
+    private void DeleteMeal()
+    {
+        var existing = meals.FirstOrDefault(x => x.MealId == selectedMeal.MealId);
+        if (existing is not null)
+        {
+            meals.Remove(existing);
+            ClearForm();
+        }
+    }
+
+    private static MealVm CloneMeal(MealVm meal) => new()
+    {
+        MealId = meal.MealId,
+        Title = meal.Title,
+        Description = meal.Description,
+        Price = meal.Price,
+        DeliveryType = meal.DeliveryType,
+        StockQuantity = meal.StockQuantity,
+        MinOrder = meal.MinOrder
+    };
+}

@@ -1,0 +1,79 @@
+﻿@page "/"
+
+<div class="page-head">
+    <div>
+        <h1 class="page-title">dashboard</h1>
+        <p class="page-subtitle">overview of your catering operations with a cleaner professional layout</p>
+    </div>
+
+    <div class="page-head-actions">
+        <a href="/orders" class="btn-primary">open orders</a>
+        <a href="/delivery" class="btn-secondary">manage delivery</a>
+    </div>
+</div>
+
+<div class="hero-card">
+    <div class="hero-title">welcome back, admin</div>
+    <div class="hero-subtitle">
+        this improved dashboard keeps your old functionality but presents everything in a more polished and organized way.
+        information is grouped by importance, actions are easier to see, and the whole UI feels cleaner and more premium.
+    </div>
+
+    <div class="quick-grid">
+        <div class="quick-card">
+            <div class="quick-card-title">orders management</div>
+            <div class="quick-card-text">track customer details, delivery type, totals, and status updates in one place.</div>
+        </div>
+        <div class="quick-card">
+            <div class="quick-card-title">delivery tracking</div>
+            <div class="quick-card-text">manage riders, dates, addresses, tracking, and signature confirmation more clearly.</div>
+        </div>
+        <div class="quick-card">
+            <div class="quick-card-title">kiosk meals</div>
+            <div class="quick-card-text">organize product details, inventory, and pricing with better information flow.</div>
+        </div>
+        <div class="quick-card">
+            <div class="quick-card-title">packages</div>
+            <div class="quick-card-text">build package combinations and meal inclusions using a much neater editing layout.</div>
+        </div>
+    </div>
+</div>
+
+<div class="stats-grid">
+    <StatCard Label="active meals" Value="24" />
+    <StatCard Label="catering packages" Value="8" />
+    <StatCard Label="deliveries today" Value="12" />
+    <StatCard Label="orders today" Value="13" />
+</div>
+
+<div class="admin-grid">
+    <SectionCard Title="quick actions" Subtitle="jump directly to the modules you use most">
+        <div class="btn-row">
+            <a href="/kiosk-meals" class="btn-primary">add new meal</a>
+            <a href="/catering-packages" class="btn-outline">create package</a>
+            <a href="/delivery" class="btn-outline">track delivery</a>
+            <a href="/orders" class="btn-outline">open orders</a>
+        </div>
+    </SectionCard>
+
+    <SectionCard Title="visual improvements" Subtitle="what changed in the GUI">
+        <div class="quick-grid">
+            <div class="quick-card">
+                <div class="quick-card-title">better spacing</div>
+                <div class="quick-card-text">sections have proper breathing room so the page is easier to scan.</div>
+            </div>
+            <div class="quick-card">
+                <div class="quick-card-title">clean grouping</div>
+                <div class="quick-card-text">details are arranged into smaller cards instead of one long flat form.</div>
+            </div>
+            <div class="quick-card">
+                <div class="quick-card-title">softer palette</div>
+                <div class="quick-card-text">orange is used as the accent only, while the base stays professional and clean.</div>
+            </div>
+            <div class="quick-card">
+                <div class="quick-card-title">stronger hierarchy</div>
+                <div class="quick-card-text">titles, labels, buttons, and totals now stand out in the right places.</div>
+            </div>
+        </div>
+    </SectionCard>
+</div>

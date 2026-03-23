@@ -1,0 +1,348 @@
+﻿@page "/catering-packages"
+@inject AdminDataService DataService
+
+<div class="page-head">
+    <div>
+        <h1 class="page-title">catering packages</h1>
+        <p class="page-subtitle">build premium package offers with a more polished and realistic admin layout</p>
+    </div>
+
+    <div class="page-head-actions">
+        <button type="button" class="btn-primary" @onclick="CreateNewPackage">new package</button>
+        <button type="button" class="btn-outline">preview package</button>
+    </div>
+</div>
+
+<div class="hero-banner">
+    <div class="hero-inner">
+        <div>
+            <h2 class="hero-title">Design packages that feel premium</h2>
+            <div class="hero-text">
+                combine meals, pax capacity, availability, notes, and pricing inside a cleaner package builder that looks much closer to a real client dashboard.
+            </div>
+
+            <div class="hero-chips">
+                <span class="hero-chip">pax planning</span>
+                <span class="hero-chip">meal combinations</span>
+                <span class="hero-chip">price builder</span>
+            </div>
+        </div>
+
+        <div class="hero-side-card">
+            <div class="hero-side-title">current package total</div>
+            <div class="hero-side-value">₱@PackageTotal.ToString("F0")</div>
+            <div class="hero-side-actions">
+                <button type="button" class="btn-secondary" @onclick="SavePackage">save</button>
+                <button type="button" class="btn-outline" @onclick="CreateNewPackage">clear</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="stats-grid">
+    <StatCard Label="package count" Value="@packages.Count.ToString()" Accent="true" />
+    <StatCard Label="available" Value="@packages.Count(x => x.IsAvailable).ToString()" />
+    <StatCard Label="customizable" Value="@packages.Count(x => x.CustomizablePackage).ToString()" />
+    <StatCard Label="avg. pax" Value="@(packages.Count == 0 ? "0" : packages.Average(x => x.Pax).ToString("F0"))" />
+</div>
+
+<div class="admin-grid">
+    <div class="list-panel-card">
+        <div class="toolbar">
+            <div class="section-title">package list</div>
+            <span class="chip active">@packages.Count item(s)</span>
+        </div>
+
+        <div class="filter-row">
+            <span class="chip active">all</span>
+            <span class="chip">available</span>
+            <span class="chip">customizable</span>
+        </div>
+
+        <div class="list-scroll">
+            @foreach (var package in packages)
+            {
+                <div class="list-item @(selectedPackage?.PackageId == package.PackageId ? "active" : "")"
+                     @onclick="() => SelectPackage(package)">
+                    <div class="list-row">
+                        <div>
+                            <div class="list-title">@package.Name</div>
+                            <div class="list-subtitle">@package.Notes</div>
+                            <div class="list-subtitle">@package.IncludedMeals.Count meal(s) ・ good for @package.Pax pax</div>
+                        </div>
+                        <div class="price-text">₱@package.Price.ToString("F2")</div>
+                    </div>
+                </div>
+            }
+        </div>
+    </div>
+
+    <div class="section-stack">
+        <div class="section-box">
+            <div class="section-heading">
+                <div>
+                    <div class="section-title">package profile</div>
+                    <div class="section-note">identity, owner, promo, and pax</div>
+                </div>
+            </div>
+
+            <div style="display:flex; gap:20px; align-items:flex-start; flex-wrap:wrap;">
+                <div class="photo-bubble package-bubble"></div>
+
+                <div style="flex:1; min-width:260px;">
+                    <div class="form-grid-2">
+                        <div class="field">
+                            <label>package id</label>
+                            <input @bind="selectedPackage.PackageId" />
+                        </div>
+                        <div class="field">
+                            <label>owner id</label>
+                            <input @bind="selectedPackage.OwnerId" />
+                        </div>
+                    </div>
+
+                    <div class="form-grid-2" style="margin-top:14px;">
+                        <div class="field">
+                            <label>promo id</label>
+                            <input @bind="selectedPackage.PromoId" />
+                        </div>
+                        <div class="field">
+                            <label>number of pax</label>
+                            <input type="number" @bind="selectedPackage.Pax" />
+                        </div>
+                    </div>
+
+                    <div class="check-row">
+                        <label class="check-item">
+                            <input type="checkbox" @bind="selectedPackage.IsCateringPackage" />
+                            <span>is catering package</span>
+                        </label>
+
+                        <label class="check-item">
+                            <input type="checkbox" @bind="selectedPackage.IsAvailable" />
+                            <span>is available</span>
+                        </label>
+
+                        <label class="check-item">
+                            <input type="checkbox" @bind="selectedPackage.CustomizablePackage" />
+                            <span>customizable</span>
+                        </label>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="section-box">
+            <div class="section-heading">
+                <div>
+                    <div class="section-title">package details</div>
+                    <div class="section-note">visible title, notes, and description</div>
+                </div>
+            </div>
+
+            <div class="field">
+                <label>package name</label>
+                <input @bind="selectedPackage.Name" />
+            </div>
+
+            <div class="field">
+                <label>notes</label>
+                <input @bind="selectedPackage.Notes" />
+            </div>
+
+            <div class="field">
+                <label>description</label>
+                <textarea @bind="selectedPackage.Description"></textarea>
+            </div>
+        </div>
+
+        <div class="section-box">
+            <div class="section-heading">
+                <div>
+                    <div class="section-title">meal builder</div>
+                    <div class="section-note">add meals and quantities into this package</div>
+                </div>
+            </div>
+
+            <div class="form-grid-3">
+                <div class="field">
+                    <label>select meal</label>
+                    <select @bind="newMealName">
+                        <option value="">select meal</option>
+                        @foreach (var meal in meals)
+                        {
+                            <option value="@meal.Title">@meal.Title</option>
+                        }
+                    </select>
+                </div>
+
+                <div class="field">
+                    <label>quantity</label>
+                    <input type="number" @bind="newMealQuantity" />
+                </div>
+
+                <div class="field">
+                    <label>&nbsp;</label>
+                    <button type="button" class="btn-primary" @onclick="AddMealToPackage">add meal</button>
+                </div>
+            </div>
+
+            @foreach (var meal in selectedPackage.IncludedMeals)
+            {
+                <div class="item-card">
+                    <div class="item-card-top">
+                        <div>
+                            <div class="list-title">@meal.MealName</div>
+                            <div class="list-subtitle">₱@meal.Price.ToString("F2") each</div>
+                        </div>
+                        <div class="price-text">₱@((meal.Price * meal.Quantity).ToString("F2"))</div>
+                    </div>
+
+                    <div class="form-grid-2">
+                        <div class="field">
+                            <label>quantity</label>
+                            <input type="number" @bind="meal.Quantity" />
+                        </div>
+                        <div class="field">
+                            <label>special request</label>
+                            <input @bind="meal.SpecialRequest" />
+                        </div>
+                    </div>
+
+                    <div class="btn-row" style="margin-top:12px;">
+                        <button type="button" class="btn-danger" @onclick="() => RemoveMeal(meal)">remove</button>
+                    </div>
+                </div>
+            }
+        </div>
+
+        <div class="total-bar">
+            <div>
+                <div class="total-label">package total</div>
+                <div class="section-note">auto-computed from included meals</div>
+            </div>
+            <div class="total-text">₱@PackageTotal.ToString("F2")</div>
+        </div>
+
+        <div class="btn-row">
+            <button type="button" class="btn-primary" @onclick="SavePackage">save package</button>
+            <button type="button" class="btn-secondary" @onclick="CreateNewPackage">clear</button>
+        </div>
+    </div>
+</div>
+
+@code {
+    private List<PackageVm> packages = new();
+    private List<MealVm> meals = new();
+    private PackageVm selectedPackage = new();
+
+    private string newMealName = "";
+    private int newMealQuantity = 1;
+
+    protected override void OnInitialized()
+    {
+        meals = DataService.GetMeals();
+        packages = DataService.GetPackages();
+        selectedPackage = ClonePackage(packages.FirstOrDefault() ?? new PackageVm());
+    }
+
+    private decimal PackageTotal => selectedPackage.IncludedMeals.Sum(x => x.Price * x.Quantity);
+
+    private void SelectPackage(PackageVm package)
+    {
+        selectedPackage = ClonePackage(package);
+    }
+
+    private void CreateNewPackage()
+    {
+        selectedPackage = new PackageVm
+        {
+            IsCateringPackage = true,
+            IsAvailable = true,
+            Pax = 20
+        };
+        newMealName = "";
+        newMealQuantity = 1;
+    }
+
+    private void AddMealToPackage()
+    {
+        if (string.IsNullOrWhiteSpace(newMealName))
+            return;
+
+        var sourceMeal = meals.FirstOrDefault(x => x.Title == newMealName);
+        if (sourceMeal is null)
+            return;
+
+        selectedPackage.IncludedMeals.Add(new PackageMealVm
+        {
+            MealName = sourceMeal.Title,
+            Price = sourceMeal.Price,
+            Quantity = newMealQuantity <= 0 ? 1 : newMealQuantity,
+            SpecialRequest = "Special request"
+        });
+
+        newMealName = "";
+        newMealQuantity = 1;
+    }
+
+    private void RemoveMeal(PackageMealVm meal)
+    {
+        selectedPackage.IncludedMeals.Remove(meal);
+    }
+
+    private void SavePackage()
+    {
+        selectedPackage.Price = PackageTotal;
+
+        var existing = packages.FirstOrDefault(x => x.PackageId == selectedPackage.PackageId);
+
+        if (existing is null)
+        {
+            packages.Add(ClonePackage(selectedPackage));
+        }
+        else
+        {
+            existing.OwnerId = selectedPackage.OwnerId;
+            existing.PromoId = selectedPackage.PromoId;
+            existing.Pax = selectedPackage.Pax;
+            existing.IsCateringPackage = selectedPackage.IsCateringPackage;
+            existing.IsAvailable = selectedPackage.IsAvailable;
+            existing.CustomizablePackage = selectedPackage.CustomizablePackage;
+            existing.Name = selectedPackage.Name;
+            existing.Description = selectedPackage.Description;
+            existing.Notes = selectedPackage.Notes;
+            existing.Price = PackageTotal;
+            existing.IncludedMeals = selectedPackage.IncludedMeals
+                .Select(x => new PackageMealVm
+                {
+                    MealName = x.MealName,
+                    Price = x.Price,
+                    Quantity = x.Quantity,
+                    SpecialRequest = x.SpecialRequest
+                }).ToList();
+        }
+    }
+
+    private static PackageVm ClonePackage(PackageVm package) => new()
+    {
+        PackageId = package.PackageId,
+        OwnerId = package.OwnerId,
+        PromoId = package.PromoId,
+        Pax = package.Pax,
+        IsCateringPackage = package.IsCateringPackage,
+        IsAvailable = package.IsAvailable,
+        CustomizablePackage = package.CustomizablePackage,
+        Name = package.Name,
+        Description = package.Description,
+        Notes = package.Notes,
+        Price = package.Price,
+        IncludedMeals = package.IncludedMeals.Select(x => new PackageMealVm
+        {
+            MealName = x.MealName,
+            Price = x.Price,
+            Quantity = x.Quantity,
+            SpecialRequest = x.SpecialRequest   
+        }).ToList()
+    };
+}

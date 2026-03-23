@@ -1,0 +1,70 @@
+﻿@page "/kiosk-meals"
+
+<div class="admin-container">
+    <div class="list-column">
+        <div class="list-header">
+            <h2>Kiosk Meals</h2>
+            <button class="btn-filter">Filter meal list</button>
+        </div>
+
+        <div class="scrollable-list">
+            <div class="meal-item active">
+                <div class="status-indicator"></div>
+                <div class="meal-info">
+                    <span class="meal-name">Puto</span>
+                    <span class="meal-type">Delivery</span>
+                </div>
+            </div>
+
+            <div class="meal-item">
+                <div class="status-indicator inactive"></div>
+                <div class="meal-info">
+                    <span class="meal-name">Kutsinta</span>
+                    <span class="meal-type">Delivery</span>
+                </div>
+            </div>
+        </div>
+
+        <button class="btn-primary-add">Add New Meal</button>
+    </div>
+
+    <div class="config-column">
+        <div class="config-card">
+            <h3>Meal Configuration</h3>
+            <p class="subtitle">Manage product information without changing the current functional flow.</p>
+
+            <div class="config-grid">
+                <div class="image-upload-box">
+                    <div class="preview-square"></div>
+                    <button class="btn-secondary">Change Photo</button>
+                </div>
+
+                <div class="form-section">
+                    <div class="form-group">
+                        <label>Meal Title</label>
+                        <input type="text" placeholder="Enter meal name..." value="Puto" />
+                    </div>
+
+                    <div class="form-group">
+                        <label>Description</label>
+                        <textarea rows="3">Soft and fluffy steamed rice cake</textarea>
+                    </div>
+
+                    <div class="row-inputs">
+                        <div class="form-group">
+                            <label>Price</label>
+                            <input type="number" value="60.00" />
+                        </div>
+                        <div class="form-group">
+                            <label>Delivery Type</label>
+                            <select>
+                                <option>Delivery</option>
+                                <option>Pickup</option>
+                            </select>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
