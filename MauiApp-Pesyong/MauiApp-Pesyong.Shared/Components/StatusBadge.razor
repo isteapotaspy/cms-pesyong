@@ -1,14 +1,23 @@
-﻿<span class="badge @CssClass">@Text</span>
+﻿<span class="status-badge @GetCssClass()">@Text</span>
 
 @code {
-    [Parameter] public string Text { get; set; } = "";
+    [Parameter] public string Text { get; set; } = "active";
 
-    private string CssClass => Text.ToLower() switch
+    private string GetCssClass()
     {
-        "delivered" => "badge-success",
-        "pending" => "badge-warning",
-        "cancelled" => "badge-danger",
-        "in transit" => "badge-neutral",
-        _ => "badge-neutral"
-    };
+        var value = (Text ?? string.Empty).Trim().ToLowerInvariant();
+
+        return value switch
+        {
+            "active" => "status-badge--success",
+            "live" => "status-badge--success",
+            "open" => "status-badge--success",
+            "pending" => "status-badge--warning",
+            "processing" => "status-badge--warning",
+            "delayed" => "status-badge--warning",
+            "cancelled" => "status-badge--danger",
+            "closed" => "status-badge--danger",
+            _ => "status-badge--neutral"
+        };
+    }
 }

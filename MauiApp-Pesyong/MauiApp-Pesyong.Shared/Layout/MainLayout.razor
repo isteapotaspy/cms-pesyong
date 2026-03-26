@@ -1,17 +1,12 @@
 ﻿@inherits LayoutComponentBase
 
 <div class="admin-shell">
-    <aside class="sidebar">
+    <aside class="admin-shell__sidebar">
         <AdminSidebar />
     </aside>
 
-    <main class="main-content">
-        <div class="topbar">
-            <div class="topbar-title">Pesyong Catering Admin</div>
-            <div class="topbar-subtitle">Professional admin dashboard for orders, deliveries, meals, and packages</div>
-        </div>
-
-        <div class="page-body">
+    <main class="admin-shell__main">
+        <div class="admin-shell__content">
             @Body
         </div>
     </main>

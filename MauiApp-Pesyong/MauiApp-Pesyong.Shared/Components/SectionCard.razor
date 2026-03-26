@@ -1,25 +1,29 @@
-﻿<div class="section-box">
-    @if (!string.IsNullOrWhiteSpace(Title) || !string.IsNullOrWhiteSpace(Subtitle))
-    {
-        <div class="section-heading">
-            <div>
-                @if (!string.IsNullOrWhiteSpace(Title))
-                {
-                    <div class="section-title">@Title</div>
-                }
-                @if (!string.IsNullOrWhiteSpace(Subtitle))
-                {
-                    <div class="section-note">@Subtitle</div>
-                }
-            </div>
-        </div>
-    }
+﻿<div class="section-card">
+    <div class="section-card__header">
+        <div>
+            <h3 class="section-card__title">@Title</h3>
 
-    @ChildContent
+            @if (!string.IsNullOrWhiteSpace(Subtitle))
+            {
+                <p class="section-card__subtitle">@Subtitle</p>
+            }
+        </div>
+
+        @if (!string.IsNullOrWhiteSpace(ActionText) && !string.IsNullOrWhiteSpace(ActionHref))
+        {
+            <a class="section-card__action" href="@ActionHref">@ActionText</a>
+        }
+    </div>
+
+    <div class="section-card__body">
+        @ChildContent
+    </div>
 </div>
 
 @code {
-    [Parameter] public string Title { get; set; } = "";
-    [Parameter] public string Subtitle { get; set; } = "";
+    [Parameter] public string Title { get; set; } = string.Empty;
+    [Parameter] public string? Subtitle { get; set; }
+    [Parameter] public string? ActionText { get; set; }
+    [Parameter] public string? ActionHref { get; set; }
     [Parameter] public RenderFragment? ChildContent { get; set; }
 }

@@ -1,85 +1,110 @@
-﻿.admin-nav {
-    display: flex;
-    flex-direction: column;
-    gap: 10px;
-}
+﻿@page "/admin-dashboard"
 
-.brand-card {
-    display: flex;
-    align-items: center;
-    gap: 12px;
-    background: #ffffff;
-    border: 1px solid #f3d6c3;
-    border-radius: 18px;
-    padding: 14px;
-    margin-bottom: 12px;
-    box-shadow: 0 8px 20px rgba(249, 115, 22, 0.06);
-}
+<PageTitle>Pesyong Admin Dashboard</PageTitle>
 
-.brand-icon {
-    width: 48px;
-    height: 48px;
-    border-radius: 14px;
-    display: grid;
-    place-items: center;
-    background: #f97316;
-    color: white;
-    font-size: 1.4rem;
-}
+<div class="dashboard">
+    <section class="dashboard-hero">
+        <div class="dashboard-hero__content">
+            <div class="dashboard-hero__eyebrow">
+                pesyong catering admin
+            </div>
 
-.brand-text {
-    min-width: 0;
-}
+            <h1 class="dashboard-hero__title">professional admin dashboard</h1>
 
-.brand-title {
-    font-size: 1rem;
-    font-weight: 800;
-    color: #1f2937;
-    text-transform: lowercase;
-}
+            <p class="dashboard-hero__text">
+                overview of your catering operations with a cleaner and more polished layout.
+                same functionality, better presentation.
+            </p>
 
-.brand-subtitle {
-    font-size: .82rem;
-    color: #6b7280;
-}
+            <div class="dashboard-hero__actions">
+                <a href="/orders" class="dashboard-btn dashboard-btn--primary">open orders</a>
+                <a href="/delivery" class="dashboard-btn dashboard-btn--secondary">manage delivery</a>
+            </div>
+        </div>
 
-.nav-group-label {
-    margin: 12px 8px 4px;
-    font-size: .75rem;
-    font-weight: 700;
-    color: #9ca3af;
-    text-transform: uppercase;
-    letter-spacing: .08em;
-}
+        <div class="dashboard-hero__side">
+            <div class="dashboard-hero__panel">
+                <div class="dashboard-hero__panel-label">welcome back</div>
+                <div class="dashboard-hero__panel-value">admin</div>
+                <div class="dashboard-hero__panel-text">
+                    same logic, better design. this dashboard is only a visual improvement layer.
+                </div>
+            </div>
+        </div>
+    </section>
 
-.nav-link {
-    display: block;
-    text-decoration: none;
-    color: #374151;
-    padding: 12px 14px;
-    border-radius: 14px;
-    font-weight: 700;
-    transition: all .18s ease;
-}
+    <section class="dashboard-stats">
+        <div class="stat-card">
+            <div class="stat-card__title">active meals</div>
+            <div class="stat-card__value">24</div>
+            <div class="stat-card__caption">currently available</div>
+        </div>
 
-    .nav-link:hover {
-        background: #fff1e8;
-        color: #ea580c;
-    }
+        <div class="stat-card">
+            <div class="stat-card__title">packages</div>
+            <div class="stat-card__value">8</div>
+            <div class="stat-card__caption">ready combinations</div>
+        </div>
 
-    .nav-link.active {
-        background: linear-gradient(90deg, #f97316 0%, #fb923c 100%);
-        color: white;
-        box-shadow: 0 10px 20px rgba(249, 115, 22, 0.22);
-    }
+        <div class="stat-card">
+            <div class="stat-card__title">deliveries today</div>
+            <div class="stat-card__value">12</div>
+            <div class="stat-card__caption">scheduled and active</div>
+        </div>
 
-@media (max-width: 1100px) {
-    .brand-subtitle,
-    .nav-group-label {
-        display: none;
-    }
+        <div class="stat-card">
+            <div class="stat-card__title">orders today</div>
+            <div class="stat-card__value">13</div>
+            <div class="stat-card__caption">new and processing</div>
+        </div>
+    </section>
 
-    .brand-title {
-        font-size: .88rem;
-    }
-}
+    <section class="dashboard-grid">
+        <div class="section-card">
+            <div class="section-card__header">
+                <div>
+                    <h3 class="section-card__title">operations overview</h3>
+                    <p class="section-card__subtitle">cleaner and more organized content grouping</p>
+                </div>
+            </div>
+
+            <div class="info-list">
+                <div class="info-list__item">
+                    <div class="info-list__title">orders management</div>
+                    <div class="info-list__text">track customer details, totals, and statuses in one place.</div>
+                </div>
+
+                <div class="info-list__item">
+                    <div class="info-list__title">delivery tracking</div>
+                    <div class="info-list__text">manage riders, schedule, and confirmation flow more clearly.</div>
+                </div>
+
+                <div class="info-list__item">
+                    <div class="info-list__title">kiosk meals</div>
+                    <div class="info-list__text">organize products and pricing with better structure.</div>
+                </div>
+
+                <div class="info-list__item">
+                    <div class="info-list__title">packages</div>
+                    <div class="info-list__text">build meal inclusions and package combinations cleanly.</div>
+                </div>
+            </div>
+        </div>
+
+        <div class="section-card">
+            <div class="section-card__header">
+                <div>
+                    <h3 class="section-card__title">quick actions</h3>
+                    <p class="section-card__subtitle">jump to common admin tasks</p>
+                </div>
+            </div>
+
+            <div class="quick-links">
+                <a href="/kiosk-meals" class="quick-links__item">add new meal</a>
+                <a href="/catering-packages" class="quick-links__item">create package</a>
+                <a href="/delivery" class="quick-links__item">track delivery</a>
+                <a href="/orders" class="quick-links__item">open orders</a>
+            </div>
+        </div>
+    </section>
+</div>

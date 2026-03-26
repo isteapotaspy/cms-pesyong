@@ -1,34 +1,27 @@
-﻿using MauiApp_Pesyong.Services;
-using MauiApp_Pesyong.Shared.Services;
-using Microsoft.Extensions.Logging;
+﻿using Microsoft.AspNetCore.Components.WebView.Maui;
 
+namespace MauiApp_Pesyong;
 
-namespace MauiApp_Pesyong
+public static class MauiProgram
 {
-    public static class MauiProgram
+    public static MauiApp CreateMauiApp()
     {
-        public static MauiApp CreateMauiApp()
-        {
-            var builder = MauiApp.CreateBuilder();
-            builder
-                .UseMauiApp<App>()
-                .ConfigureFonts(fonts =>
-                {
-                    fonts.AddFont("OpenSans-Regular.ttf", "OpenSansRegular");
-                });
+        var builder = MauiApp.CreateBuilder();
 
-            // Add device-specific services used by the MauiApp_Pesyong.Shared project
-            builder.Services.AddSingleton<IFormFactor, FormFactor>();
-            builder.Services.AddSingleton<AdminDataService>();
+        builder
+            .UseMauiApp<App>()
+            .ConfigureFonts(fonts =>
+            {
+                fonts.AddFont("OpenSans-Regular.ttf", "OpenSansRegular");
+                fonts.AddFont("OpenSans-Semibold.ttf", "OpenSansSemibold");
+            });
 
-            builder.Services.AddMauiBlazorWebView();
+        builder.Services.AddMauiBlazorWebView();
 
 #if DEBUG
-            builder.Services.AddBlazorWebViewDeveloperTools();
-            builder.Logging.AddDebug();
+        builder.Services.AddBlazorWebViewDeveloperTools();
 #endif
 
-            return builder.Build();
-        }
+        return builder.Build();
     }
 }

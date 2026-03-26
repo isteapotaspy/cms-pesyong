@@ -7,5 +7,7 @@
   <Project Path="CMS.WPF.Customer/CMS.WPF.Customer.csproj" />
   <Project Path="MauiApp-Pesyong/MauiApp-Pesyong.Shared/MauiApp-Pesyong.Shared.csproj" Id="587d4621-3ed3-40d2-8454-6ab21815ba75" />
   <Project Path="MauiApp-Pesyong/MauiApp-Pesyong.Web/MauiApp-Pesyong.Web.csproj" Id="743939b2-271a-443f-af56-473cdae1874c" />
-  <Project Path="MauiApp-Pesyong/MauiApp-Pesyong/MauiApp-Pesyong.csproj" Id="7ca91a3b-3f83-431a-b2f7-27c830a54efd" />
+  <Project Path="MauiApp-Pesyong/MauiApp-Pesyong/MauiApp-Pesyong.csproj" Id="7ca91a3b-3f83-431a-b2f7-27c830a54efd">
+    <Build Solution="Debug|*" Project="false" />
+  </Project>
 </Solution>
