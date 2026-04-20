@@ -3,8 +3,6 @@
   <Project Path="CMS.Domain/CMS.Domain.csproj" />
   <Project Path="CMS.Infrastructure/CMS.Infrastructure.csproj" />
   <Project Path="CMS.Server/CMS.Server.csproj" />
-  <Project Path="CMS.WPF.Admin/CMS.WPF.Admin.csproj" />
-  <Project Path="CMS.WPF.Customer/CMS.WPF.Customer.csproj" />
   <Project Path="MauiApp-Pesyong/MauiApp-Pesyong.Shared/MauiApp-Pesyong.Shared.csproj" Id="587d4621-3ed3-40d2-8454-6ab21815ba75" />
   <Project Path="MauiApp-Pesyong/MauiApp-Pesyong.Web/MauiApp-Pesyong.Web.csproj" Id="743939b2-271a-443f-af56-473cdae1874c" />
   <Project Path="MauiApp-Pesyong/MauiApp-Pesyong/MauiApp-Pesyong.csproj" Id="7ca91a3b-3f83-431a-b2f7-27c830a54efd">
