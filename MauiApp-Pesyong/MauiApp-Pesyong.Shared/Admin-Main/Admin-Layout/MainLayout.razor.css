@@ -1,0 +1,112 @@
+.admin-shell {
+    min-height: 100vh;
+    display: grid;
+    grid-template-columns: 260px 1fr;
+    background: var(--bg-app);
+}
+
+.admin-shell__sidebar {
+    position: sticky;
+    top: 0;
+    height: 100vh;
+    overflow-y: auto;
+    background: var(--bg-sidebar);
+    border-right: 1px solid var(--border-color);
+    z-index: 30;
+}
+
+.admin-shell__overlay {
+    display: none;
+}
+
+.admin-shell__main {
+    min-width: 0;
+    display: flex;
+    flex-direction: column;
+}
+
+.admin-shell__topbar {
+    display: none;
+    align-items: center;
+    gap: 12px;
+    padding: 10px 16px;
+    background: var(--bg-surface);
+    border-bottom: 1px solid var(--border-color);
+    position: sticky;
+    top: 0;
+    z-index: 20;
+}
+
+.topbar-toggle {
+    width: 36px;
+    height: 36px;
+    border-radius: var(--radius-md);
+    background: transparent;
+    border: 1px solid var(--border-color);
+    color: var(--text-primary);
+    cursor: pointer;
+    display: grid;
+    place-items: center;
+    transition: all var(--transition);
+}
+
+.topbar-toggle:hover {
+    background: var(--bg-surface-hover);
+}
+
+.topbar-title {
+    font-size: 0.9rem;
+    font-weight: 700;
+    color: var(--text-primary);
+}
+
+.admin-shell__content {
+    flex: 1;
+    padding: 24px;
+    min-height: 0;
+    overflow-y: auto;
+}
+
+@media (max-width: 1100px) {
+    .admin-shell {
+        grid-template-columns: 1fr;
+    }
+
+    .admin-shell__topbar {
+        display: flex;
+    }
+
+    .admin-shell__sidebar {
+        position: fixed;
+        left: -280px;
+        top: 0;
+        width: 260px;
+        height: 100vh;
+        transition: left 300ms ease;
+        z-index: 50;
+    }
+
+    .admin-shell.sidebar-open .admin-shell__sidebar {
+        left: 0;
+    }
+
+    .admin-shell__overlay {
+        display: block;
+        position: fixed;
+        inset: 0;
+        background: rgba(0,0,0,0.5);
+        z-index: 40;
+        opacity: 0;
+        pointer-events: none;
+        transition: opacity 300ms ease;
+    }
+
+    .admin-shell__overlay.visible {
+        opacity: 1;
+        pointer-events: auto;
+    }
+
+    .admin-shell__content {
+        padding: 16px;
+    }
+}

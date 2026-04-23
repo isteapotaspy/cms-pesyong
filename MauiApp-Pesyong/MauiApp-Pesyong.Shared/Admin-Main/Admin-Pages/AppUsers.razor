@@ -1,0 +1,119 @@
+@page "/app-users"
+
+<PageTitle>App Users — Pesyong Admin</PageTitle>
+
+<div class="page-head">
+    <div>
+        <h1 class="page-title">App Users</h1>
+        <p class="page-subtitle">Manage system users, roles, and access</p>
+    </div>
+    <div class="page-head-actions">
+        <button type="button" class="btn-primary" @onclick="CreateNew">New User</button>
+    </div>
+</div>
+
+<div class="stats-grid">
+    <StatCard Label="total users" Value="@users.Count.ToString()" Accent="true" />
+    <StatCard Label="active" Value="@users.Count(u => u.IsActive).ToString()" />
+    <StatCard Label="admins" Value="@users.Count(u => u.Role == "Admin").ToString()" />
+    <StatCard Label="staff" Value="@users.Count(u => u.Role == "Staff").ToString()" />
+</div>
+
+<div class="admin-grid">
+    <div class="list-panel-card">
+        <div class="toolbar">
+            <div class="section-title">User List</div>
+            <span class="chip active">@FilteredUsers.Count() item(s)</span>
+        </div>
+
+        <input class="search-box" placeholder="Search username, name..." @bind="searchText" @bind:event="oninput" />
+
+        <div class="filter-row">
+            <span class="chip @(filterRole == "" ? "active" : "")" @onclick="() => filterRole = string.Empty">All</span>
+            <span class="chip @(filterRole == "Admin" ? "active" : "")" @onclick='() => filterRole = "Admin"'>Admin</span>
+            <span class="chip @(filterRole == "Manager" ? "active" : "")" @onclick='() => filterRole = "Manager"'>Manager</span>
+            <span class="chip @(filterRole == "Staff" ? "active" : "")" @onclick='() => filterRole = "Staff"'>Staff</span>
+        </div>
+
+        <div class="list-scroll">
+            @foreach (var u in FilteredUsers)
+            {
+                <div class="list-item @(selected?.UserId == u.UserId ? "active" : "")"
+                     @onclick="() => Select(u)">
+                    <div class="list-row">
+                        <div>
+                            <div class="list-title">@u.DisplayName</div>
+                            <div class="list-subtitle">@@@u.Username · @u.Role</div>
+                        </div>
+                        <StatusBadge Text="@(u.IsActive ? "Active" : "Closed")" />
+                    </div>
+                </div>
+            }
+        </div>
+    </div>
+
+    <div class="section-stack">
+        <div class="section-box">
+            <div class="section-heading">
+                <div>
+                    <div class="section-title">User Profile</div>
+                    <div class="section-note">Account identity and credentials</div>
+                </div>
+            </div>
+
+            <div class="form-grid-2">
+                <div class="field">
+                    <label>User ID</label>
+                    <input @bind="selected.UserId" readonly />
+                </div>
+                <div class="field">
+                    <label>Username</label>
+                    <input @bind="selected.Username" placeholder="username" />
+                </div>
+            </div>
+
+            <div class="form-grid-2">
+                <div class="field">
+                    <label>Display Name</label>
+                    <input @bind="selected.DisplayName" placeholder="Full name" />
+                </div>
+                <div class="field">
+                    <label>Email</label>
+                    <input @bind="selected.Email" type="email" placeholder="user@pesyong.com" />
+                </div>
+            </div>
+
+            <div class="form-grid-2">
+                <div class="field">
+                    <label>Role</label>
+                    <select @bind="selected.Role">
+                        <option>Admin</option>
+                        <option>Manager</option>
+                        <option>Staff</option>
+                    </select>
+                </div>
+                <div class="field">
+                    <label>Last Login</label>
+                    <input value="@selected.LastLogin.ToString("MMM dd, yyyy h:mm tt")" readonly />
+                </div>
+            </div>
+
+            <div class="check-row">
+                <label class="check-item">
+                    <input type="checkbox" @bind="selected.IsActive" />
+                    <span>Account Active</span>
+                </label>
+            </div>
+        </div>
+
+        <div class="btn-row">
+            <button type="button" class="btn-primary" @onclick="Save">Save User</button>
+            <button type="button" class="btn-secondary" @onclick="CreateNew">Clear</button>
+            <button type="button" class="btn-danger" @onclick="Delete">Delete</button>
+        </div>
+    </div>
+</div>
+
+<ConfirmDialog Visible="showConfirm" Title="Delete User"
+               Message="@($"Are you sure you want to delete {selected.DisplayName}?")"
+               OnConfirm="ConfirmDelete" OnCancel="() => showConfirm = false" />

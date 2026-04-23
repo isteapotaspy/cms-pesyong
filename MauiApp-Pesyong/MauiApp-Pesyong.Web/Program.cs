@@ -1,4 +1,5 @@
 using MauiApp_Pesyong.Shared.Services;
+using MauiApp_Pesyong.Shared.Admin_Main.Admin_Services;
 using MauiApp_Pesyong.Web.Components;
 using MauiApp_Pesyong.Web.Services;
 
@@ -10,6 +11,7 @@ builder.Services.AddRazorComponents()
 
 // Add device-specific services used by the MauiApp_Pesyong.Shared project
 builder.Services.AddSingleton<IFormFactor, FormFactor>();
+builder.Services.AddSingleton<AdminDataService>();
 
 var app = builder.Build();
 

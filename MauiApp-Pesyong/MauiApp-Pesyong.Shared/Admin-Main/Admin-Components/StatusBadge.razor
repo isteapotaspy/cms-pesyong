@@ -1,4 +1,4 @@
-﻿<span class="status-badge @GetCssClass()">@Text</span>
+<span class="status-badge @GetCssClass()">@Text</span>
 
 @code {
     [Parameter] public string Text { get; set; } = "active";
@@ -12,11 +12,16 @@
             "active" => "status-badge--success",
             "live" => "status-badge--success",
             "open" => "status-badge--success",
+            "delivered" => "status-badge--success",
+            "completed" => "status-badge--success",
             "pending" => "status-badge--warning",
             "processing" => "status-badge--warning",
             "delayed" => "status-badge--warning",
+            "in transit" => "status-badge--info",
+            "shipping" => "status-badge--info",
             "cancelled" => "status-badge--danger",
             "closed" => "status-badge--danger",
+            "error" => "status-badge--danger",
             _ => "status-badge--neutral"
         };
     }

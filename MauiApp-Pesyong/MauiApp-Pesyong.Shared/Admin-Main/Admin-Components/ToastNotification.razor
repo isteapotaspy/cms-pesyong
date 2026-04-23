@@ -1,0 +1,29 @@
+@if (toasts.Any())
+{
+    <div class="toast-container">
+        @foreach (var t in toasts)
+        {
+            <div class="toast toast--@t.Type">@t.Message</div>
+        }
+    </div>
+}
+
+@code {
+    private List<ToastItem> toasts = new();
+
+    public async Task Show(string message, string type = "success")
+    {
+        var toast = new ToastItem { Message = message, Type = type };
+        toasts.Add(toast);
+        StateHasChanged();
+        await Task.Delay(3000);
+        toasts.Remove(toast);
+        StateHasChanged();
+    }
+
+    private class ToastItem
+    {
+        public string Message { get; set; } = "";
+        public string Type { get; set; } = "success";
+    }
+}

@@ -1,0 +1,106 @@
+@page "/admin-dashboard"
+@page "/"
+
+<PageTitle>Pesyong Admin Dashboard</PageTitle>
+
+<div class="dashboard">
+    <section class="dashboard-hero">
+        <div class="dashboard-hero__content">
+            <div class="dashboard-hero__eyebrow">pesyong catering admin</div>
+            <h1 class="dashboard-hero__title">Welcome back, Admin</h1>
+            <p class="dashboard-hero__text">
+                Overview of your catering operations. Monitor orders, deliveries, meals, and team activity from one place.
+            </p>
+            <div class="dashboard-hero__actions">
+                <a href="/orders" class="btn-primary">Open Orders</a>
+                <a href="/delivery" class="btn-outline">Manage Delivery</a>
+            </div>
+        </div>
+        <div class="dashboard-hero__side">
+            <div class="dashboard-hero__panel">
+                <div class="dashboard-hero__panel-label">today's summary</div>
+                <div class="dashboard-hero__panel-value">@DateTime.Today.ToString("MMM dd, yyyy")</div>
+                <div class="dashboard-hero__panel-text">
+                    @orders.Count orders · @deliveries.Count deliveries · @meals.Count meals active
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <section class="stats-grid">
+        <StatCard Label="active meals" Value="@meals.Count.ToString()" Accent="true" />
+        <StatCard Label="packages" Value="@packages.Count.ToString()" />
+        <StatCard Label="deliveries" Value="@deliveries.Count.ToString()" />
+        <StatCard Label="orders" Value="@orders.Count.ToString()" />
+    </section>
+
+    <section class="dashboard-grid">
+        <div class="section-card">
+            <div class="section-card__header">
+                <div>
+                    <h3 class="section-card__title">Operations Overview</h3>
+                    <p class="section-card__subtitle">Key areas of your catering operations</p>
+                </div>
+            </div>
+            <div class="info-list">
+                <div class="info-list__item">
+                    <div class="info-list__icon">📋</div>
+                    <div>
+                        <div class="info-list__title">Orders Management</div>
+                        <div class="info-list__text">Track customer details, totals, and statuses in one place.</div>
+                    </div>
+                </div>
+                <div class="info-list__item">
+                    <div class="info-list__icon">🚚</div>
+                    <div>
+                        <div class="info-list__title">Delivery Tracking</div>
+                        <div class="info-list__text">Manage riders, schedules, and confirmation flow.</div>
+                    </div>
+                </div>
+                <div class="info-list__item">
+                    <div class="info-list__icon">🍽️</div>
+                    <div>
+                        <div class="info-list__title">Kiosk Meals</div>
+                        <div class="info-list__text">Organize products and pricing with better structure.</div>
+                    </div>
+                </div>
+                <div class="info-list__item">
+                    <div class="info-list__icon">📦</div>
+                    <div>
+                        <div class="info-list__title">Catering Packages</div>
+                        <div class="info-list__text">Build meal inclusions and package combinations.</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="section-card">
+            <div class="section-card__header">
+                <div>
+                    <h3 class="section-card__title">Quick Actions</h3>
+                    <p class="section-card__subtitle">Jump to common admin tasks</p>
+                </div>
+            </div>
+            <div class="quick-links">
+                <a href="/kiosk-meals" class="quick-links__item">
+                    <span class="quick-links__icon">+</span> Add New Meal
+                </a>
+                <a href="/catering-packages" class="quick-links__item">
+                    <span class="quick-links__icon">+</span> Create Package
+                </a>
+                <a href="/delivery" class="quick-links__item">
+                    <span class="quick-links__icon">→</span> Track Delivery
+                </a>
+                <a href="/orders" class="quick-links__item">
+                    <span class="quick-links__icon">→</span> View Orders
+                </a>
+                <a href="/customers" class="quick-links__item">
+                    <span class="quick-links__icon">→</span> Manage Customers
+                </a>
+                <a href="/app-users" class="quick-links__item">
+                    <span class="quick-links__icon">→</span> Manage Users
+                </a>
+            </div>
+        </div>
+    </section>
+</div>

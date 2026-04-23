@@ -14,4 +14,10 @@
     <PackageReference Include="Microsoft.AspNetCore.Components.Web" Version="10.0.0" />
   </ItemGroup>
 
+  <ItemGroup>
+    <Folder Include="Admin-Main\Admin-Pages\" />
+    <Folder Include="Admin-Main\Admin-Components\" />
+    <Folder Include="Admin-Main\Admin-Layout\" />
+  </ItemGroup>
+
 </Project>

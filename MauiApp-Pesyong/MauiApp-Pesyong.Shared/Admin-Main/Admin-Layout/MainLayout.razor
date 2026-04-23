@@ -1,0 +1,38 @@
+@inherits LayoutComponentBase
+
+<div class="admin-shell @(sidebarOpen ? "sidebar-open" : "")">
+    <div class="admin-shell__overlay @(sidebarOpen ? "visible" : "")" @onclick="ToggleSidebar"></div>
+
+    <aside class="admin-shell__sidebar">
+        <AdminSidebar OnNavigated="CloseSidebar" />
+    </aside>
+
+    <main class="admin-shell__main">
+        <header class="admin-shell__topbar">
+            <button class="topbar-toggle" @onclick="ToggleSidebar">
+                <svg width="20" height="20" viewBox="0 0 20 20" fill="none"><path d="M3 5h14M3 10h14M3 15h14" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg>
+            </button>
+            <span class="topbar-title">Pesyong Admin</span>
+        </header>
+        <div class="admin-shell__content">
+            @Body
+        </div>
+    </main>
+</div>
+
+<div class="toast-container">
+    @foreach (var t in toasts)
+    {
+        <div class="toast toast--@t.Type">@t.Message</div>
+    }
+</div>
+
+@code {
+    private bool sidebarOpen;
+    private List<ToastItem> toasts = new();
+
+    private void ToggleSidebar() => sidebarOpen = !sidebarOpen;
+    private void CloseSidebar() => sidebarOpen = false;
+
+    private class ToastItem { public string Message { get; set; } = ""; public string Type { get; set; } = "success"; }
+}

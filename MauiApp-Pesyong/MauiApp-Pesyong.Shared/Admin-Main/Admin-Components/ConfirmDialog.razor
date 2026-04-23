@@ -1,0 +1,25 @@
+@if (Visible)
+{
+    <div class="dialog-backdrop" @onclick="Cancel">
+        <div class="dialog-box" @onclick:stopPropagation="true">
+            <div class="dialog-title">@Title</div>
+            <div class="dialog-message">@Message</div>
+            <div class="dialog-actions">
+                <button class="btn-secondary" @onclick="Cancel">Cancel</button>
+                <button class="btn-danger" @onclick="Confirm">@ConfirmText</button>
+            </div>
+        </div>
+    </div>
+}
+
+@code {
+    [Parameter] public bool Visible { get; set; }
+    [Parameter] public string Title { get; set; } = "Confirm";
+    [Parameter] public string Message { get; set; } = "Are you sure?";
+    [Parameter] public string ConfirmText { get; set; } = "Delete";
+    [Parameter] public EventCallback OnConfirm { get; set; }
+    [Parameter] public EventCallback OnCancel { get; set; }
+
+    private async Task Confirm() => await OnConfirm.InvokeAsync();
+    private async Task Cancel() => await OnCancel.InvokeAsync();
+}

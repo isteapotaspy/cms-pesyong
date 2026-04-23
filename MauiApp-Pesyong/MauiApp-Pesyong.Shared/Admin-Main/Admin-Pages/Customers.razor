@@ -1,0 +1,111 @@
+@page "/customers"
+
+<PageTitle>Customers — Pesyong Admin</PageTitle>
+
+<div class="page-head">
+    <div>
+        <h1 class="page-title">Customers</h1>
+        <p class="page-subtitle">Manage your customer database</p>
+    </div>
+    <div class="page-head-actions">
+        <button type="button" class="btn-primary" @onclick="CreateNew">New Customer</button>
+    </div>
+</div>
+
+<div class="stats-grid">
+    <StatCard Label="total customers" Value="@customers.Count.ToString()" Accent="true" />
+    <StatCard Label="this month" Value="@customers.Count(c => c.CreatedDate.Month == DateTime.Today.Month).ToString()" />
+    <StatCard Label="with email" Value="@customers.Count(c => !string.IsNullOrWhiteSpace(c.Email)).ToString()" />
+    <StatCard Label="with notes" Value="@customers.Count(c => !string.IsNullOrWhiteSpace(c.Notes)).ToString()" />
+</div>
+
+<div class="admin-grid">
+    <div class="list-panel-card">
+        <div class="toolbar">
+            <div class="section-title">Customer List</div>
+            <span class="chip active">@FilteredCustomers.Count() item(s)</span>
+        </div>
+
+        <input class="search-box" placeholder="Search name, email..." @bind="searchText" @bind:event="oninput" />
+
+        <div class="list-scroll">
+            @foreach (var c in FilteredCustomers)
+            {
+                <div class="list-item @(selected?.CustomerId == c.CustomerId ? "active" : "")"
+                     @onclick="() => Select(c)">
+                    <div class="list-row">
+                        <div>
+                            <div class="list-title">@c.FullName</div>
+                            <div class="list-subtitle">@c.Email</div>
+                            <div class="list-subtitle">@c.Phone</div>
+                        </div>
+                    </div>
+                </div>
+            }
+        </div>
+    </div>
+
+    <div class="section-stack">
+        <div class="section-box">
+            <div class="section-heading">
+                <div>
+                    <div class="section-title">Customer Details</div>
+                    <div class="section-note">Personal information and contact</div>
+                </div>
+            </div>
+
+            <div class="form-grid-2">
+                <div class="field">
+                    <label>Customer ID</label>
+                    <input @bind="selected.CustomerId" readonly />
+                </div>
+                <div class="field">
+                    <label>Created Date</label>
+                    <InputDate @bind-Value="selected.CreatedDate" class="search-box input-date" />
+                </div>
+            </div>
+
+            <div class="form-grid-2">
+                <div class="field">
+                    <label>First Name</label>
+                    <input @bind="selected.FirstName" placeholder="First name" />
+                </div>
+                <div class="field">
+                    <label>Last Name</label>
+                    <input @bind="selected.LastName" placeholder="Last name" />
+                </div>
+            </div>
+
+            <div class="form-grid-2">
+                <div class="field">
+                    <label>Email</label>
+                    <input @bind="selected.Email" type="email" placeholder="email@example.com" />
+                </div>
+                <div class="field">
+                    <label>Phone</label>
+                    <input @bind="selected.Phone" placeholder="09XX XXX XXXX" />
+                </div>
+            </div>
+
+            <div class="field">
+                <label>Address</label>
+                <textarea @bind="selected.Address" rows="2" placeholder="Full address"></textarea>
+            </div>
+
+            <div class="field">
+                <label>Notes</label>
+                <textarea @bind="selected.Notes" rows="2" placeholder="Internal notes about this customer"></textarea>
+            </div>
+        </div>
+
+        <div class="btn-row">
+            <button type="button" class="btn-primary" @onclick="Save">Save Customer</button>
+            <button type="button" class="btn-secondary" @onclick="CreateNew">Clear</button>
+            <button type="button" class="btn-danger" @onclick="Delete">Delete</button>
+        </div>
+    </div>
+</div>
+
+<ConfirmDialog Visible="showConfirm" Title="Delete Customer"
+               Message="@($"Are you sure you want to delete {selected.FullName}?")"
+               OnConfirm="ConfirmDelete" OnCancel="() => showConfirm = false" />

@@ -1,0 +1,166 @@
+@page "/system-logs"
+
+<PageTitle>System Logs — Pesyong Admin</PageTitle>
+
+<div class="page-head">
+    <div>
+        <h1 class="page-title">System Logs</h1>
+        <p class="page-subtitle">Monitor application events, warnings, and errors</p>
+    </div>
+    <div class="page-head-actions">
+        <button type="button" class="btn-outline" @onclick="Refresh">Refresh</button>
+    </div>
+</div>
+
+<div class="stats-grid">
+    <StatCard Label="total logs" Value="@logs.Count.ToString()" Accent="true" />
+    <StatCard Label="info" Value="@logs.Count(l => l.Level == "Info").ToString()" />
+    <StatCard Label="warnings" Value="@logs.Count(l => l.Level == "Warning").ToString()" />
+    <StatCard Label="errors" Value="@logs.Count(l => l.Level == "Error").ToString()" />
+</div>
+
+<div class="section-box">
+    <div class="toolbar">
+        <div class="section-title">Event Log</div>
+        <span class="chip active">@FilteredLogs.Count() entries</span>
+    </div>
+
+    <input class="search-box" placeholder="Search message, source..." @bind="searchText" @bind:event="oninput" />
+
+    <div class="filter-row">
+        <span class="chip @(filterLevel == "" ? "active" : "")" @onclick="() => filterLevel = string.Empty">All</span>
+        <span class="chip @(filterLevel == "Info" ? "active" : "")" @onclick='() => filterLevel = "Info"'>Info</span>
+        <span class="chip @(filterLevel == "Warning" ? "active" : "")" @onclick='() => filterLevel = "Warning"'>Warning</span>
+        <span class="chip @(filterLevel == "Error" ? "active" : "")" @onclick='() => filterLevel = "Error"'>Error</span>
+    </div>
+
+    <div class="log-table-wrapper">
+        <table class="log-table">
+            <thead>
+                <tr>
+                    <th>Timestamp</th>
+                    <th>Level</th>
+                    <th>Source</th>
+                    <th>Message</th>
+                </tr>
+            </thead>
+            <tbody>
+                @foreach (var log in FilteredLogs)
+                {
+                    <tr class="log-row log-row--@log.Level.ToLower()">
+                        <td class="log-time">@log.Timestamp.ToString("MMM dd, HH:mm:ss")</td>
+                        <td>
+                            <span class="log-level log-level--@log.Level.ToLower()">@log.Level</span>
+                        </td>
+                        <td class="log-source">@log.Source</td>
+                        <td class="log-message">@log.Message</td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    </div>
+
+    @if (!FilteredLogs.Any())
+    {
+        <div class="log-empty">No log entries match your filter.</div>
+    }
+</div>
+
+<style>
+    .log-table-wrapper {
+        overflow-x: auto;
+        margin-top: 8px;
+    }
+
+    .log-table {
+        width: 100%;
+        border-collapse: collapse;
+        font-size: 0.85rem;
+    }
+
+    .log-table th {
+        text-align: left;
+        padding: 10px 14px;
+        font-size: 0.75rem;
+        font-weight: 700;
+        color: var(--text-muted);
+        text-transform: uppercase;
+        letter-spacing: 0.04em;
+        border-bottom: 1px solid var(--border-color);
+        background: var(--bg-surface-raised);
+    }
+
+    .log-table td {
+        padding: 10px 14px;
+        border-bottom: 1px solid var(--border-subtle);
+        vertical-align: top;
+    }
+
+    .log-row {
+        transition: background var(--transition);
+    }
+
+    .log-row:hover {
+        background: var(--bg-surface-hover);
+    }
+
+    .log-row--error {
+        border-left: 3px solid var(--danger);
+    }
+
+    .log-row--warning {
+        border-left: 3px solid var(--warning);
+    }
+
+    .log-row--info {
+        border-left: 3px solid var(--info);
+    }
+
+    .log-time {
+        white-space: nowrap;
+        color: var(--text-muted);
+        font-family: "Cascadia Code", "Consolas", monospace;
+        font-size: 0.8rem;
+    }
+
+    .log-level {
+        padding: 2px 10px;
+        border-radius: 999px;
+        font-size: 0.72rem;
+        font-weight: 700;
+        text-transform: uppercase;
+        letter-spacing: 0.03em;
+    }
+
+    .log-level--info {
+        background: var(--info-bg);
+        color: var(--info);
+    }
+
+    .log-level--warning {
+        background: var(--warning-bg);
+        color: var(--warning);
+    }
+
+    .log-level--error {
+        background: var(--danger-bg);
+        color: var(--danger);
+    }
+
+    .log-source {
+        color: var(--accent);
+        font-weight: 600;
+        white-space: nowrap;
+    }
+
+    .log-message {
+        color: var(--text-primary);
+    }
+
+    .log-empty {
+        text-align: center;
+        padding: 40px;
+        color: var(--text-muted);
+        font-size: 0.9rem;
+    }
+</style>

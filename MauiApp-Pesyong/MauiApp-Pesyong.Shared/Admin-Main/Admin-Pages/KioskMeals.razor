@@ -1,5 +1,4 @@
-﻿@page "/kiosk-meals"
-@inject AdminDataService DataService
+@page "/kiosk-meals"
 
 <div class="page-head">
     <div>
@@ -203,78 +202,3 @@
         </div>
     </div>
 </div>
-
-@code {
-    private string searchText = "";
-    private List<MealVm> meals = new();
-    private MealVm selectedMeal = new();
-    private string creatorId = "";
-    private DateTime mealCreatedDate = DateTime.Today;
-
-    protected override void OnInitialized()
-    {
-        meals = DataService.GetMeals();
-        selectedMeal = meals.FirstOrDefault() is MealVm first ? CloneMeal(first) : new MealVm();
-    }
-
-    private IEnumerable<MealVm> FilteredMeals =>
-        meals.Where(x =>
-            string.IsNullOrWhiteSpace(searchText) ||
-            x.Title.Contains(searchText, StringComparison.OrdinalIgnoreCase) ||
-            x.Description.Contains(searchText, StringComparison.OrdinalIgnoreCase));
-
-    private void SelectMeal(MealVm meal)
-    {
-        selectedMeal = CloneMeal(meal);
-    }
-
-    private void ClearForm()
-    {
-        selectedMeal = new MealVm
-        {
-            DeliveryType = "Delivery"
-        };
-        creatorId = "";
-        mealCreatedDate = DateTime.Today;
-    }
-
-    private void SaveMeal()
-    {
-        var existing = meals.FirstOrDefault(x => x.MealId == selectedMeal.MealId);
-
-        if (existing is null)
-        {
-            meals.Add(CloneMeal(selectedMeal));
-        }
-        else
-        {
-            existing.Title = selectedMeal.Title;
-            existing.Description = selectedMeal.Description;
-            existing.Price = selectedMeal.Price;
-            existing.DeliveryType = selectedMeal.DeliveryType;
-            existing.StockQuantity = selectedMeal.StockQuantity;
-            existing.MinOrder = selectedMeal.MinOrder;
-        }
-    }
-
-    private void DeleteMeal()
-    {
-        var existing = meals.FirstOrDefault(x => x.MealId == selectedMeal.MealId);
-        if (existing is not null)
-        {
-            meals.Remove(existing);
-            ClearForm();
-        }
-    }
-
-    private static MealVm CloneMeal(MealVm meal) => new()
-    {
-        MealId = meal.MealId,
-        Title = meal.Title,
-        Description = meal.Description,
-        Price = meal.Price,
-        DeliveryType = meal.DeliveryType,
-        StockQuantity = meal.StockQuantity,
-        MinOrder = meal.MinOrder
-    };
-}
