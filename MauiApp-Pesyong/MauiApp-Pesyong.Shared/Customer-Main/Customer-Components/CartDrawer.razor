@@ -1,0 +1,117 @@
+﻿@implements IDisposable
+@inject CustomerDrawerState DrawerState
+@inject NavigationManager NavManager
+
+<MudDrawer Open="@DrawerState.IsCartDrawerOpen"
+           OpenChanged="OnOpenChanged"
+           Anchor="Anchor.End"
+           Variant="DrawerVariant.Temporary"
+           Elevation="24"
+           Overlay="true"
+           Class="customer-drawer cart-drawer">
+
+    <div class="drawer-shell">
+        <div class="cart-topbar">
+            <MudText Typo="Typo.h5">Your Cart</MudText>
+
+            <MudIconButton Icon="@Icons.Material.Filled.Close"
+                           OnClick="CloseAsync" />
+        </div>
+
+        @if (DrawerState.CartItems.Count == 0)
+        {
+            <div class="empty-cart-state">
+                <MudIcon Icon="@Icons.Material.Filled.ShoppingCart" Size="Size.Large" />
+                <MudText Typo="Typo.h6">Your cart is empty</MudText>
+                <MudText Typo="Typo.body2">Add packages or dishes to start your order.</MudText>
+            </div>
+        }
+        else
+        {
+            <div class="drawer-body cart-body">
+                @foreach (var item in DrawerState.CartItems)
+                {
+                    <MudPaper Class="cart-item" Elevation="0">
+                        <div class="@($"cart-thumb {item.ImageClass}")"></div>
+
+                        <div class="cart-item-copy">
+                            <MudText Typo="Typo.subtitle2">@item.Name</MudText>
+                            <MudText Typo="Typo.caption">@item.Notes</MudText>
+                        </div>
+
+                        <div class="cart-item-right">
+                            <MudText Typo="Typo.subtitle2">@ToPeso(item.LineTotal)</MudText>
+
+                            <div class="qty-box small">
+                                <MudIconButton Icon="@Icons.Material.Filled.Remove"
+                                               Size="Size.Small"
+                                               OnClick="@(() => DecreaseQty(item))" />
+                                <MudText Typo="Typo.caption">@item.Quantity</MudText>
+                                <MudIconButton Icon="@Icons.Material.Filled.Add"
+                                               Size="Size.Small"
+                                               OnClick="@(() => IncreaseQty(item))" />
+                            </div>
+
+                            <MudIconButton Icon="@Icons.Material.Filled.DeleteOutline"
+                                           Size="Size.Small"
+                                           OnClick="@(() => RemoveItem(item))" />
+                        </div>
+                    </MudPaper>
+                }
+            </div>
+
+            <div class="cart-footer">
+                <MudButton Variant="Variant.Filled"
+                           Color="Color.Primary"
+                           Size="Size.Large"
+                           FullWidth="true"
+                           Class="checkout-btn"
+                           OnClick="CheckoutAsync">
+                    Checkout
+                </MudButton>
+            </div>
+        }
+    </div>
+</MudDrawer>
+
+@code {
+    protected override void OnInitialized()
+    {
+        DrawerState.OnChange += HandleStateChanged;
+    }
+
+    private void HandleStateChanged()
+    {
+        InvokeAsync(StateHasChanged);
+    }
+
+    private Task OnOpenChanged(bool open)
+    {
+        DrawerState.SetCartDrawer(open);
+        return Task.CompletedTask;
+    }
+
+    private Task CloseAsync()
+    {
+        DrawerState.SetCartDrawer(false);
+        return Task.CompletedTask;
+    }
+
+    private void IncreaseQty(CartLineUiModel item) => DrawerState.IncreaseItem(item);
+    private void DecreaseQty(CartLineUiModel item) => DrawerState.DecreaseItem(item);
+    private void RemoveItem(CartLineUiModel item) => DrawerState.RemoveItem(item);
+
+    private Task CheckoutAsync()
+    {
+        DrawerState.SetCartDrawer(false);
+        NavManager.NavigateTo("/checkout");
+        return Task.CompletedTask;
+    }
+
+    public void Dispose()
+    {
+        DrawerState.OnChange -= HandleStateChanged;
+    }
+
+    private static string ToPeso(decimal amount) => $"₱{amount:N0}";
+}

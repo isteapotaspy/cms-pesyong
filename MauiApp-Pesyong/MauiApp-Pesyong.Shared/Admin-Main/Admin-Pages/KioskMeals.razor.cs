@@ -17,10 +17,13 @@ public partial class KioskMeals : ComponentBase
 
     protected override void OnInitialized()
     {
-        meals = DataService.GetMeals();
+        // Be defensive if DataService or returned list is null
+        var fetched = DataService?.GetMeals();
+        meals = fetched ?? new List<MealVm>();
         selectedMeal = meals.FirstOrDefault() is MealVm first ? CloneMeal(first) : new MealVm();
     }
 
+    // Make the filter null-safe: handle null collections and null title/description
     protected IEnumerable<MealVm> FilteredMeals =>
         meals.Where(x =>
             string.IsNullOrWhiteSpace(searchText) ||

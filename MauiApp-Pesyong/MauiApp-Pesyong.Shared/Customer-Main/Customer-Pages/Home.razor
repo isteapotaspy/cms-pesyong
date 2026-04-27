@@ -1,0 +1,280 @@
+﻿@page "/customer-home"
+@page "/"
+@using System.Linq
+@inject CustomerDrawerState DrawerState
+
+<MudContainer MaxWidth="MaxWidth.False" Class="customer-page">
+    <TopBar />
+
+    <MudPaper Class="hero-banner" Elevation="0">
+        <div class="hero-copy">
+            <MudChip T="string" Color="Color.Error" Variant="Variant.Filled" Size="Size.Small" Class="hero-chip">
+                Seasonal Special
+            </MudChip>
+
+            <MudText Typo="Typo.h3" Class="hero-title">
+                Celebrate Every Moment with Pesyong Fiesta
+            </MudText>
+
+            <MudText Typo="Typo.body1" Class="hero-subtitle">
+                From intimate family gatherings to grand corporate events, experience authentic Filipino catering delivered hot and fresh.
+            </MudText>
+
+            <div class="hero-actions">
+                <MudButton Variant="Variant.Filled" Color="Color.Primary" Size="Size.Large">
+                    Browse Packages
+                </MudButton>
+
+                <MudButton Variant="Variant.Filled" Color="Color.Default" Size="Size.Large" Class="hero-secondary-btn">
+                    View Kakanin
+                </MudButton>
+            </div>
+        </div>
+    </MudPaper>
+
+    <div class="category-row">
+        <div class="category-left">
+            @foreach (var category in _categories)
+            {
+                <MudButton Variant="Variant.Text"
+                           Class="@GetCategoryClass(category)"
+                           OnClick="@(() => _selectedCategory = category)">
+                    @category
+                </MudButton>
+            }
+        </div>
+
+        <MudButton Variant="Variant.Text"
+                   EndIcon="@Icons.Material.Filled.KeyboardArrowDown"
+                   Class="sort-btn">
+            Popularity
+        </MudButton>
+    </div>
+
+    <div class="toolbar-row">
+        <div class="toolbar-pills">
+            <MudPaper Class="toolbar-pill" Elevation="0">
+                <MudIcon Icon="@Icons.Material.Filled.LocationOn" Size="Size.Small" />
+                <div>
+                    <MudText Typo="Typo.caption">DELIVER TO</MudText>
+                    <MudText Typo="Typo.body2">Quezon City, Metro Manila</MudText>
+                </div>
+            </MudPaper>
+
+            <MudPaper Class="toolbar-pill" Elevation="0">
+                <MudIcon Icon="@Icons.Material.Filled.AccessTime" Size="Size.Small" />
+                <div>
+                    <MudText Typo="Typo.caption">DELIVERY TIME</MudText>
+                    <MudText Typo="Typo.body2">Today, 6:00 PM</MudText>
+                </div>
+            </MudPaper>
+        </div>
+
+        <div class="toolbar-actions">
+            <MudTextField T="string"
+                          Placeholder="Search dishes..."
+                          Variant="Variant.Outlined"
+                          Margin="Margin.Dense"
+                          Adornment="Adornment.Start"
+                          AdornmentIcon="@Icons.Material.Filled.Search"
+                          Class="dish-search" />
+
+            <MudButton Variant="Variant.Outlined"
+                       StartIcon="@Icons.Material.Filled.Tune"
+                       Class="filter-btn">
+                Filters
+            </MudButton>
+        </div>
+    </div>
+
+    <section class="section-block">
+        <div class="section-head">
+            <div>
+                <MudText Typo="Typo.h4" Class="section-title">Catering</MudText>
+                <MudText Typo="Typo.body2" Class="section-subtitle">
+                    Showing delicious options for your event.
+                </MudText>
+            </div>
+
+            <MudButton Variant="Variant.Text" EndIcon="@Icons.Material.Filled.KeyboardArrowRight" Class="view-all-btn">
+                View All
+            </MudButton>
+        </div>
+
+        <div class="package-grid">
+            @foreach (var packageItem in FilteredPackages)
+            {
+                <MudCard Class="food-card">
+                    <div class="@($"food-card-image {packageItem.ImageClass}")">
+                        @if (!string.IsNullOrWhiteSpace(packageItem.Badge))
+                        {
+                            <MudChip T="string" Size="Size.Small" Color="Color.Error" Variant="Variant.Filled" Class="card-chip">
+                                @packageItem.Badge
+                            </MudChip>
+                        }
+                    </div>
+
+                    <MudCardContent Class="food-card-content">
+                        <MudText Typo="Typo.subtitle1" Class="card-title">@packageItem.Title</MudText>
+                        <MudText Typo="Typo.body2" Class="card-description">@packageItem.CardSummary</MudText>
+                        <MudText Typo="Typo.caption" Class="card-meta">@packageItem.ServesLabel</MudText>
+                    </MudCardContent>
+
+                    <MudCardActions Class="food-card-actions">
+                        <div>
+                            <MudText Typo="Typo.h6" Class="card-price">@ToPeso(packageItem.Sizes.First().Price)</MudText>
+                            <MudText Typo="Typo.caption" Class="card-price-note">PER PACKAGE</MudText>
+                        </div>
+
+                        <MudIconButton Icon="@Icons.Material.Filled.Add"
+                                       Color="Color.Primary"
+                                       Class="card-add-btn"
+                                       OnClick="@(() => OpenPackage(packageItem))" />
+                    </MudCardActions>
+                </MudCard>
+            }
+        </div>
+    </section>
+
+    <MudPaper Class="promo-panel" Elevation="0">
+        <div>
+            <MudText Typo="Typo.h4" Class="promo-title">Planning a Large Event?</MudText>
+            <MudText Typo="Typo.body1" Class="promo-copy">
+                Our event coordinators are ready to help you customize a menu that perfectly fits your budget and taste.
+            </MudText>
+
+            <div class="promo-actions">
+                <MudButton Variant="Variant.Filled" Color="Color.Primary">
+                    Get a Free Quote
+                </MudButton>
+
+                <MudButton Variant="Variant.Filled" Color="Color.Default" Class="hero-secondary-btn">
+                    Chat with Us
+                </MudButton>
+            </div>
+        </div>
+
+        <div class="promo-image"></div>
+    </MudPaper>
+
+    <Footer />
+</MudContainer>
+
+@code {
+    private readonly List<string> _categories = new()
+    {
+        "All Menu",
+        "Catering",
+        "Short Orders",
+        "Authentic Kakanin"
+    };
+
+    private string _selectedCategory = "Catering";
+
+    private readonly List<PackageUiModel> _packages = new()
+    {
+        new PackageUiModel
+        {
+            Title = "Grand Fiesta Package A",
+            MenuCategory = "Catering",
+            CategoryLabel = "Catering Packages",
+            Description = "Complete feast with whole lechon, beef caldereta, pancit bihon, and dessert.",
+            CardSummary = "Complete feast with whole lechon, beef caldereta, pancit bihon, and dessert.",
+            Badge = "Popular",
+            Notice = "24-48h Notice",
+            ServesLabel = "25-30 Pax",
+            InclusionText = "Complete utensils included",
+            ImageClass = "food-image-one",
+            Rating = 4.8m,
+            ReviewCount = 124,
+            Sizes = new()
+            {
+                new PackageSizeUiModel { Label = "10 Persons", Subtitle = "4 Main Courses", Price = 2800 },
+                new PackageSizeUiModel { Label = "20 Persons", Subtitle = "5 Main Courses", Price = 4500 },
+                new PackageSizeUiModel { Label = "50 Persons", Subtitle = "7 Main Courses", Price = 9800 }
+            },
+            Addons = new()
+            {
+                new AddonUiModel { Name = "Extra Lechon Sauce", Description = "500ml of our signature liver sauce", Price = 150 },
+                new AddonUiModel { Name = "Premium Dessert Tray", Description = "Add assorted Filipino sweets", Price = 350 }
+            }
+        },
+        new PackageUiModel
+        {
+            Title = "Seafood Boodle Fight",
+            MenuCategory = "Catering",
+            CategoryLabel = "Catering Packages",
+            Description = "Crabs, prawns, mussels, grilled fish, and squid served on fresh banana leaves.",
+            CardSummary = "Crabs, prawns, mussels, grilled fish, and squid served on fresh banana leaves.",
+            Badge = "Top Rated",
+            Notice = "Best Seller",
+            ServesLabel = "10-15 Pax",
+            InclusionText = "Complete utensils included",
+            ImageClass = "food-image-two",
+            Rating = 4.9m,
+            ReviewCount = 98,
+            Sizes = new()
+            {
+                new PackageSizeUiModel { Label = "10 Persons", Subtitle = "Seafood Feast", Price = 8900 },
+                new PackageSizeUiModel { Label = "20 Persons", Subtitle = "Expanded Spread", Price = 14500 }
+            },
+            Addons = new()
+            {
+                new AddonUiModel { Name = "Garlic Butter Shrimp Tray", Description = "Extra tray for seafood lovers", Price = 550 }
+            }
+        },
+        new PackageUiModel
+        {
+            Title = "Pork Sisig Short Order",
+            MenuCategory = "Short Orders",
+            CategoryLabel = "Short Orders",
+            Description = "Classic sizzling pork sisig, good for family sharing.",
+            CardSummary = "Classic sizzling pork sisig, good for family sharing.",
+            Badge = "Hot Pick",
+            Notice = "Ready Today",
+            ServesLabel = "Family Size",
+            InclusionText = "Disposable utensils included",
+            ImageClass = "food-image-three",
+            Rating = 4.7m,
+            ReviewCount = 62,
+            Sizes = new()
+            {
+                new PackageSizeUiModel { Label = "Family", Subtitle = "Good for 4-5", Price = 700 }
+            }
+        },
+        new PackageUiModel
+        {
+            Title = "Special Biko with Latik",
+            MenuCategory = "Authentic Kakanin",
+            CategoryLabel = "Authentic Kakanin",
+            Description = "Sticky rice dessert topped with rich coconut latik.",
+            CardSummary = "Sticky rice dessert topped with rich coconut latik.",
+            Badge = "Chef's Choice",
+            Notice = "Freshly Made",
+            ServesLabel = "Medium Tray",
+            InclusionText = "Packed ready for gifting",
+            ImageClass = "food-image-four",
+            Rating = 4.9m,
+            ReviewCount = 47,
+            Sizes = new()
+            {
+                new PackageSizeUiModel { Label = "Medium Tray", Subtitle = "Great for sharing", Price = 280 }
+            }
+        }
+    };
+
+    private IEnumerable<PackageUiModel> FilteredPackages =>
+        _selectedCategory == "All Menu"
+            ? _packages
+            : _packages.Where(x => x.MenuCategory == _selectedCategory);
+
+    private void OpenPackage(PackageUiModel packageItem)
+    {
+        DrawerState.OpenPackage(packageItem);
+    }
+
+    private string GetCategoryClass(string category) =>
+        category == _selectedCategory ? "category-btn selected" : "category-btn";
+
+    private static string ToPeso(decimal amount) => $"₱{amount:N0}";
+}

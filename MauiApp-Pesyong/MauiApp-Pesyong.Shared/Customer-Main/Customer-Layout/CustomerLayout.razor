@@ -1,0 +1,42 @@
+﻿@inherits LayoutComponentBase
+@implements IDisposable
+@using MauiApp_Pesyong.Shared.Customer_Main.Customer_Theme
+@inject CustomerDrawerState DrawerState
+
+<MudThemeProvider Theme="@CustomerTheme.Default" />
+<MudPopoverProvider />
+<MudDialogProvider />
+<MudSnackbarProvider />
+
+<MudLayout Class="customer-layout">
+    <MudMainContent Class="customer-main">
+        @Body
+    </MudMainContent>
+
+    @if (DrawerState.IsPackageDrawerOpen)
+    {
+        <PackageDetailsDrawer />
+    }
+
+    @if (DrawerState.IsCartDrawerOpen)
+    {
+        <CartDrawer />
+    }
+</MudLayout>
+
+@code {
+    protected override void OnInitialized()
+    {
+        DrawerState.OnChange += HandleDrawerStateChanged;
+    }
+
+    private void HandleDrawerStateChanged()
+    {
+        InvokeAsync(StateHasChanged);
+    }
+
+    public void Dispose()
+    {
+        DrawerState.OnChange -= HandleDrawerStateChanged;
+    }
+}

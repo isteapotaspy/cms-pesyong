@@ -1,12 +1,13 @@
-@using MauiApp_Pesyong.Shared.Admin_Main.Admin_Layout
+@using MauiApp_Pesyong.Shared.Customer_Main.Customer_Layout
 
 <Router AppAssembly="@typeof(Routes).Assembly">
     <Found Context="routeData">
-        <RouteView RouteData="@routeData" DefaultLayout="@typeof(MainLayout)" />
+        <RouteView RouteData="@routeData" DefaultLayout="@typeof(CustomerLayout)" />
         <FocusOnNavigate RouteData="@routeData" Selector="h1" />
     </Found>
+
     <NotFound>
-        <LayoutView Layout="@typeof(MainLayout)">
+        <LayoutView Layout="@typeof(CustomerLayout)">
             <p>page not found</p>
         </LayoutView>
     </NotFound>
