@@ -27,7 +27,7 @@ public partial class AppUsers : ComponentBase
          u.Username.Contains(searchText, StringComparison.OrdinalIgnoreCase)) &&
         (string.IsNullOrWhiteSpace(filterRole) || u.Role == filterRole));
 
-    protected void Select(AppUserVm u) => selected = Clone(u);
+    protected void Select(AppUserVm u) => selected= Clone(u);
 
     protected void CreateNew() => selected = new AppUserVm
     {

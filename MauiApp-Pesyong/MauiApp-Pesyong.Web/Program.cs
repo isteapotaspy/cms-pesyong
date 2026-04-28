@@ -2,6 +2,7 @@ using MauiApp_Pesyong.Shared.Services;
 using MauiApp_Pesyong.Shared.Admin_Main.Admin_Services;
 using MauiApp_Pesyong.Web.Components;
 using MauiApp_Pesyong.Web.Services;
+using MudBlazor.Services;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -13,6 +14,8 @@ builder.Services.AddRazorComponents()
 builder.Services.AddSingleton<IFormFactor, FormFactor>();
 builder.Services.AddSingleton<AdminDataService>();
 
+builder.Services.AddMudServices();
+builder.Services.AddScoped<CustomerDrawerState>();
 var app = builder.Build();
 
 // Configure the HTTP request pipeline.

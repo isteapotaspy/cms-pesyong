@@ -77,4 +77,13 @@
     <ProjectReference Include="..\MauiApp-Pesyong.Shared\MauiApp-Pesyong.Shared.csproj" />
   </ItemGroup>
 
+	<ItemGroup>
+		<RazorComponent Remove="MainPage.xaml" />
+		<RazorComponent Remove="**\*.xaml" />
+
+		<MauiXaml Update="MainPage.xaml">
+			<Generator>MSBuild:Compile</Generator>
+		</MauiXaml>
+	</ItemGroup>
+
 </Project>

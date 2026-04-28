@@ -1,0 +1,247 @@
+﻿@using System.Linq
+@implements IDisposable
+@inject CustomerDrawerState DrawerState
+
+<MudDrawer Open="@DrawerState.IsPackageDrawerOpen"
+           OpenChanged="OnOpenChanged"
+           Anchor="Anchor.End"
+           Variant="DrawerVariant.Temporary"
+           Elevation="24"
+           Overlay="true"
+           Class="customer-drawer package-drawer">
+
+    @if (DrawerState.SelectedPackage is PackageUiModel packageItem)
+    {
+        <div class="drawer-shell">
+            <div class="@($"drawer-hero {packageItem.ImageClass}")">
+                <div class="drawer-hero-top">
+                    <MudChip T="string" Color="Color.Primary" Variant="Variant.Filled" Size="Size.Small">
+                        @packageItem.Badge
+                    </MudChip>
+
+                    @if (!string.IsNullOrWhiteSpace(packageItem.Notice))
+                    {
+                        <MudChip T="string" Color="Color.Default" Variant="Variant.Filled" Size="Size.Small">
+                            @packageItem.Notice
+                        </MudChip>
+                    }
+
+                    <MudSpacer />
+
+                    <MudIconButton Icon="@Icons.Material.Filled.Close"
+                                   Class="drawer-close-btn"
+                                   OnClick="CloseAsync" />
+                </div>
+            </div>
+
+            <div class="drawer-body">
+                <div class="drawer-title-row">
+                    <div>
+                        <MudText Typo="Typo.overline" Class="eyebrow">@packageItem.CategoryLabel</MudText>
+                        <MudText Typo="Typo.h4" Class="drawer-title">@packageItem.Title</MudText>
+                    </div>
+
+                    <div class="drawer-rating">
+                        <MudText Typo="Typo.subtitle1">★ @packageItem.Rating</MudText>
+                        <MudText Typo="Typo.caption">@packageItem.ReviewCount reviews</MudText>
+                    </div>
+                </div>
+
+                <MudText Typo="Typo.body1" Class="drawer-description">
+                    @packageItem.Description
+                </MudText>
+
+                <div class="drawer-meta-row">
+                    <MudChip T="string" Variant="Variant.Text" Color="Color.Default" Size="Size.Small">
+                        @packageItem.ServesLabel
+                    </MudChip>
+
+                    <MudChip T="string" Variant="Variant.Text" Color="Color.Default" Size="Size.Small">
+                        @packageItem.InclusionText
+                    </MudChip>
+                </div>
+
+                @if (packageItem.Sizes.Any())
+                {
+                    <MudDivider Class="my-4" />
+
+                    <div class="drawer-section-head">
+                        <MudText Typo="Typo.h6">Package Size</MudText>
+                        <MudText Typo="Typo.caption">Choose one</MudText>
+                    </div>
+
+                    <div class="size-grid">
+                        @for (var i = 0; i < packageItem.Sizes.Count; i++)
+                        {
+                            var size = packageItem.Sizes[i];
+                            var isSelected = i == _selectedSizeIndex;
+
+                            <button type="button"
+                                    class="@(isSelected ? "size-card selected" : "size-card")"
+                                    @onclick="@(() => SelectSize(i))">
+                                <MudText Typo="Typo.subtitle2">@size.Label</MudText>
+                                <MudText Typo="Typo.caption">@size.Subtitle</MudText>
+                                <MudText Typo="Typo.h6">@ToPeso(size.Price)</MudText>
+                            </button>
+                        }
+                    </div>
+                }
+
+                @if (packageItem.Addons.Any())
+                {
+                    <MudDivider Class="my-4" />
+
+                    <MudText Typo="Typo.h6" Class="mb-3">Recommended Add-ons</MudText>
+
+                    @foreach (var addon in packageItem.Addons)
+                    {
+                        <MudPaper Class="addon-row" Elevation="0">
+                            <MudCheckBox T="bool"
+                                         Value="@_selectedAddons.Contains(addon.Name)"
+                                         ValueChanged="@(value => ToggleAddon(addon.Name, value))" />
+
+                            <div class="addon-copy">
+                                <MudText Typo="Typo.subtitle2">@addon.Name</MudText>
+                                <MudText Typo="Typo.caption">@addon.Description</MudText>
+                            </div>
+
+                            <MudText Typo="Typo.subtitle2" Class="addon-price">
+                                +@ToPeso(addon.Price)
+                            </MudText>
+                        </MudPaper>
+                    }
+                }
+            </div>
+
+            <div class="drawer-footer">
+                <div class="qty-box">
+                    <MudIconButton Icon="@Icons.Material.Filled.Remove"
+                                   Size="Size.Small"
+                                   OnClick="DecreaseQty" />
+
+                    <MudText Typo="Typo.subtitle1">@_quantity</MudText>
+
+                    <MudIconButton Icon="@Icons.Material.Filled.Add"
+                                   Size="Size.Small"
+                                   OnClick="IncreaseQty" />
+                </div>
+
+                <div class="drawer-total">
+                    <MudText Typo="Typo.caption">ESTIMATED TOTAL</MudText>
+                    <MudText Typo="Typo.h5">@ToPeso(EstimatedTotal)</MudText>
+                </div>
+
+                <MudButton Variant="Variant.Filled"
+                           Color="Color.Primary"
+                           Size="Size.Large"
+                           Class="drawer-cta-btn"
+                           OnClick="AddToCartAsync">
+                    Add to Cart
+                </MudButton>
+            </div>
+        </div>
+    }
+</MudDrawer>
+
+@code {
+    private readonly HashSet<string> _selectedAddons = new();
+    private string? _lastPackageId;
+    private int _selectedSizeIndex;
+    private int _quantity = 1;
+
+    protected override void OnInitialized()
+    {
+        DrawerState.OnChange += HandleStateChanged;
+    }
+
+    private void HandleStateChanged()
+    {
+        var currentPackageId = DrawerState.SelectedPackage?.Id;
+
+        if (!string.IsNullOrWhiteSpace(currentPackageId) && _lastPackageId != currentPackageId)
+        {
+            _lastPackageId = currentPackageId;
+            _selectedAddons.Clear();
+            _quantity = 1;
+            _selectedSizeIndex = DrawerState.SelectedPackage!.Sizes.Count > 1 ? 1 : 0;
+        }
+
+        InvokeAsync(StateHasChanged);
+    }
+
+    private PackageSizeUiModel? SelectedSize =>
+        DrawerState.SelectedPackage is not null &&
+        DrawerState.SelectedPackage.Sizes.Count > 0 &&
+        _selectedSizeIndex >= 0 &&
+        _selectedSizeIndex < DrawerState.SelectedPackage.Sizes.Count
+            ? DrawerState.SelectedPackage.Sizes[_selectedSizeIndex]
+            : null;
+
+    private decimal SelectedAddonTotal =>
+        DrawerState.SelectedPackage?.Addons
+            .Where(x => _selectedAddons.Contains(x.Name))
+            .Sum(x => x.Price) ?? 0m;
+
+    private decimal EstimatedTotal =>
+        ((SelectedSize?.Price ?? 0m) + SelectedAddonTotal) * _quantity;
+
+    private Task OnOpenChanged(bool open)
+    {
+        DrawerState.SetPackageDrawer(open);
+        return Task.CompletedTask;
+    }
+
+    private void SelectSize(int index) => _selectedSizeIndex = index;
+
+    private void ToggleAddon(string addonName, bool isSelected)
+    {
+        if (isSelected) _selectedAddons.Add(addonName);
+        else _selectedAddons.Remove(addonName);
+    }
+
+    private void IncreaseQty() => _quantity++;
+
+    private void DecreaseQty()
+    {
+        if (_quantity > 1) _quantity--;
+    }
+
+    private Task CloseAsync()
+    {
+        DrawerState.SetPackageDrawer(false);
+        return Task.CompletedTask;
+    }
+
+    private Task AddToCartAsync()
+    {
+        if (DrawerState.SelectedPackage is null || SelectedSize is null)
+            return Task.CompletedTask;
+
+        var selectedAddonNames = DrawerState.SelectedPackage.Addons
+            .Where(x => _selectedAddons.Contains(x.Name))
+            .Select(x => x.Name)
+            .ToList();
+
+        var notes = selectedAddonNames.Count > 0
+            ? $"{SelectedSize.Label} • {string.Join(", ", selectedAddonNames)}"
+            : SelectedSize.Label;
+
+        DrawerState.AddToCart(new CartLineUiModel
+        {
+            Name = DrawerState.SelectedPackage.Title,
+            Notes = notes,
+            UnitPrice = SelectedSize.Price + SelectedAddonTotal,
+            Quantity = _quantity,
+            ImageClass = DrawerState.SelectedPackage.ImageClass
+        });
+
+        return Task.CompletedTask;
+    }
+
+    public void Dispose()
+    {
+        DrawerState.OnChange -= HandleStateChanged;
+    }
+
+    private static string ToPeso(decimal amount) => $"₱{amount:N0}";
+}

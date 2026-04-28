@@ -1,0 +1,54 @@
+﻿@inject CustomerDrawerState DrawerState
+
+<MudPaper Class="topbar" Elevation="0">
+    <div class="brand-chip">
+        <div class="brand-icon-wrap">
+            <MudIcon Icon="@Icons.Material.Filled.Restaurant" Size="Size.Small" />
+        </div>
+        <MudText Typo="Typo.h6" Class="brand-name">Pesyong</MudText>
+    </div>
+
+    <MudPaper Class="location-pill" Elevation="0">
+        <MudIcon Icon="@Icons.Material.Filled.LocationOn" Size="Size.Small" />
+        <MudText Typo="Typo.body2">Quezon City, Metro Manila</MudText>
+    </MudPaper>
+
+    <MudTextField T="string"
+                  Placeholder="@SearchPlaceholder"
+                  Variant="Variant.Outlined"
+                  Margin="Margin.Dense"
+                  Adornment="Adornment.Start"
+                  AdornmentIcon="@Icons.Material.Filled.Search"
+                  Class="search-field" />
+
+    @if (ShowHelp)
+    {
+        <MudButton Variant="Variant.Text"
+                   StartIcon="@Icons.Material.Filled.HelpOutline"
+                   Class="nav-action-btn">
+            Help
+        </MudButton>
+    }
+
+    <MudBadge Content="@DrawerState.CartCount"
+              Color="Color.Primary"
+              Overlap="true"
+              Bordered="true"
+              Invisible="@(DrawerState.CartCount == 0)">
+        <MudIconButton Icon="@Icons.Material.Filled.ShoppingCart"
+                       Class="cart-icon-btn"
+                       OnClick="OpenCart" />
+    </MudBadge>
+
+    <MudAvatar Class="nav-avatar">P</MudAvatar>
+</MudPaper>
+
+@code {
+    [Parameter] public string SearchPlaceholder { get; set; } = "Search for catering, meals, or kakanin...";
+    [Parameter] public bool ShowHelp { get; set; } = true;
+
+    private void OpenCart()
+    {
+        DrawerState.OpenCart();
+    }
+}
