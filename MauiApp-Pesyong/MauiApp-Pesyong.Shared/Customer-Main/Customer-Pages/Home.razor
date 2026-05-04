@@ -1,7 +1,9 @@
 ﻿@page "/customer-home"
-@page "/"
+@layout CustomerLayout
 @using System.Linq
+@using MauiApp_Pesyong.Shared.Customer_Main.Customer_Services
 @inject CustomerDrawerState DrawerState
+@inject ICustomerCatalogService CatalogService
 
 <MudContainer MaxWidth="MaxWidth.False" Class="customer-page">
     <TopBar />
@@ -77,7 +79,8 @@
                           Margin="Margin.Dense"
                           Adornment="Adornment.Start"
                           AdornmentIcon="@Icons.Material.Filled.Search"
-                          Class="dish-search" />
+                          Class="dish-search"
+                          @bind-Value="_searchText" />
 
             <MudButton Variant="Variant.Outlined"
                        StartIcon="@Icons.Material.Filled.Tune"
@@ -90,9 +93,9 @@
     <section class="section-block">
         <div class="section-head">
             <div>
-                <MudText Typo="Typo.h4" Class="section-title">Catering</MudText>
+                <MudText Typo="Typo.h4" Class="section-title">@CurrentSectionTitle</MudText>
                 <MudText Typo="Typo.body2" Class="section-subtitle">
-                    Showing delicious options for your event.
+                    @CurrentSectionSubtitle
                 </MudText>
             </div>
 
@@ -101,39 +104,72 @@
             </MudButton>
         </div>
 
-        <div class="package-grid">
-            @foreach (var packageItem in FilteredPackages)
-            {
-                <MudCard Class="food-card">
-                    <div class="@($"food-card-image {packageItem.ImageClass}")">
-                        @if (!string.IsNullOrWhiteSpace(packageItem.Badge))
-                        {
-                            <MudChip T="string" Size="Size.Small" Color="Color.Error" Variant="Variant.Filled" Class="card-chip">
-                                @packageItem.Badge
-                            </MudChip>
-                        }
-                    </div>
+        @if (_isLoading)
+        {
+            <MudPaper Class="footer-panel" Elevation="0">
+                <MudProgressCircular Indeterminate="true" Color="Color.Primary" />
+                <MudText Typo="Typo.body1" Class="mt-3">Loading menu...</MudText>
+            </MudPaper>
+        }
+        else if (!string.IsNullOrWhiteSpace(_errorMessage))
+        {
+            <MudPaper Class="footer-panel" Elevation="0">
+                <MudText Typo="Typo.h6" Color="Color.Error">Unable to load menu</MudText>
+                <MudText Typo="Typo.body2">@_errorMessage</MudText>
 
-                    <MudCardContent Class="food-card-content">
-                        <MudText Typo="Typo.subtitle1" Class="card-title">@packageItem.Title</MudText>
-                        <MudText Typo="Typo.body2" Class="card-description">@packageItem.CardSummary</MudText>
-                        <MudText Typo="Typo.caption" Class="card-meta">@packageItem.ServesLabel</MudText>
-                    </MudCardContent>
-
-                    <MudCardActions Class="food-card-actions">
-                        <div>
-                            <MudText Typo="Typo.h6" Class="card-price">@ToPeso(packageItem.Sizes.First().Price)</MudText>
-                            <MudText Typo="Typo.caption" Class="card-price-note">PER PACKAGE</MudText>
+                <MudButton Variant="Variant.Filled"
+                           Color="Color.Primary"
+                           Class="mt-4"
+                           OnClick="LoadDataAsync">
+                    Retry
+                </MudButton>
+            </MudPaper>
+        }
+        else if (!FilteredPackages.Any())
+        {
+            <MudPaper Class="footer-panel" Elevation="0">
+                <MudText Typo="Typo.h6">No packages found</MudText>
+                <MudText Typo="Typo.body2">
+                    Try another category or search term.
+                </MudText>
+            </MudPaper>
+        }
+        else
+        {
+            <div class="package-grid">
+                @foreach (var packageItem in FilteredPackages)
+                {
+                    <MudCard Class="food-card">
+                        <div class="@($"food-card-image {packageItem.ImageClass}")">
+                            @if (!string.IsNullOrWhiteSpace(packageItem.Badge))
+                            {
+                                <MudChip T="string" Size="Size.Small" Color="Color.Error" Variant="Variant.Filled" Class="card-chip">
+                                    @packageItem.Badge
+                                </MudChip>
+                            }
                         </div>
 
-                        <MudIconButton Icon="@Icons.Material.Filled.Add"
-                                       Color="Color.Primary"
-                                       Class="card-add-btn"
-                                       OnClick="@(() => OpenPackage(packageItem))" />
-                    </MudCardActions>
-                </MudCard>
-            }
-        </div>
+                        <MudCardContent Class="food-card-content">
+                            <MudText Typo="Typo.subtitle1" Class="card-title">@packageItem.Title</MudText>
+                            <MudText Typo="Typo.body2" Class="card-description">@packageItem.CardSummary</MudText>
+                            <MudText Typo="Typo.caption" Class="card-meta">@packageItem.ServesLabel</MudText>
+                        </MudCardContent>
+
+                        <MudCardActions Class="food-card-actions">
+                            <div>
+                                <MudText Typo="Typo.h6" Class="card-price">@ToPeso(packageItem.Sizes.FirstOrDefault()?.Price ?? 0)</MudText>
+                                <MudText Typo="Typo.caption" Class="card-price-note">PER PACKAGE</MudText>
+                            </div>
+
+                            <MudIconButton Icon="@Icons.Material.Filled.Add"
+                                           Color="Color.Primary"
+                                           Class="card-add-btn"
+                                           OnClick="@(() => OpenPackage(packageItem))" />
+                        </MudCardActions>
+                    </MudCard>
+                }
+            </div>
+        }
     </section>
 
     <MudPaper Class="promo-panel" Elevation="0">
@@ -161,112 +197,64 @@
 </MudContainer>
 
 @code {
-    private readonly List<string> _categories = new()
-    {
-        "All Menu",
-        "Catering",
-        "Short Orders",
-        "Authentic Kakanin"
-    };
+    private List<string> _categories = new() { "All Menu" };
+    private List<PackageUiModel> _packages = new();
+    private string _selectedCategory = "All Menu";
+    private string _searchText = string.Empty;
+    private bool _isLoading = true;
+    private string? _errorMessage;
 
-    private string _selectedCategory = "Catering";
-
-    private readonly List<PackageUiModel> _packages = new()
+    protected override async Task OnInitializedAsync()
     {
-        new PackageUiModel
+        await LoadDataAsync();
+    }
+
+    private async Task LoadDataAsync()
+    {
+        try
         {
-            Title = "Grand Fiesta Package A",
-            MenuCategory = "Catering",
-            CategoryLabel = "Catering Packages",
-            Description = "Complete feast with whole lechon, beef caldereta, pancit bihon, and dessert.",
-            CardSummary = "Complete feast with whole lechon, beef caldereta, pancit bihon, and dessert.",
-            Badge = "Popular",
-            Notice = "24-48h Notice",
-            ServesLabel = "25-30 Pax",
-            InclusionText = "Complete utensils included",
-            ImageClass = "food-image-one",
-            Rating = 4.8m,
-            ReviewCount = 124,
-            Sizes = new()
+            _isLoading = true;
+            _errorMessage = null;
+
+            var categories = await CatalogService.GetCategoriesAsync();
+            var packages = await CatalogService.GetPackagesAsync();
+
+            _categories = new List<string> { "All Menu" };
+            _categories.AddRange(categories
+                .Where(x => !string.IsNullOrWhiteSpace(x))
+                .Distinct()
+                .OrderBy(x => x));
+
+            _packages = packages.ToList();
+
+            if (!_categories.Contains(_selectedCategory))
             {
-                new PackageSizeUiModel { Label = "10 Persons", Subtitle = "4 Main Courses", Price = 2800 },
-                new PackageSizeUiModel { Label = "20 Persons", Subtitle = "5 Main Courses", Price = 4500 },
-                new PackageSizeUiModel { Label = "50 Persons", Subtitle = "7 Main Courses", Price = 9800 }
-            },
-            Addons = new()
-            {
-                new AddonUiModel { Name = "Extra Lechon Sauce", Description = "500ml of our signature liver sauce", Price = 150 },
-                new AddonUiModel { Name = "Premium Dessert Tray", Description = "Add assorted Filipino sweets", Price = 350 }
-            }
-        },
-        new PackageUiModel
-        {
-            Title = "Seafood Boodle Fight",
-            MenuCategory = "Catering",
-            CategoryLabel = "Catering Packages",
-            Description = "Crabs, prawns, mussels, grilled fish, and squid served on fresh banana leaves.",
-            CardSummary = "Crabs, prawns, mussels, grilled fish, and squid served on fresh banana leaves.",
-            Badge = "Top Rated",
-            Notice = "Best Seller",
-            ServesLabel = "10-15 Pax",
-            InclusionText = "Complete utensils included",
-            ImageClass = "food-image-two",
-            Rating = 4.9m,
-            ReviewCount = 98,
-            Sizes = new()
-            {
-                new PackageSizeUiModel { Label = "10 Persons", Subtitle = "Seafood Feast", Price = 8900 },
-                new PackageSizeUiModel { Label = "20 Persons", Subtitle = "Expanded Spread", Price = 14500 }
-            },
-            Addons = new()
-            {
-                new AddonUiModel { Name = "Garlic Butter Shrimp Tray", Description = "Extra tray for seafood lovers", Price = 550 }
-            }
-        },
-        new PackageUiModel
-        {
-            Title = "Pork Sisig Short Order",
-            MenuCategory = "Short Orders",
-            CategoryLabel = "Short Orders",
-            Description = "Classic sizzling pork sisig, good for family sharing.",
-            CardSummary = "Classic sizzling pork sisig, good for family sharing.",
-            Badge = "Hot Pick",
-            Notice = "Ready Today",
-            ServesLabel = "Family Size",
-            InclusionText = "Disposable utensils included",
-            ImageClass = "food-image-three",
-            Rating = 4.7m,
-            ReviewCount = 62,
-            Sizes = new()
-            {
-                new PackageSizeUiModel { Label = "Family", Subtitle = "Good for 4-5", Price = 700 }
-            }
-        },
-        new PackageUiModel
-        {
-            Title = "Special Biko with Latik",
-            MenuCategory = "Authentic Kakanin",
-            CategoryLabel = "Authentic Kakanin",
-            Description = "Sticky rice dessert topped with rich coconut latik.",
-            CardSummary = "Sticky rice dessert topped with rich coconut latik.",
-            Badge = "Chef's Choice",
-            Notice = "Freshly Made",
-            ServesLabel = "Medium Tray",
-            InclusionText = "Packed ready for gifting",
-            ImageClass = "food-image-four",
-            Rating = 4.9m,
-            ReviewCount = 47,
-            Sizes = new()
-            {
-                new PackageSizeUiModel { Label = "Medium Tray", Subtitle = "Great for sharing", Price = 280 }
+                _selectedCategory = "All Menu";
             }
         }
-    };
+        catch (Exception ex)
+        {
+            _errorMessage = ex.Message;
+        }
+        finally
+        {
+            _isLoading = false;
+        }
+    }
 
     private IEnumerable<PackageUiModel> FilteredPackages =>
-        _selectedCategory == "All Menu"
-            ? _packages
-            : _packages.Where(x => x.MenuCategory == _selectedCategory);
+        _packages.Where(x =>
+            (_selectedCategory == "All Menu" || x.MenuCategory == _selectedCategory) &&
+            (string.IsNullOrWhiteSpace(_searchText) ||
+             x.Title.Contains(_searchText, StringComparison.OrdinalIgnoreCase) ||
+             x.CardSummary.Contains(_searchText, StringComparison.OrdinalIgnoreCase) ||
+             x.Description.Contains(_searchText, StringComparison.OrdinalIgnoreCase)));
+
+    private string CurrentSectionTitle =>
+        _selectedCategory == "All Menu" ? "All Menu" : _selectedCategory;
+
+    private string CurrentSectionSubtitle =>
+        $"Showing {FilteredPackages.Count()} delicious option(s) for your event.";
 
     private void OpenPackage(PackageUiModel packageItem)
     {

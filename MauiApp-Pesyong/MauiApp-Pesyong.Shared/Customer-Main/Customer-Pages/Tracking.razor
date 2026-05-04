@@ -1,171 +1,264 @@
 ﻿@page "/tracking"
+@layout CustomerLayout
+@using CMS.Contracts.Customer.Orders
+@using MauiApp_Pesyong.Shared.Customer_Main.Customer_Services
+@using MauiApp_Pesyong.Shared.Customer_Main.Customer_Vms
 @inject NavigationManager NavManager
+@inject CustomerDrawerState DrawerState
+@inject ICustomerOrderService OrderService
 
-<MudContainer MaxWidth="MaxWidth.False" Class="customer-page">
-    <TopBar />
-
-    <MudPaper Class="tracking-hero" Elevation="0">
-        <div class="tracking-hero-left">
-            <div class="tracking-icon-wrap">
-                <MudIcon Icon="@Icons.Material.Filled.CheckCircleOutline" />
-            </div>
-
-            <div>
-                <MudText Typo="Typo.overline" Class="tracking-eyebrow">ORDER PLACED #PS-82910</MudText>
-                <MudText Typo="Typo.h3" Class="tracking-title">Your order is on the way!</MudText>
-                <MudText Typo="Typo.body1" Class="tracking-subtitle">
-                    Placed on Oct 24, 2024 • 11:30 AM
-                </MudText>
-            </div>
-        </div>
-
-        <div class="tracking-eta">
-            <MudText Typo="Typo.caption">ESTIMATED DELIVERY</MudText>
-            <MudText Typo="Typo.h2">12:15 PM</MudText>
-            <MudText Typo="Typo.body2">Live Tracking Enabled</MudText>
-        </div>
-    </MudPaper>
-
-    <MudGrid Spacing="3">
-        <MudItem xs="12" md="8">
-            <MudPaper Class="tracking-card" Elevation="0">
-                <div class="tracking-card-header">
-                    <MudText Typo="Typo.h6">Live Tracking</MudText>
-                    <MudChip T="string" Color="Color.Default" Variant="Variant.Outlined" Size="Size.Small">
-                        Updates every 10s
-                    </MudChip>
-                </div>
-
-                <div class="tracking-map-placeholder">
-                    <div class="tracking-route-line"></div>
-                    <div class="tracking-dot kitchen">Pesyong Kitchen</div>
-                    <div class="tracking-dot rider">Kuya Juan (moving)</div>
-                    <div class="tracking-dot home">Your Home</div>
-                </div>
-            </MudPaper>
-
-            <MudPaper Class="tracking-card" Elevation="0">
-                <MudText Typo="Typo.h6" Class="mb-3">Your Rider</MudText>
-
-                <div class="rider-card">
-                    <MudAvatar Size="Size.Large" Class="rider-avatar">J</MudAvatar>
-
-                    <div class="rider-info">
-                        <MudText Typo="Typo.subtitle1">Juan Dela Cruz</MudText>
-                        <MudText Typo="Typo.body2">Honda Click 125 • NDL 2024</MudText>
-                        <MudText Typo="Typo.caption">★ 4.9 | 2,406+ trips</MudText>
-                    </div>
-
-                    <div class="rider-actions">
-                        <MudButton Variant="Variant.Outlined">Chat</MudButton>
-                        <MudButton Variant="Variant.Filled" Color="Color.Primary">Call</MudButton>
-                    </div>
-                </div>
-            </MudPaper>
-
-            <MudPaper Class="tracking-card" Elevation="0">
-                <MudText Typo="Typo.h6" Class="mb-3">Delivery Address</MudText>
-
-                <div class="address-box">
-                    <MudText Typo="Typo.subtitle2">
-                        Unit 1402, High-rise Towers, North Avenue, Quezon City
-                    </MudText>
-                    <MudText Typo="Typo.body2">
-                        “Please leave at the lobby concierge. Look for Guard Santos.”
-                    </MudText>
-                </div>
-            </MudPaper>
-        </MudItem>
-
-        <MudItem xs="12" md="4">
-            <MudPaper Class="tracking-card" Elevation="0">
-                <MudText Typo="Typo.h6" Class="mb-3">Order Status</MudText>
-
-                <div class="timeline-list">
-                    <div class="timeline-item done">
-                        <span class="timeline-bullet"></span>
-                        <div>
-                            <MudText Typo="Typo.subtitle2">Order Confirmed</MudText>
-                            <MudText Typo="Typo.caption">We have received your order. • 11:30 AM</MudText>
-                        </div>
-                    </div>
-
-                    <div class="timeline-item done">
-                        <span class="timeline-bullet"></span>
-                        <div>
-                            <MudText Typo="Typo.subtitle2">Preparing Food</MudText>
-                            <MudText Typo="Typo.caption">Our chefs are crafting your fiesta package. • 11:45 AM</MudText>
-                        </div>
-                    </div>
-
-                    <div class="timeline-item active">
-                        <span class="timeline-bullet"></span>
-                        <div>
-                            <MudText Typo="Typo.subtitle2">Out for Delivery</MudText>
-                            <MudText Typo="Typo.caption">Your rider is heading to your location. • 12:02 PM</MudText>
-                        </div>
-                    </div>
-
-                    <div class="timeline-item">
-                        <span class="timeline-bullet"></span>
-                        <div>
-                            <MudText Typo="Typo.subtitle2">Arriving Soon</MudText>
-                            <MudText Typo="Typo.caption">Preparing to serve you at your doorstep. • ETA 12:15 PM</MudText>
-                        </div>
-                    </div>
-                </div>
-            </MudPaper>
-
-            <MudPaper Class="tracking-card" Elevation="0">
-                <MudText Typo="Typo.h6" Class="mb-3">Your Selection</MudText>
-
-                <div class="selection-item">
-                    <div class="selection-thumb food-image-one"></div>
-                    <div>
-                        <MudText Typo="Typo.subtitle2">Fiesta Catering Package A</MudText>
-                        <MudText Typo="Typo.caption">20 Servings</MudText>
-                    </div>
-                    <MudText Typo="Typo.subtitle2">₱4,500</MudText>
-                </div>
-
-                <div class="selection-item">
-                    <div class="selection-thumb food-image-three"></div>
-                    <div>
-                        <MudText Typo="Typo.subtitle2">Special Pork Adobo</MudText>
-                        <MudText Typo="Typo.caption">5–6 Servings</MudText>
-                    </div>
-                    <MudText Typo="Typo.subtitle2">₱750</MudText>
-                </div>
-
-                <MudDivider Class="my-3" />
-
-                <div class="summary-row">
-                    <MudText Typo="Typo.subtitle2">Total Amount Paid</MudText>
-                    <MudText Typo="Typo.subtitle2">₱5,400.00</MudText>
-                </div>
-
-                <MudButton Variant="Variant.Outlined" FullWidth="true" Class="mt-3">
-                    Download Invoice
-                </MudButton>
-            </MudPaper>
-
-            <MudPaper Class="tracking-help-card" Elevation="0">
-                <MudText Typo="Typo.subtitle2">Running Late?</MudText>
-                <MudText Typo="Typo.body2">
-                    Contact our support line for immediate help.
-                </MudText>
-            </MudPaper>
+@if (_isLoading)
+{
+    <MudContainer MaxWidth="MaxWidth.False" Class="customer-page">
+        <TopBar />
+        <MudPaper Class="tracking-card" Elevation="0">
+            <MudProgressCircular Indeterminate="true" Color="Color.Primary" />
+            <MudText Typo="Typo.body1" Class="mt-3">Loading tracking details...</MudText>
+        </MudPaper>
+    </MudContainer>
+}
+else if (!string.IsNullOrWhiteSpace(_errorMessage))
+{
+    <MudContainer MaxWidth="MaxWidth.False" Class="customer-page">
+        <TopBar />
+        <MudPaper Class="tracking-card" Elevation="0">
+            <MudText Typo="Typo.h6" Color="Color.Error">Unable to load tracking</MudText>
+            <MudText Typo="Typo.body2">@_errorMessage</MudText>
+            <MudButton Variant="Variant.Filled" Color="Color.Primary" Class="mt-4" OnClick="ReloadAsync">
+                Retry
+            </MudButton>
+        </MudPaper>
+    </MudContainer>
+}
+else if (Vm is null)
+{
+    <MudContainer MaxWidth="MaxWidth.False" Class="customer-page">
+        <TopBar />
+        <MudPaper Class="tracking-card" Elevation="0">
+            <MudText Typo="Typo.h6">No active tracking data yet.</MudText>
+            <MudText Typo="Typo.body2">Place an order first to see live delivery updates.</MudText>
 
             <MudButton Variant="Variant.Filled"
                        Color="Color.Primary"
-                       FullWidth="true"
-                       Size="Size.Large"
-                       Class="tracking-back-btn"
+                       Class="mt-4"
                        OnClick="@(() => NavManager.NavigateTo("/"))">
                 Back to Menu
             </MudButton>
-        </MudItem>
-    </MudGrid>
+        </MudPaper>
+    </MudContainer>
+}
+else
+{
+    <MudContainer MaxWidth="MaxWidth.False" Class="customer-page">
+        <TopBar />
 
-    <Footer />
-</MudContainer>
+        <MudPaper Class="tracking-hero" Elevation="0">
+            <div class="tracking-hero-left">
+                <div class="tracking-icon-wrap">
+                    <MudIcon Icon="@Icons.Material.Filled.CheckCircleOutline" />
+                </div>
+
+                <div>
+                    <MudText Typo="Typo.overline" Class="tracking-eyebrow">ORDER PLACED #@Vm.OrderNumber</MudText>
+                    <MudText Typo="Typo.h3" Class="tracking-title">Your order is on the way!</MudText>
+                    <MudText Typo="Typo.body1" Class="tracking-subtitle">
+                        Placed on @Vm.OrderedAt.ToString("MMM dd, yyyy") • @Vm.OrderedAt.ToString("hh:mm tt")
+                    </MudText>
+                </div>
+            </div>
+
+            <div class="tracking-eta">
+                <MudText Typo="Typo.caption">ESTIMATED DELIVERY</MudText>
+                <MudText Typo="Typo.h2">@Vm.EstimatedDeliveryTime.ToString("hh:mm tt")</MudText>
+                <MudText Typo="Typo.body2">Live Tracking Enabled</MudText>
+            </div>
+        </MudPaper>
+
+        <MudGrid Spacing="3">
+            <MudItem xs="12" md="8">
+                <MudPaper Class="tracking-card" Elevation="0">
+                    <div class="tracking-card-header">
+                        <MudText Typo="Typo.h6">Live Tracking</MudText>
+                        <MudChip T="string" Color="Color.Default" Variant="Variant.Outlined" Size="Size.Small">
+                            Updates every 10s
+                        </MudChip>
+                    </div>
+
+                    <div class="tracking-map-placeholder">
+                        <div class="tracking-route-line"></div>
+                        <div class="tracking-dot kitchen">Pesyong Kitchen</div>
+                        <div class="tracking-dot rider">@Vm.Rider.Name (moving)</div>
+                        <div class="tracking-dot home">Your Home</div>
+                    </div>
+                </MudPaper>
+
+                <MudPaper Class="tracking-card" Elevation="0">
+                    <MudText Typo="Typo.h6" Class="mb-3">Your Rider</MudText>
+
+                    <div class="rider-card">
+                        <MudAvatar Size="Size.Large" Class="rider-avatar">
+                            @(string.IsNullOrWhiteSpace(Vm.Rider.Name) ? "R" : Vm.Rider.Name[0].ToString())
+                        </MudAvatar>
+
+                        <div class="rider-info">
+                            <MudText Typo="Typo.subtitle1">@Vm.Rider.Name</MudText>
+                            <MudText Typo="Typo.body2">@Vm.Rider.Vehicle • @Vm.Rider.PlateNumber</MudText>
+                            <MudText Typo="Typo.caption">★ @Vm.Rider.Rating | @Vm.Rider.TotalTrips+ trips</MudText>
+                        </div>
+
+                        <div class="rider-actions">
+                            <MudButton Variant="Variant.Outlined">Chat</MudButton>
+                            <MudButton Variant="Variant.Filled" Color="Color.Primary">Call</MudButton>
+                        </div>
+                    </div>
+                </MudPaper>
+
+                <MudPaper Class="tracking-card" Elevation="0">
+                    <MudText Typo="Typo.h6" Class="mb-3">Delivery Address</MudText>
+
+                    <div class="address-box">
+                        <MudText Typo="Typo.subtitle2">
+                            @Vm.DeliveryAddress.StreetAddress
+                            @if (!string.IsNullOrWhiteSpace(Vm.DeliveryAddress.City))
+                            {
+                                <span>, @Vm.DeliveryAddress.City</span>
+                            }
+                            @if (!string.IsNullOrWhiteSpace(Vm.DeliveryAddress.Barangay))
+                            {
+                                <span>, @Vm.DeliveryAddress.Barangay</span>
+                            }
+                        </MudText>
+
+                        @if (!string.IsNullOrWhiteSpace(Vm.DeliveryAddress.Landmark))
+                        {
+                            <MudText Typo="Typo.body2">
+                                @Vm.DeliveryAddress.Landmark
+                            </MudText>
+                        }
+                    </div>
+                </MudPaper>
+            </MudItem>
+
+            <MudItem xs="12" md="4">
+                <MudPaper Class="tracking-card" Elevation="0">
+                    <MudText Typo="Typo.h6" Class="mb-3">Order Status</MudText>
+
+                    <div class="timeline-list">
+                        @foreach (var step in Vm.Steps)
+                        {
+                            <div class="timeline-item @GetStepClass(step.State)">
+                                <span class="timeline-bullet"></span>
+                                <div>
+                                    <MudText Typo="Typo.subtitle2">@step.Title</MudText>
+                                    <MudText Typo="Typo.caption">
+                                        @step.Description
+                                        @if (step.Timestamp.HasValue)
+                                        {
+                                            <span> • @step.Timestamp.Value.ToString("hh:mm tt")</span>
+                                        }
+                                    </MudText>
+                                </div>
+                            </div>
+                        }
+                    </div>
+                </MudPaper>
+
+                <MudPaper Class="tracking-card" Elevation="0">
+                    <MudText Typo="Typo.h6" Class="mb-3">Your Selection</MudText>
+
+                    @foreach (var item in Vm.Items)
+                    {
+                        <div class="selection-item">
+                            <div class="selection-thumb @item.ImageClass"></div>
+                            <div>
+                                <MudText Typo="Typo.subtitle2">@item.Name</MudText>
+                                <MudText Typo="Typo.caption">@item.Subtitle</MudText>
+                            </div>
+                            <MudText Typo="Typo.subtitle2">@ToPeso(item.Amount)</MudText>
+                        </div>
+                    }
+
+                    <MudDivider Class="my-3" />
+
+                    <div class="summary-row">
+                        <MudText Typo="Typo.subtitle2">Total Amount Paid</MudText>
+                        <MudText Typo="Typo.subtitle2">@ToPeso(Vm.AmountPaid)</MudText>
+                    </div>
+
+                    <MudButton Variant="Variant.Outlined" FullWidth="true" Class="mt-3">
+                        Download Invoice
+                    </MudButton>
+                </MudPaper>
+
+                <MudPaper Class="tracking-help-card" Elevation="0">
+                    <MudText Typo="Typo.subtitle2">Running Late?</MudText>
+                    <MudText Typo="Typo.body2">
+                        Contact our support line for immediate help.
+                    </MudText>
+                </MudPaper>
+
+                <MudButton Variant="Variant.Filled"
+                           Color="Color.Primary"
+                           FullWidth="true"
+                           Size="Size.Large"
+                           Class="tracking-back-btn"
+                           OnClick="@(() => NavManager.NavigateTo("/"))">
+                    Back to Menu
+                </MudButton>
+            </MudItem>
+        </MudGrid>
+
+        <Footer />
+    </MudContainer>
+}
+
+@code {
+    private TrackingVm? Vm;
+    private bool _isLoading = true;
+    private string? _errorMessage;
+
+    protected override async Task OnInitializedAsync()
+    {
+        await LoadTrackingAsync();
+    }
+
+    private async Task ReloadAsync()
+    {
+        await LoadTrackingAsync();
+    }
+
+    private async Task LoadTrackingAsync()
+    {
+        try
+        {
+            _isLoading = true;
+            _errorMessage = null;
+
+            if (string.IsNullOrWhiteSpace(DrawerState.CurrentOrderId))
+            {
+                Vm = null;
+                return;
+            }
+
+            Vm = await OrderService.GetTrackingAsync(DrawerState.CurrentOrderId);
+        }
+        catch (Exception ex)
+        {
+            _errorMessage = ex.Message;
+        }
+        finally
+        {
+            _isLoading = false;
+        }
+    }
+
+    private static string GetStepClass(TrackingStepState state) =>
+        state switch
+        {
+            TrackingStepState.Done => "done",
+            TrackingStepState.Active => "active",
+            _ => string.Empty
+        };
+
+    private static string ToPeso(decimal amount) => $"₱{amount:N0}";
+}

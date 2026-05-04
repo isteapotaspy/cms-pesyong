@@ -1,6 +1,10 @@
 ﻿@page "/checkout"
+@layout CustomerLayout
+@using MauiApp_Pesyong.Shared.Customer_Main.Customer_Services
+@using MauiApp_Pesyong.Shared.Customer_Main.Customer_Vms
 @inject CustomerDrawerState DrawerState
 @inject NavigationManager NavManager
+@inject ICustomerOrderService OrderService
 
 <MudContainer MaxWidth="MaxWidth.False" Class="customer-page">
     <TopBar />
@@ -13,6 +17,13 @@
             </MudText>
         </div>
     </div>
+
+    @if (!string.IsNullOrWhiteSpace(_errorMessage))
+    {
+        <MudAlert Severity="Severity.Error" Variant="Variant.Filled" Class="mb-4">
+            @_errorMessage
+        </MudAlert>
+    }
 
     <MudGrid Spacing="3" Class="checkout-grid">
         <MudItem xs="12" md="8">
@@ -28,21 +39,21 @@
                             <MudTextField T="string"
                                           Label="Full Name"
                                           Variant="Variant.Outlined"
-                                          @bind-Value="_fullName" />
+                                          @bind-Value="Vm.ContactInfo.FullName" />
                         </MudItem>
 
                         <MudItem xs="12" sm="6">
                             <MudTextField T="string"
                                           Label="Email Address"
                                           Variant="Variant.Outlined"
-                                          @bind-Value="_email" />
+                                          @bind-Value="Vm.ContactInfo.EmailAddress" />
                         </MudItem>
 
                         <MudItem xs="12">
                             <MudTextField T="string"
                                           Label="Mobile Number"
                                           Variant="Variant.Outlined"
-                                          @bind-Value="_mobile" />
+                                          @bind-Value="Vm.ContactInfo.MobileNumber" />
                         </MudItem>
                     </MudGrid>
                 </MudPaper>
@@ -58,14 +69,14 @@
                             <MudTextField T="string"
                                           Label="Street Address / Unit No."
                                           Variant="Variant.Outlined"
-                                          @bind-Value="_address" />
+                                          @bind-Value="Vm.DeliveryAddress.StreetAddress" />
                         </MudItem>
 
                         <MudItem xs="12" sm="6">
                             <MudSelect T="string"
                                        Label="City"
                                        Variant="Variant.Outlined"
-                                       @bind-Value="_city">
+                                       @bind-Value="Vm.DeliveryAddress.City">
                                 <MudSelectItem Value="@("Quezon City")">Quezon City</MudSelectItem>
                                 <MudSelectItem Value="@("Makati")">Makati</MudSelectItem>
                                 <MudSelectItem Value="@("Pasig")">Pasig</MudSelectItem>
@@ -77,7 +88,7 @@
                             <MudTextField T="string"
                                           Label="Barangay"
                                           Variant="Variant.Outlined"
-                                          @bind-Value="_barangay" />
+                                          @bind-Value="Vm.DeliveryAddress.Barangay" />
                         </MudItem>
 
                         <MudItem xs="12">
@@ -92,7 +103,7 @@
                             <MudTextField T="string"
                                           Label="Delivery Notes / Landmark"
                                           Variant="Variant.Outlined"
-                                          @bind-Value="_landmark" />
+                                          @bind-Value="Vm.DeliveryAddress.Landmark" />
                         </MudItem>
                     </MudGrid>
                 </MudPaper>
@@ -107,15 +118,15 @@
                               Variant="Variant.Outlined"
                               Dense="true"
                               Class="schedule-alert">
-                        All orders are for <strong>Today</strong>. Please select your preferred 30-minute window.
+                        All orders are for <strong>@Vm.DeliverySchedule.DeliveryDate:MMMM dd, yyyy</strong>. Please select your preferred 30-minute window.
                     </MudAlert>
 
                     <div class="time-slot-grid">
-                        @foreach (var slot in _timeSlots)
+                        @foreach (var slot in Vm.AvailableTimeSlots)
                         {
                             <button type="button"
-                                    class="@(slot == _selectedTimeSlot ? "time-slot selected" : "time-slot")"
-                                    @onclick="@(() => _selectedTimeSlot = slot)">
+                                    class="@(slot == Vm.DeliverySchedule.TimeSlot ? "time-slot selected" : "time-slot")"
+                                    @onclick="@(() => Vm.DeliverySchedule.TimeSlot = slot)">
                                 @slot
                             </button>
                         }
@@ -129,11 +140,11 @@
                     </div>
 
                     <div class="payment-grid">
-                        @foreach (var option in _paymentOptions)
+                        @foreach (var option in Vm.AvailablePaymentMethods)
                         {
                             <button type="button"
-                                    class="@(option == _selectedPayment ? "payment-option selected" : "payment-option")"
-                                    @onclick="@(() => _selectedPayment = option)">
+                                    class="@(option == Vm.PaymentMethod ? "payment-option selected" : "payment-option")"
+                                    @onclick="@(() => Vm.PaymentMethod = option)">
                                 <span class="payment-icon">●</span>
                                 <span>@option</span>
                             </button>
@@ -149,11 +160,11 @@
                     <div class="summary-card-head">
                         <MudText Typo="Typo.h6">Order Summary</MudText>
                         <MudChip T="string" Color="Color.Default" Variant="Variant.Outlined" Size="Size.Small">
-                            @DrawerState.CartItems.Count item(s)
+                            @Vm.Items.Count item(s)
                         </MudChip>
                     </div>
 
-                    @if (DrawerState.CartItems.Count == 0)
+                    @if (Vm.Items.Count == 0)
                     {
                         <div class="summary-empty">
                             <MudText Typo="Typo.body2">Your cart is empty.</MudText>
@@ -161,7 +172,7 @@
                     }
                     else
                     {
-                        @foreach (var item in DrawerState.CartItems)
+                        @foreach (var item in Vm.Items)
                         {
                             <div class="summary-item">
                                 <div>
@@ -181,7 +192,7 @@
                                       Placeholder="Enter code"
                                       Variant="Variant.Outlined"
                                       Margin="Margin.Dense"
-                                      @bind-Value="_promoCode" />
+                                      @bind-Value="Vm.PromoCode" />
 
                         <MudButton Variant="Variant.Filled" Color="Color.Default">
                             Apply
@@ -190,22 +201,22 @@
 
                     <div class="summary-row">
                         <MudText Typo="Typo.body2">Subtotal</MudText>
-                        <MudText Typo="Typo.body2">@ToPeso(SubTotal)</MudText>
+                        <MudText Typo="Typo.body2">@ToPeso(Vm.SubTotal)</MudText>
                     </div>
 
                     <div class="summary-row">
                         <MudText Typo="Typo.body2">Delivery Fee</MudText>
-                        <MudText Typo="Typo.body2">@ToPeso(DeliveryFee)</MudText>
+                        <MudText Typo="Typo.body2">@ToPeso(Vm.DeliveryFee)</MudText>
                     </div>
 
                     <div class="summary-row">
                         <MudText Typo="Typo.body2">Est. Tax (12%)</MudText>
-                        <MudText Typo="Typo.body2">@ToPeso(TaxAmount)</MudText>
+                        <MudText Typo="Typo.body2">@ToPeso(Vm.TaxAmount)</MudText>
                     </div>
 
                     <div class="summary-row grand-total-row">
                         <MudText Typo="Typo.h6">Grand Total</MudText>
-                        <MudText Typo="Typo.h5">@ToPeso(GrandTotal)</MudText>
+                        <MudText Typo="Typo.h5">@ToPeso(Vm.GrandTotal)</MudText>
                     </div>
 
                     <MudButton Variant="Variant.Filled"
@@ -213,9 +224,9 @@
                                FullWidth="true"
                                Size="Size.Large"
                                Class="place-order-btn"
-                               Disabled="@(DrawerState.CartItems.Count == 0)"
-                               OnClick="PlaceOrder">
-                        Place Order Now
+                               Disabled="@(_isPlacingOrder || Vm.Items.Count == 0)"
+                               OnClick="PlaceOrderAsync">
+                        @(_isPlacingOrder ? "Placing Order..." : "Place Order Now")
                     </MudButton>
 
                     <div class="secure-note">
@@ -238,46 +249,37 @@
 </MudContainer>
 
 @code {
-    private string _fullName = "Juan Dela Cruz";
-    private string _email = "juan.dc@email.com";
-    private string _mobile = "0917 123 4567";
-    private string _address = "Unit 402, Blue Residences";
-    private string _city = "Quezon City";
-    private string _barangay = "Loyola Heights";
-    private string _landmark = "e.g. Near Ateneo Gate 3, call upon arrival";
-    private string _promoCode = string.Empty;
+    private CheckoutVm Vm = new();
+    private bool _isPlacingOrder;
+    private string? _errorMessage;
 
-    private readonly List<string> _timeSlots = new()
+    protected override void OnInitialized()
     {
-        "10:00 AM",
-        "10:30 AM",
-        "11:00 AM",
-        "11:30 AM",
-        "12:00 PM",
-        "12:30 PM",
-        "01:00 PM",
-        "01:30 PM"
-    };
+        Vm = CheckoutVm.FromCart(DrawerState.CartItems);
+    }
 
-    private string _selectedTimeSlot = "11:30 AM";
-
-    private readonly List<string> _paymentOptions = new()
+    private async Task PlaceOrderAsync()
     {
-        "GCash",
-        "Credit Card",
-        "Cash on Delivery"
-    };
+        try
+        {
+            _isPlacingOrder = true;
+            _errorMessage = null;
 
-    private string _selectedPayment = "GCash";
+            var response = await OrderService.PlaceOrderAsync(Vm);
 
-    private decimal SubTotal => DrawerState.SubTotal;
-    private decimal DeliveryFee => 0m;
-    private decimal TaxAmount => Math.Round(SubTotal * 0.12m, 2);
-    private decimal GrandTotal => SubTotal + DeliveryFee + TaxAmount;
+            DrawerState.SetPlacedOrder(response);
+            DrawerState.ClearCartAfterCheckout();
 
-    private void PlaceOrder()
-    {
-        NavManager.NavigateTo("/tracking");
+            NavManager.NavigateTo("/tracking");
+        }
+        catch (Exception ex)
+        {
+            _errorMessage = ex.Message;
+        }
+        finally
+        {
+            _isPlacingOrder = false;
+        }
     }
 
     private static string ToPeso(decimal amount) => $"₱{amount:N0}";
