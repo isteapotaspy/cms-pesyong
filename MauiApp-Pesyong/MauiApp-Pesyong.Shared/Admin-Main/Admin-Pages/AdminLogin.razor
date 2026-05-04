@@ -1,0 +1,136 @@
+﻿@page "/admin-login"
+@inject NavigationManager NavManager
+
+<MudContainer MaxWidth="MaxWidth.False" Class="portal-page admin-login-page">
+    <div class="portal-bg-orb orb-one"></div>
+    <div class="portal-bg-orb orb-two"></div>
+
+    <div class="admin-login-shell">
+        <MudPaper Class="admin-login-card" Elevation="0">
+            <div class="admin-login-top">
+                <MudButton Variant="Variant.Text"
+                           StartIcon="@Icons.Material.Filled.ArrowBack"
+                           Class="back-btn"
+                           OnClick="@(() => NavManager.NavigateTo("/"))">
+                    Back
+                </MudButton>
+
+                <div class="admin-login-icon">
+                    <MudIcon Icon="@Icons.Material.Filled.AdminPanelSettings" />
+                </div>
+
+                <MudText Typo="Typo.overline" Class="portal-eyebrow">
+                    RESTRICTED ACCESS
+                </MudText>
+
+                <MudText Typo="Typo.h4" Class="admin-login-title">
+                    Admin Login
+                </MudText>
+
+                <MudText Typo="Typo.body2" Class="admin-login-subtitle">
+                    Sign in to access the Pesyong admin dashboard and management tools.
+                </MudText>
+            </div>
+
+            <MudForm @ref="_form">
+                <MudTextField T="string"
+                              Label="Username"
+                              Variant="Variant.Outlined"
+                              Required="true"
+                              RequiredError="Username is required."
+                              @bind-Value="_loginModel.UserName"
+                              Class="mb-3" />
+
+                <MudTextField T="string"
+                              Label="Password"
+                              Variant="Variant.Outlined"
+                              InputType="@(_showPassword ? InputType.Text : InputType.Password)"
+                              Required="true"
+                              RequiredError="Password is required."
+                              Adornment="Adornment.End"
+                              AdornmentIcon="@(_showPassword ? Icons.Material.Filled.VisibilityOff : Icons.Material.Filled.Visibility)"
+                              OnAdornmentClick="TogglePassword"
+                              @bind-Value="_loginModel.Password"
+                              Class="mb-2" />
+
+                <div class="admin-login-actions-row">
+                    <MudCheckBox T="bool" @bind-Value="_loginModel.RememberMe" Label="Remember me" />
+                    <MudButton Variant="Variant.Text" Class="forgot-btn">Forgot password?</MudButton>
+                </div>
+
+                @if (!string.IsNullOrWhiteSpace(_errorMessage))
+                {
+                    <MudAlert Severity="Severity.Error" Variant="Variant.Filled" Dense="true" Class="mb-3">
+                        @_errorMessage
+                    </MudAlert>
+                }
+
+                <MudButton Variant="Variant.Filled"
+                           Color="Color.Primary"
+                           FullWidth="true"
+                           Size="Size.Large"
+                           Class="admin-login-btn"
+                           OnClick="SubmitAsync">
+                    @(_isSubmitting ? "Signing in..." : "Sign In")
+                </MudButton>
+            </MudForm>
+
+            <div class="admin-login-dev-note">
+                <MudIcon Icon="@Icons.Material.Filled.Info" Size="Size.Small" />
+                <span>Temporary development login: <strong>admin</strong> / <strong>123</strong></span>
+            </div>
+        </MudPaper>
+    </div>
+</MudContainer>
+
+@code {
+    private MudForm? _form;
+    private bool _showPassword;
+    private bool _isSubmitting;
+    private string? _errorMessage;
+
+    private AdminLoginModel _loginModel = new();
+
+    private void TogglePassword()
+    {
+        _showPassword = !_showPassword;
+    }
+
+    private async Task SubmitAsync()
+    {
+        _errorMessage = null;
+
+        if (_form is null)
+            return;
+
+        await _form.ValidateAsync();
+
+        if (!_form.IsValid)
+            return;
+
+        try
+        {
+            _isSubmitting = true;
+            await Task.Delay(300);
+
+            if (_loginModel.UserName == "admin" && _loginModel.Password == "123")
+            {
+                NavManager.NavigateTo("/admin-dashboard");
+                return;
+            }
+
+            _errorMessage = "Invalid username or password.";
+        }
+        finally
+        {
+            _isSubmitting = false;
+        }
+    }
+
+    private class AdminLoginModel
+    {
+        public string UserName { get; set; } = string.Empty;
+        public string Password { get; set; } = string.Empty;
+        public bool RememberMe { get; set; }
+    }
+}

@@ -1,0 +1,127 @@
+﻿@page "/"
+@inject NavigationManager NavManager
+
+<MudContainer MaxWidth="MaxWidth.False" Class="portal-page">
+    <div class="portal-bg-orb orb-one"></div>
+    <div class="portal-bg-orb orb-two"></div>
+
+    <div class="portal-shell">
+        <MudPaper Class="portal-card" Elevation="0">
+            <div class="portal-header">
+                <div class="portal-brand">
+                    <div class="portal-brand-icon">
+                        <MudIcon Icon="@Icons.Material.Filled.Restaurant" />
+                    </div>
+
+                    <div class="portal-brand-copy">
+                        <MudText Typo="Typo.overline" Class="portal-eyebrow">
+                            PESYONG CATERING MANAGEMENT SYSTEM
+                        </MudText>
+
+                        <MudText Typo="Typo.h3" Class="portal-title">
+                            Welcome to Pesyong
+                        </MudText>
+
+                        <MudText Typo="Typo.body1" Class="portal-subtitle">
+                            Choose where you want to continue. Customers can browse packages and place orders, while admins can sign in to manage the system.
+                        </MudText>
+                    </div>
+                </div>
+            </div>
+
+            <div class="portal-grid">
+                <MudPaper Class="portal-option customer-option" Elevation="0">
+                    <div class="portal-option-top">
+                        <div class="portal-option-icon">
+                            <MudIcon Icon="@Icons.Material.Filled.Storefront" />
+                        </div>
+
+                        <MudChip T="string" Color="Color.Primary" Variant="Variant.Outlined" Size="Size.Small">
+                            Public Access
+                        </MudChip>
+                    </div>
+
+                    <div class="portal-option-content">
+                        <MudText Typo="Typo.h5" Class="portal-option-title">Customer</MudText>
+
+                        <MudText Typo="Typo.body2" Class="portal-option-copy">
+                            Browse catering packages, add items to cart, checkout, and track your order in the customer experience.
+                        </MudText>
+
+                        <div class="portal-feature-list">
+                            <div class="portal-feature-item">
+                                <MudIcon Icon="@Icons.Material.Filled.CheckCircle" />
+                                <span>Browse menu packages</span>
+                            </div>
+
+                            <div class="portal-feature-item">
+                                <MudIcon Icon="@Icons.Material.Filled.CheckCircle" />
+                                <span>Add to cart and checkout</span>
+                            </div>
+
+                            <div class="portal-feature-item">
+                                <MudIcon Icon="@Icons.Material.Filled.CheckCircle" />
+                                <span>Track orders in real time</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <MudButton Variant="Variant.Filled"
+                               Color="Color.Primary"
+                               Size="Size.Large"
+                               FullWidth="true"
+                               Class="portal-btn"
+                               OnClick="@(() => NavManager.NavigateTo("/customer-home"))">
+                        Go to Customer Page
+                    </MudButton>
+                </MudPaper>
+
+                <MudPaper Class="portal-option admin-option" Elevation="0">
+                    <div class="portal-option-top">
+                        <div class="portal-option-icon admin">
+                            <MudIcon Icon="@Icons.Material.Filled.AdminPanelSettings" />
+                        </div>
+
+                        <MudChip T="string" Color="Color.Secondary" Variant="Variant.Outlined" Size="Size.Small">
+                            Restricted Access
+                        </MudChip>
+                    </div>
+
+                    <div class="portal-option-content">
+                        <MudText Typo="Typo.h5" Class="portal-option-title">Admin</MudText>
+
+                        <MudText Typo="Typo.body2" Class="portal-option-copy">
+                            Sign in to manage packages, orders, dashboards, customer activity, and the rest of the admin-side operations.
+                        </MudText>
+
+                        <div class="portal-feature-list">
+                            <div class="portal-feature-item">
+                                <MudIcon Icon="@Icons.Material.Filled.CheckCircle" />
+                                <span>Manage packages and menu</span>
+                            </div>
+
+                            <div class="portal-feature-item">
+                                <MudIcon Icon="@Icons.Material.Filled.CheckCircle" />
+                                <span>Handle orders and reports</span>
+                            </div>
+
+                            <div class="portal-feature-item">
+                                <MudIcon Icon="@Icons.Material.Filled.CheckCircle" />
+                                <span>Access admin dashboard</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <MudButton Variant="Variant.Outlined"
+                               Color="Color.Primary"
+                               Size="Size.Large"
+                               FullWidth="true"
+                               Class="portal-btn admin-btn"
+                               OnClick="@(() => NavManager.NavigateTo("/admin-login"))">
+                        Admin Login
+                    </MudButton>
+                </MudPaper>
+            </div>
+        </MudPaper>
+    </div>
+</MudContainer>
