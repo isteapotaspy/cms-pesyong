@@ -1,4 +1,5 @@
-﻿using MauiApp_Pesyong.Shared.Customer_Main.Customer_Models;
+﻿using CMS.Contracts.Customer.Orders;
+using MauiApp_Pesyong.Shared.Customer_Main.Customer_Models;
 
 namespace MauiApp_Pesyong.Shared.Services;
 
@@ -10,8 +11,10 @@ public class CustomerDrawerState
     public bool IsCartDrawerOpen { get; private set; }
 
     public PackageUiModel? SelectedPackage { get; private set; }
-
     public List<CartLineUiModel> CartItems { get; } = new();
+
+    public string? CurrentOrderId { get; private set; }
+    public string? CurrentOrderNumber { get; private set; }
 
     public int CartCount => CartItems.Sum(x => x.Quantity);
     public decimal SubTotal => CartItems.Sum(x => x.LineTotal);
@@ -63,17 +66,12 @@ public class CustomerDrawerState
         var existing = CartItems.FirstOrDefault(x => x.Name == line.Name && x.Notes == line.Notes);
 
         if (existing is null)
-        {
             CartItems.Add(line);
-        }
         else
-        {
             existing.Quantity += line.Quantity;
-        }
 
         IsPackageDrawerOpen = false;
         IsCartDrawerOpen = true;
-
         NotifyStateChanged();
     }
 
@@ -95,9 +93,22 @@ public class CustomerDrawerState
     public void RemoveItem(CartLineUiModel item)
     {
         if (CartItems.Remove(item))
-        {
             NotifyStateChanged();
-        }
+    }
+
+    public void SetPlacedOrder(PlaceOrderResponse response)
+    {
+        CurrentOrderId = response.OrderId;
+        CurrentOrderNumber = response.OrderNumber;
+        NotifyStateChanged();
+    }
+
+    public void ClearCartAfterCheckout()
+    {
+        CartItems.Clear();
+        IsCartDrawerOpen = false;
+        IsPackageDrawerOpen = false;
+        NotifyStateChanged();
     }
 
     public void NotifyStateChanged()
