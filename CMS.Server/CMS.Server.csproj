@@ -11,5 +11,11 @@
   <ItemGroup>
     <PackageReference Include="Microsoft.AspNetCore.OpenApi" Version="10.0.3" />
   </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\CMS.Application\CMS.Application.csproj" />
+    <ProjectReference Include="..\CMS.Contracts\CMS.Contracts.csproj" />
+    <ProjectReference Include="..\CMS.Infrastructure\CMS.Infrastructure.csproj" />
+  </ItemGroup>
   
 </Project>

@@ -6,4 +6,13 @@
     <Nullable>enable</Nullable>
   </PropertyGroup>
 
+  <ItemGroup>
+    <Folder Include="Dtos\" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\CMS.Contracts\CMS.Contracts.csproj" />
+    <ProjectReference Include="..\CMS.Domain\CMS.Domain.csproj" />
+  </ItemGroup>
+
 </Project>
