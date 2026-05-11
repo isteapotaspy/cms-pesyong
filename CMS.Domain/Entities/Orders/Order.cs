@@ -1,5 +1,5 @@
 ﻿using CMS.Domain.Common;
-using CMS.Domain.Entities.Payment;
+using CMS.Domain.Entities.Orders;
 using CMS.Domain.Entities.User;
 using CMS.Domain.Enums;
 
@@ -11,7 +11,6 @@ public class Order : BaseEntity
 
     public int CustomerProfileId { get; set; }
     public int? AddressId { get; set; }
-    public int? PromoId { get; set; }
 
     public DateTime OrderedAtUtc { get; set; } = DateTime.UtcNow;
     public DateTime DeliveryDate { get; set; }
@@ -21,8 +20,14 @@ public class Order : BaseEntity
     public PaymentMethod PaymentMethod { get; set; }
     public PaymentStatus PaymentStatus { get; set; } = PaymentStatus.Pending;
 
+    public string ContactNameSnapshot { get; set; } = string.Empty;
+    public string ContactEmailSnapshot { get; set; } = string.Empty;
+    public string ContactMobileSnapshot { get; set; } = string.Empty;
+
     public string CustomerNotes { get; set; } = string.Empty;
     public string SpecialInstructions { get; set; } = string.Empty;
+
+    public string PromoCodeApplied { get; set; } = string.Empty;
 
     public decimal SubTotal { get; set; }
     public decimal DeliveryFee { get; set; }
@@ -32,9 +37,6 @@ public class Order : BaseEntity
 
     public CustomerProfile CustomerProfile { get; set; } = default!;
     public Address? Address { get; set; }
-    public Promo? Promo { get; set; }
 
     public ICollection<OrderItem> Items { get; set; } = new List<OrderItem>();
-    public ICollection<Payment> Payments { get; set; } = new List<Payment>();
-    public ICollection<DeliveryUpdate> DeliveryUpdates { get; set; } = new List<DeliveryUpdate>();
 }

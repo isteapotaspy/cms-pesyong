@@ -1,4 +1,5 @@
-﻿using CMS.Contracts.Customer.Menu;
+﻿using CMS.Contracts.Customer.Meals;
+using CMS.Contracts.Customer.Menu;
 using CMS.Contracts.Customer.Orders;
 using MauiApp_Pesyong.Shared.Customer_Main.Customer_Models;
 using MauiApp_Pesyong.Shared.Customer_Main.Customer_Vms;
@@ -11,7 +12,8 @@ public static class CustomerMappings
     {
         return new PackageUiModel
         {
-            Id = dto.Id,
+            Id = dto.Id.ToString(),
+            PackageId = dto.Id,
             Title = dto.Title,
             MenuCategory = dto.CategoryName,
             CategoryLabel = dto.CategoryName,
@@ -24,17 +26,53 @@ public static class CustomerMappings
             ImageClass = string.IsNullOrWhiteSpace(dto.ImageUrl) ? "food-image-one" : dto.ImageUrl,
             Rating = dto.Rating,
             ReviewCount = dto.ReviewCount,
+            IsAvailable = dto.IsAvailable,
+            IsCustomizable = dto.IsCustomizable,
             Sizes = dto.Sizes.Select(x => new PackageSizeUiModel
             {
+                Id = x.Id,
                 Label = x.Label,
                 Subtitle = x.Subtitle,
+                PaxCount = x.PaxCount,
                 Price = x.Price
             }).ToList(),
             Addons = dto.Addons.Select(x => new AddonUiModel
             {
+                Id = x.Id,
                 Name = x.Name,
                 Description = x.Description,
-                Price = x.Price
+                Price = x.Price,
+                IsAvailable = x.IsAvailable
+            }).ToList(),
+            SelectionRules = dto.SelectionRules.Select(r => new PackageSelectionRuleUiModel
+            {
+                Id = r.Id,
+                Title = r.Title,
+                Description = r.Description,
+                SelectionType = r.SelectionType,
+                AllowedMealType = r.AllowedMealType,
+                MinSelections = r.MinSelections,
+                MaxSelections = r.MaxSelections,
+                IsRequired = r.IsRequired,
+                DisplayOrder = r.DisplayOrder,
+                Options = r.Options.Select(o => new PackageSelectionOptionUiModel
+                {
+                    Id = o.Id,
+                    MealId = o.MealId,
+                    AdditionalPrice = o.AdditionalPrice,
+                    IsDefault = o.IsDefault,
+                    Meal = new MealOptionUiModel
+                    {
+                        Id = o.Meal.Id,
+                        Name = o.Meal.Name,
+                        Description = o.Meal.Description,
+                        MealType = o.Meal.MealType,
+                        BasePrice = o.Meal.BasePrice,
+                        AdditionalPrice = o.Meal.AdditionalPrice,
+                        ImageClass = string.IsNullOrWhiteSpace(o.Meal.ImageUrl) ? "food-image-one" : o.Meal.ImageUrl,
+                        IsDefault = o.Meal.IsDefault
+                    }
+                }).ToList()
             }).ToList()
         };
     }
@@ -43,21 +81,23 @@ public static class CustomerMappings
     {
         return new TrackingVm
         {
-            OrderId = dto.OrderId,
+            OrderId = dto.OrderId.ToString(),
             OrderNumber = dto.OrderNumber,
             Status = dto.Status,
-            OrderedAt = dto.OrderedAt,
-            EstimatedDeliveryTime = dto.EstimatedDeliveryTime,
+            OrderedAt = dto.OrderedAtUtc.ToLocalTime(),
+            EstimatedDeliveryTime = dto.EstimatedDeliveryTimeUtc.ToLocalTime(),
             AmountPaid = dto.AmountPaid,
-            Rider = new RiderVm
-            {
-                Name = dto.Rider.Name,
-                Vehicle = dto.Rider.Vehicle,
-                PlateNumber = dto.Rider.PlateNumber,
-                Rating = dto.Rider.Rating,
-                TotalTrips = dto.Rider.TotalTrips,
-                ContactNumber = dto.Rider.ContactNumber
-            },
+            Rider = dto.Rider is null
+                ? new RiderVm()
+                : new RiderVm
+                {
+                    Name = dto.Rider.Name,
+                    Vehicle = dto.Rider.Vehicle,
+                    PlateNumber = dto.Rider.PlateNumber,
+                    Rating = dto.Rider.Rating,
+                    TotalTrips = dto.Rider.TotalTrips,
+                    ContactNumber = dto.Rider.ContactNumber
+                },
             DeliveryAddress = new DeliveryAddressVm
             {
                 StreetAddress = dto.DeliveryAddress.StreetAddress,
@@ -71,16 +111,36 @@ public static class CustomerMappings
             {
                 Title = x.Title,
                 Description = x.Description,
-                Timestamp = x.Timestamp,
+                Timestamp = x.TimestampUtc?.ToLocalTime(),
                 State = x.State
             }).ToList(),
             Items = dto.Items.Select((x, i) => new TrackingSelectionVm
             {
-                Name = x.Name,
-                Subtitle = x.Subtitle,
-                Amount = x.Amount,
+                Name = x.PackageTitle,
+                Subtitle = string.IsNullOrWhiteSpace(x.SizeLabel)
+                    ? $"Qty {x.Quantity}"
+                    : $"{x.SizeLabel} • Qty {x.Quantity}",
+                Amount = x.LineTotal,
                 ImageClass = i % 2 == 0 ? "food-image-one" : "food-image-three"
             }).ToList()
+        };
+    }
+
+    public static ShortOrderMealUiModel ToUiModel(this CustomerMealDto dto)
+    {
+        return new ShortOrderMealUiModel
+        {
+            Id = dto.Id,
+            CategoryId = dto.CategoryId,
+            CategoryName = dto.CategoryName,
+            CategorySlug = dto.CategorySlug,
+            Name = dto.Name,
+            Description = dto.Description,
+            MealType = dto.MealType,
+            BasePrice = dto.BasePrice,
+            MinOrderQuantity = dto.MinOrderQuantity,
+            ImageClass = string.IsNullOrWhiteSpace(dto.ImageUrl) ? "food-image-one" : dto.ImageUrl,
+            IsAvailable = dto.IsAvailable
         };
     }
 }

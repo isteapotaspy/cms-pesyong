@@ -5,11 +5,16 @@ namespace MauiApp_Pesyong.Shared.Customer_Main.Customer_Vms;
 
 public class CheckoutVm
 {
+    public int? CustomerProfileId { get; set; } = 1;
+
     public ContactInfoVm ContactInfo { get; set; } = new();
     public DeliveryAddressVm DeliveryAddress { get; set; } = new();
     public DeliveryScheduleVm DeliverySchedule { get; set; } = new();
+
     public string PaymentMethod { get; set; } = "GCash";
     public string PromoCode { get; set; } = string.Empty;
+    public string CustomerNotes { get; set; } = string.Empty;
+    public string SpecialInstructions { get; set; } = string.Empty;
 
     public List<string> AvailableTimeSlots { get; set; } = new()
     {
@@ -21,6 +26,20 @@ public class CheckoutVm
         "12:30 PM",
         "01:00 PM",
         "01:30 PM"
+    };
+
+    public List<string> AvailableCities { get; set; } = new()
+    {
+    "Davao City",
+    "Manila",
+    "Makati",
+    "Pasig",
+    "Taguig",
+    "Mandaluyong",
+    "Marikina",
+    "Pasay",
+    "San Juan",
+    "Caloocan"
     };
 
     public List<string> AvailablePaymentMethods { get; set; } = new()
@@ -43,16 +62,16 @@ public class CheckoutVm
         {
             ContactInfo = new ContactInfoVm
             {
-                FullName = "Juan Dela Cruz",
-                EmailAddress = "juan.dc@email.com",
-                MobileNumber = "0917 123 4567"
+                FullName = string.Empty,
+                EmailAddress = string.Empty,
+                MobileNumber = string.Empty
             },
             DeliveryAddress = new DeliveryAddressVm
             {
-                StreetAddress = "Unit 402, Blue Residences",
-                City = "Quezon City",
-                Barangay = "Loyola Heights",
-                Landmark = "Near Ateneo Gate 3, call upon arrival"
+                StreetAddress = string.Empty,
+                City = string.Empty,
+                Barangay = string.Empty,
+                Landmark = string.Empty
             },
             DeliverySchedule = new DeliveryScheduleVm
             {
@@ -62,11 +81,11 @@ public class CheckoutVm
             Items = cartItems.ToList()
         };
     }
-
     public PlaceOrderRequest ToRequest()
     {
         return new PlaceOrderRequest
         {
+            CustomerProfileId = CustomerProfileId,
             ContactInfo = new ContactInfoDto
             {
                 FullName = ContactInfo.FullName,
@@ -89,17 +108,28 @@ public class CheckoutVm
             },
             PaymentMethod = PaymentMethod,
             PromoCode = PromoCode,
-            DeliveryFee = DeliveryFee,
-            TaxAmount = TaxAmount,
-            GrandTotal = GrandTotal,
-            Items = Items.Select(x => new OrderItemDto
+            CustomerNotes = CustomerNotes,
+            SpecialInstructions = SpecialInstructions,
+            Items = Items.Select(x => new OrderItemRequestDto
             {
-                PackageId = x.Id,
-                PackageTitle = x.Name,
-                SizeLabel = x.Notes,
-                Notes = x.Notes,
-                UnitPrice = x.UnitPrice,
-                Quantity = x.Quantity
+                ItemType = x.IsMealItem ? "Meal" : "Package",
+                PackageId = x.IsMealItem ? null : x.PackageId,
+                PackageSizeId = x.IsMealItem ? null : x.PackageSizeId,
+                MealId = x.IsMealItem ? x.MealId : null,
+                Quantity = x.Quantity,
+                MealSelections = x.IsMealItem
+                    ? new List<OrderItemMealSelectionRequestDto>()
+                    : x.MealSelections.Select(m => new OrderItemMealSelectionRequestDto
+                    {
+                        PackageSelectionRuleId = m.PackageSelectionRuleId,
+                        MealId = m.MealId
+                    }).ToList(),
+                AddonSelections = x.IsMealItem
+                    ? new List<OrderItemAddonSelectionRequestDto>()
+                    : x.AddonSelections.Select(a => new OrderItemAddonSelectionRequestDto
+                    {
+                        PackageAddonId = a.PackageAddonId
+                    }).ToList()
             }).ToList()
         };
     }
@@ -127,3 +157,4 @@ public class DeliveryScheduleVm
     public DateTime DeliveryDate { get; set; } = DateTime.Today;
     public string TimeSlot { get; set; } = "11:30 AM";
 }
+

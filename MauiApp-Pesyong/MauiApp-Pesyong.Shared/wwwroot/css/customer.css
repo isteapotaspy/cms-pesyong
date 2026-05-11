@@ -848,6 +848,10 @@ html, body {
     padding: 16px;
 }
 
+.mud-popover {
+    z-index: 2000 !important;
+}
+
 .map-badge {
     padding: 6px 12px;
     border-radius: 999px;

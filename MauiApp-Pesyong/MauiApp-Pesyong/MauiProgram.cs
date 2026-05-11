@@ -1,7 +1,9 @@
-using Microsoft.AspNetCore.Components.WebView.Maui;
-using MauiApp_Pesyong.Shared.Services;
 using MauiApp_Pesyong.Shared.Admin_Main.Admin_Services;
 using MauiApp_Pesyong.Shared.Customer_Main.Customer_Services;
+using MauiApp_Pesyong.Shared.Customer_Main.Customer_Vms;
+using MauiApp_Pesyong.Shared.Services;
+using Microsoft.AspNetCore.Components.WebView.Maui;
+using Microsoft.Extensions.DependencyInjection;
 using MudBlazor.Services;
 
 namespace MauiApp_Pesyong;
@@ -24,19 +26,12 @@ public static class MauiProgram
         builder.Services.AddSingleton<AdminDataService>();
         builder.Services.AddMudServices();
         builder.Services.AddScoped<CustomerDrawerState>();
+        builder.Services.AddScoped<ShortOrdersVm>();
 
 
-        //use the real api later , for now we will use the fake api client
-        builder.Services.AddScoped<FakeCustomerApiClient>();
-        builder.Services.AddScoped<ICustomerCatalogService>(sp => sp.GetRequiredService<FakeCustomerApiClient>());
-        builder.Services.AddScoped<ICustomerOrderService>(sp => sp.GetRequiredService<FakeCustomerApiClient>());
-
-
-        //for the real api client
-
-        /*builder.Services.AddHttpClient("CMSApi", client =>
+        builder.Services.AddHttpClient("CMSApi", client =>
         {
-            client.BaseAddress = new Uri("https://localhost:7068/");
+            client.BaseAddress = new Uri("http://localhost:5010/");
         });
 
         builder.Services.AddScoped<CustomerApiClient>(sp =>
@@ -47,7 +42,6 @@ public static class MauiProgram
 
         builder.Services.AddScoped<ICustomerCatalogService>(sp => sp.GetRequiredService<CustomerApiClient>());
         builder.Services.AddScoped<ICustomerOrderService>(sp => sp.GetRequiredService<CustomerApiClient>());
-        */
 
 #if DEBUG
         builder.Services.AddBlazorWebViewDeveloperTools();

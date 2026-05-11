@@ -1,4 +1,5 @@
 ﻿using CMS.Domain.Common;
+using CMS.Domain.Entities.Packages;
 
 namespace CMS.Domain.Entities.Menu;
 

@@ -87,7 +87,9 @@ else
                     <div class="tracking-map-placeholder">
                         <div class="tracking-route-line"></div>
                         <div class="tracking-dot kitchen">Pesyong Kitchen</div>
-                        <div class="tracking-dot rider">@Vm.Rider.Name (moving)</div>
+                        <div class="tracking-dot rider">
+                            @(string.IsNullOrWhiteSpace(Vm.Rider.Name) ? "Rider pending" : $"{Vm.Rider.Name} (moving)")
+                        </div>
                         <div class="tracking-dot home">Your Home</div>
                     </div>
                 </MudPaper>
@@ -101,14 +103,16 @@ else
                         </MudAvatar>
 
                         <div class="rider-info">
-                            <MudText Typo="Typo.subtitle1">@Vm.Rider.Name</MudText>
+                            <MudText Typo="Typo.subtitle1">
+                                @(string.IsNullOrWhiteSpace(Vm.Rider.Name) ? "Rider not assigned yet" : Vm.Rider.Name)
+                            </MudText>
                             <MudText Typo="Typo.body2">@Vm.Rider.Vehicle • @Vm.Rider.PlateNumber</MudText>
                             <MudText Typo="Typo.caption">★ @Vm.Rider.Rating | @Vm.Rider.TotalTrips+ trips</MudText>
                         </div>
 
                         <div class="rider-actions">
-                            <MudButton Variant="Variant.Outlined">Chat</MudButton>
-                            <MudButton Variant="Variant.Filled" Color="Color.Primary">Call</MudButton>
+                            <MudButton Variant="Variant.Outlined" Disabled="@string.IsNullOrWhiteSpace(Vm.Rider.Name)">Chat</MudButton>
+                            <MudButton Variant="Variant.Filled" Color="Color.Primary" Disabled="@string.IsNullOrWhiteSpace(Vm.Rider.Name)">Call</MudButton>
                         </div>
                     </div>
                 </MudPaper>
@@ -234,13 +238,13 @@ else
             _isLoading = true;
             _errorMessage = null;
 
-            if (string.IsNullOrWhiteSpace(DrawerState.CurrentOrderId))
+            if (!DrawerState.CurrentOrderId.HasValue)
             {
                 Vm = null;
                 return;
             }
 
-            Vm = await OrderService.GetTrackingAsync(DrawerState.CurrentOrderId);
+            Vm = await OrderService.GetTrackingAsync(DrawerState.CurrentOrderId.Value);
         }
         catch (Exception ex)
         {

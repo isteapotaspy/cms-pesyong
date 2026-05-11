@@ -13,7 +13,7 @@ public class CustomerDrawerState
     public PackageUiModel? SelectedPackage { get; private set; }
     public List<CartLineUiModel> CartItems { get; } = new();
 
-    public string? CurrentOrderId { get; private set; }
+    public int? CurrentOrderId { get; private set; }
     public string? CurrentOrderNumber { get; private set; }
 
     public int CartCount => CartItems.Sum(x => x.Quantity);
@@ -37,7 +37,6 @@ public class CustomerDrawerState
     public void SetPackageDrawer(bool open)
     {
         IsPackageDrawerOpen = open;
-
         if (open)
             IsCartDrawerOpen = false;
 
@@ -47,7 +46,6 @@ public class CustomerDrawerState
     public void SetCartDrawer(bool open)
     {
         IsCartDrawerOpen = open;
-
         if (open)
             IsPackageDrawerOpen = false;
 
@@ -63,12 +61,24 @@ public class CustomerDrawerState
 
     public void AddToCart(CartLineUiModel line)
     {
-        var existing = CartItems.FirstOrDefault(x => x.Name == line.Name && x.Notes == line.Notes);
+        var existing = CartItems.FirstOrDefault(x =>
+            x.IsMealItem == line.IsMealItem &&
+            (
+                (x.IsMealItem && x.MealId == line.MealId) ||
+                (!x.IsMealItem &&
+                 x.PackageId == line.PackageId &&
+                 x.PackageSizeId == line.PackageSizeId &&
+                 x.Notes == line.Notes)
+            ));
 
         if (existing is null)
+        {
             CartItems.Add(line);
+        }
         else
+        {
             existing.Quantity += line.Quantity;
+        }
 
         IsPackageDrawerOpen = false;
         IsCartDrawerOpen = true;

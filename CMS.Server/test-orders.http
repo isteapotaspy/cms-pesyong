@@ -1,0 +1,43 @@
+POST http://localhost:5010/api/customer/orders
+Content-Type: application/json
+
+{
+  "customerProfileId": 1,
+  "contactInfo": {
+    "fullName": "Demo Customer",
+    "emailAddress": "customer.demo@pesyong.local",
+    "mobileNumber": "09171234567"
+  },
+  "deliveryAddress": {
+    "streetAddress": "Unit 402, Blue Residences",
+    "barangay": "Loyola Heights",
+    "city": "Quezon City",
+    "landmark": "Near Ateneo Gate 3",
+    "latitude": null,
+    "longitude": null
+  },
+  "deliverySchedule": {
+    "deliveryDate": "2026-05-12T00:00:00",
+    "timeSlot": "11:30 AM"
+  },
+  "paymentMethod": "GCash",
+  "promoCode": "",
+  "customerNotes": "Please call upon arrival.",
+  "specialInstructions": "Leave at the lobby if unavailable.",
+  "items": [
+    {
+      "packageId": 1,
+      "packageSizeId": 2,
+      "quantity": 1,
+      "mealSelections": [
+        { "packageSelectionRuleId": 1, "mealId": 1 },
+        { "packageSelectionRuleId": 1, "mealId": 2 },
+        { "packageSelectionRuleId": 2, "mealId": 6 },
+        { "packageSelectionRuleId": 3, "mealId": 8 }
+      ],
+      "addonSelections": [
+        { "packageAddonId": 1 }
+      ]
+    }
+  ]
+}

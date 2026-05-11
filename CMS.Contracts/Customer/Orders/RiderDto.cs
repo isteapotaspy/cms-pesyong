@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Text;
 
 namespace CMS.Contracts.Customer.Orders;
+
 public class RiderDto
 {
     public string Name { get; set; } = string.Empty;

@@ -68,6 +68,7 @@
                         <MudItem xs="12">
                             <MudTextField T="string"
                                           Label="Street Address / Unit No."
+                                          Placeholder="Moon Street, Unit 4A"
                                           Variant="Variant.Outlined"
                                           @bind-Value="Vm.DeliveryAddress.StreetAddress" />
                         </MudItem>
@@ -76,17 +77,21 @@
                             <MudSelect T="string"
                                        Label="City"
                                        Variant="Variant.Outlined"
-                                       @bind-Value="Vm.DeliveryAddress.City">
-                                <MudSelectItem Value="@("Quezon City")">Quezon City</MudSelectItem>
-                                <MudSelectItem Value="@("Makati")">Makati</MudSelectItem>
-                                <MudSelectItem Value="@("Pasig")">Pasig</MudSelectItem>
-                                <MudSelectItem Value="@("Taguig")">Taguig</MudSelectItem>
+                                       Placeholder="Davao City"
+                                       Value="@Vm.DeliveryAddress.City"
+                                       ValueChanged="OnCityChanged"
+                                       Required="true">
+                                @foreach (var city in Vm.AvailableCities)
+                                {
+                                    <MudSelectItem T="string" Value="@city">@city</MudSelectItem>
+                                }
                             </MudSelect>
                         </MudItem>
 
                         <MudItem xs="12" sm="6">
                             <MudTextField T="string"
                                           Label="Barangay"
+                                          Placeholder="Barangay 2A"
                                           Variant="Variant.Outlined"
                                           @bind-Value="Vm.DeliveryAddress.Barangay" />
                         </MudItem>
@@ -102,6 +107,7 @@
                         <MudItem xs="12">
                             <MudTextField T="string"
                                           Label="Delivery Notes / Landmark"
+                                          Placeholder="Near school, church, gate, or building"
                                           Variant="Variant.Outlined"
                                           @bind-Value="Vm.DeliveryAddress.Landmark" />
                         </MudItem>
@@ -219,6 +225,13 @@
                         <MudText Typo="Typo.h5">@ToPeso(Vm.GrandTotal)</MudText>
                     </div>
 
+                    @if (HasMealItems)
+                    {
+                        <MudAlert Severity="Severity.Warning" Variant="Variant.Outlined" Class="mb-4">
+                            Short-order meal checkout is not connected yet. Please remove meal items from the cart before placing this order.
+                        </MudAlert>
+                    }
+
                     <MudButton Variant="Variant.Filled"
                                Color="Color.Primary"
                                FullWidth="true"
@@ -282,5 +295,13 @@
         }
     }
 
+    private Task OnCityChanged(string? value)
+    {
+        Vm.DeliveryAddress.City = value ?? string.Empty;
+        StateHasChanged();
+        return Task.CompletedTask;
+    }
+
     private static string ToPeso(decimal amount) => $"₱{amount:N0}";
+    private bool HasMealItems => Vm.Items.Any(x => x.IsMealItem);
 }

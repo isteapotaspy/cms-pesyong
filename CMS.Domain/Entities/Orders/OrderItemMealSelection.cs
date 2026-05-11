@@ -1,6 +1,6 @@
 ﻿using CMS.Domain.Common;
 using CMS.Domain.Entities.Menu;
-using CMS.Domain.Entities.Package;
+using CMS.Domain.Entities.Packages;
 
 namespace CMS.Domain.Entities.Orders;
 
