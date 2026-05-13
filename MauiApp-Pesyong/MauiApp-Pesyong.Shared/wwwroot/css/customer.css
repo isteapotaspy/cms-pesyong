@@ -1,13 +1,15 @@
 ﻿:root {
-    --pesyong-primary: #5b5fef;
-    --pesyong-secondary: #27c2b8;
-    --pesyong-bg: #f6f7fb;
+    --pesyong-primary: #e8661f;
+    --pesyong-primary-dark: #b94716;
+    --pesyong-primary-soft: #fff1e8;
+    --pesyong-secondary: #f59e0b;
+    --pesyong-bg: #f8f4ef;
     --pesyong-surface: #ffffff;
-    --pesyong-text: #1e2230;
-    --pesyong-muted: #7b8190;
-    --pesyong-border: #e9ecf4;
-    --pesyong-soft: #f1f3fa;
-    --pesyong-shadow: 0 18px 45px rgba(31, 41, 55, 0.08);
+    --pesyong-text: #1f1814;
+    --pesyong-muted: #7b6f68;
+    --pesyong-border: #eadfd6;
+    --pesyong-soft: #fff7f1;
+    --pesyong-shadow: 0 18px 45px rgba(88, 45, 18, 0.10);
 }
 
 html, body {
@@ -79,14 +81,21 @@ html, body {
     gap: 10px;
 }
 
-.brand-icon-wrap {
-    width: 34px;
-    height: 34px;
+.brand-logo-wrap {
+    width: 48px;
+    height: 48px;
+    border-radius: 14px;
+    overflow: hidden;
     display: grid;
     place-items: center;
-    border-radius: 50%;
-    color: white;
-    background: linear-gradient(135deg, #6b6ef7, #4f46e5);
+    background: #fff1e8;
+    flex-shrink: 0;
+}
+
+.brand-svg-logo {
+    width: 40px;
+    height: 40px;
+    display: block;
 }
 
 .brand-name {
@@ -1722,5 +1731,280 @@ html, body {
     .admin-login-actions-row {
         flex-direction: column;
         align-items: stretch;
+    }
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+/* BETTER CUSTOMER PAGE SPACING */
+/* REMOVE TOO MUCH TOP SPACE */
+.customer-page {
+    padding-top: 12px;
+}
+
+/* LOGO */
+.brand-logo-wrap {
+    width: 42px;
+    height: 42px;
+    border-radius: 14px;
+    overflow: hidden;
+    display: grid;
+    place-items: center;
+    background: var(--pesyong-primary-soft);
+}
+
+.brand-logo-img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+
+/* TOPBAR */
+.topbar {
+    position: sticky;
+    top: 8px;
+    z-index: 100;
+    border: 1px solid rgba(232, 102, 31, 0.18);
+    background: rgba(255, 255, 255, 0.96);
+    backdrop-filter: blur(12px);
+}
+
+.location-pill,
+.toolbar-pill {
+    background: var(--pesyong-soft);
+    border: 1px solid rgba(232, 102, 31, 0.18);
+}
+
+/* HERO REAL IMAGE */
+.hero-banner {
+    background: linear-gradient(90deg, rgba(31, 24, 20, 0.88), rgba(31, 24, 20, 0.46), rgba(31, 24, 20, 0.12)), url("../images/food-menu-assortment.jpg");
+    background-size: cover;
+    background-position: center;
+}
+
+/*/* CARD REAL IMAGES 
+.food-image-one {
+    background-image: linear-gradient(135deg, rgba(31, 24, 20, .18), rgba(31, 24, 20, .04)), url("../images/package-1.jpg");
+}
+
+.food-image-two {
+    background-image: linear-gradient(135deg, rgba(31, 24, 20, .18), rgba(31, 24, 20, .04)), url("../images/package-2.jpg");
+}
+
+.food-image-three {
+    background-image: linear-gradient(135deg, rgba(31, 24, 20, .18), rgba(31, 24, 20, .04)), url("../images/meal-1.jpg");
+}
+
+.food-image-four {
+    background-image: linear-gradient(135deg, rgba(31, 24, 20, .18), rgba(31, 24, 20, .04)), url("../images/meal-2.jpg");
+}
+*/
+
+/* PROMO REAL IMAGE */
+.promo-image {
+    background-image: linear-gradient(135deg, rgba(31, 24, 20, 0.14), rgba(31, 24, 20, 0.04)), url("../images/sharing-table.jpg");
+    background-size: cover;
+    background-position: center;
+}
+
+/* BETTER CARD SPACING */
+.food-card {
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+}
+
+.food-card-content {
+    flex: 1;
+}
+
+.food-card-actions {
+    margin-top: auto;
+}
+
+.card-price {
+    color: var(--pesyong-primary-dark) !important;
+}
+
+/* RESPONSIVE FIXES */
+@media (max-width: 1180px) {
+    .topbar {
+        grid-template-columns: auto 1fr auto auto;
+    }
+
+    .location-pill {
+        display: none;
+    }
+
+    .search-field {
+        grid-column: 1 / -1;
+    }
+}
+
+@media (max-width: 820px) {
+    .brand-name,
+    .nav-action-btn {
+        display: none;
+    }
+
+    .topbar {
+        grid-template-columns: auto 1fr auto;
+    }
+
+    .package-grid {
+        grid-template-columns: 1fr;
+    }
+
+    .toolbar-row,
+    .toolbar-actions,
+    .toolbar-pills {
+        width: 100%;
+    }
+
+    .toolbar-actions {
+        display: grid;
+        grid-template-columns: 1fr;
+    }
+
+    .dish-search,
+    .filter-btn {
+        width: 100%;
+    }
+}
+
+
+
+
+/* PACKAGE DRAWER OPTION CARDS */
+.package-size-grid {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 12px;
+}
+
+.option-grid {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 12px;
+}
+
+.choice-card {
+    width: 100%;
+    border: 1px solid var(--pesyong-border);
+    background: #ffffff;
+    color: var(--pesyong-text);
+    border-radius: 18px;
+    padding: 14px;
+    cursor: pointer;
+    text-align: left;
+    font-family: inherit;
+    transition: 160ms ease;
+}
+
+    .choice-card:hover {
+        transform: translateY(-1px);
+        border-color: rgba(232, 102, 31, 0.38);
+        background: #fffaf6;
+    }
+
+    .choice-card.selected {
+        border-color: var(--pesyong-primary);
+        background: var(--pesyong-primary-soft);
+        box-shadow: 0 0 0 3px rgba(232, 102, 31, 0.10);
+    }
+
+.package-size-card {
+    min-height: 86px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 10px;
+}
+
+.option-card {
+    min-height: 104px;
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 12px;
+}
+
+.option-copy {
+    min-width: 0;
+    flex: 1;
+}
+
+.option-title-row {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    margin-bottom: 5px;
+}
+
+.choice-title {
+    font-weight: 800 !important;
+    color: var(--pesyong-text) !important;
+    line-height: 1.25 !important;
+}
+
+.choice-subtitle {
+    color: var(--pesyong-muted) !important;
+    line-height: 1.45 !important;
+}
+
+.choice-price {
+    color: var(--pesyong-primary-dark) !important;
+    font-weight: 900 !important;
+    white-space: nowrap;
+}
+
+.option-price-pill {
+    flex-shrink: 0;
+    align-self: center;
+    padding: 6px 9px;
+    border-radius: 999px;
+    background: #ffffff;
+    border: 1px solid rgba(232, 102, 31, 0.20);
+    color: var(--pesyong-primary-dark);
+    font-size: 0.75rem;
+    font-weight: 800;
+    white-space: nowrap;
+}
+
+.option-check-icon {
+    color: var(--pesyong-primary) !important;
+    flex-shrink: 0;
+}
+
+/* Drawer footer spacing fix */
+.drawer-footer {
+    gap: 14px;
+}
+
+.drawer-cta-btn {
+    min-height: 48px;
+}
+
+/* Mobile drawer */
+@media (max-width: 820px) {
+    .package-size-grid,
+    .option-grid {
+        grid-template-columns: 1fr;
+    }
+
+    .package-size-card,
+    .option-card {
+        min-height: unset;
     }
 }

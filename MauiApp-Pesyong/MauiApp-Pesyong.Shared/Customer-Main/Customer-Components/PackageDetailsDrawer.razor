@@ -71,18 +71,24 @@
                         <MudText Typo="Typo.caption">Choose one</MudText>
                     </div>
 
-                    <div class="size-grid">
+                    <div class="package-size-grid">
                         @for (var i = 0; i < packageItem.Sizes.Count; i++)
                         {
-                            var size = packageItem.Sizes[i];
-                            var isSelected = i == _selectedSizeIndex;
+                            var index = i;
+                            var size = packageItem.Sizes[index];
+                            var isSelected = index == _selectedSizeIndex;
 
                             <button type="button"
-                                    class="@(isSelected ? "size-card selected" : "size-card")"
-                                    @onclick="@(() => SelectSize(i))">
-                                <MudText Typo="Typo.subtitle2">@size.Label</MudText>
-                                <MudText Typo="Typo.caption">@size.Subtitle</MudText>
-                                <MudText Typo="Typo.h6">@ToPeso(size.Price)</MudText>
+                                    class="@(isSelected ? "choice-card package-size-card selected" : "choice-card package-size-card")"
+                                    aria-pressed="@isSelected"
+                                    @onclick="@(() => SelectSize(index))">
+
+                                <div>
+                                    <MudText Typo="Typo.subtitle2" Class="choice-title">@size.Label</MudText>
+                                    <MudText Typo="Typo.caption" Class="choice-subtitle">@size.Subtitle</MudText>
+                                </div>
+
+                                <MudText Typo="Typo.h6" Class="choice-price">@ToPeso(size.Price)</MudText>
                             </button>
                         }
                     </div>
@@ -105,25 +111,47 @@
                             </MudText>
                         </div>
 
-                        <div class="size-grid">
+                        <div class="option-grid">
                             @foreach (var option in rule.Options)
                             {
-                                var isSelected = IsMealSelected(rule.Id, option.MealId);
+                                var currentRule = rule;
+                                var currentOption = option;
+                                var isSelected = IsMealSelected(currentRule.Id, currentOption.MealId);
 
                                 <button type="button"
-                                        class="@(isSelected ? "size-card selected" : "size-card")"
-                                        @onclick="@(() => ToggleMeal(rule, option))">
-                                    <MudText Typo="Typo.subtitle2">@option.Meal.Name</MudText>
-                                    <MudText Typo="Typo.caption">@option.Meal.Description</MudText>
+                                        class="@(isSelected ? "choice-card option-card selected" : "choice-card option-card")"
+                                        aria-pressed="@isSelected"
+                                        @onclick="@(() => ToggleMeal(currentRule, currentOption))">
 
-                                    @if (option.AdditionalPrice > 0)
-                                    {
-                                        <MudText Typo="Typo.caption">+@ToPeso(option.AdditionalPrice)</MudText>
-                                    }
-                                    else
-                                    {
-                                        <MudText Typo="Typo.caption">Included</MudText>
-                                    }
+                                    <div class="option-copy">
+                                        <div class="option-title-row">
+                                            <MudText Typo="Typo.subtitle2" Class="choice-title">
+                                                @currentOption.Meal.Name
+                                            </MudText>
+
+                                            @if (isSelected)
+                                            {
+                                                <MudIcon Icon="@Icons.Material.Filled.CheckCircle"
+                                                         Size="Size.Small"
+                                                         Class="option-check-icon" />
+                                            }
+                                        </div>
+
+                                        <MudText Typo="Typo.caption" Class="choice-subtitle">
+                                            @currentOption.Meal.Description
+                                        </MudText>
+                                    </div>
+
+                                    <div class="option-price-pill">
+                                        @if (currentOption.AdditionalPrice > 0)
+                                        {
+                                            <span>+@ToPeso(currentOption.AdditionalPrice)</span>
+                                        }
+                                        else
+                                        {
+                                            <span>Included</span>
+                                        }
+                                    </div>
                                 </button>
                             }
                         </div>
@@ -294,6 +322,12 @@
 
         if (selectedMeals.Contains(option.MealId))
         {
+            if (rule.IsRequired && selectedMeals.Count <= rule.MinSelections)
+            {
+                Snackbar.Add($"'{rule.Title}' requires at least {rule.MinSelections} selection(s).", Severity.Info);
+                return;
+            }
+
             selectedMeals.Remove(option.MealId);
             return;
         }
@@ -307,6 +341,13 @@
 
         if (rule.MaxSelections > 0 && selectedMeals.Count >= rule.MaxSelections)
         {
+            if (rule.IsRequired && rule.MinSelections == rule.MaxSelections)
+            {
+                selectedMeals.Remove(selectedMeals.First());
+                selectedMeals.Add(option.MealId);
+                return;
+            }
+
             Snackbar.Add($"You can only select up to {rule.MaxSelections} for '{rule.Title}'.", Severity.Warning);
             return;
         }

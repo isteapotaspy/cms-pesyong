@@ -8,7 +8,9 @@
 @inject ISnackbar Snackbar
 
 <MudContainer MaxWidth="MaxWidth.False" Class="customer-page">
-    <TopBar />
+    <TopBar SearchText="@_searchText"
+            SearchTextChanged="@((string value) => _searchText = value)"
+            DeliveryLocation="@_deliveryLocation" />
 
     <MudPaper Class="hero-banner" Elevation="0">
         <div class="hero-copy">
@@ -392,11 +394,16 @@
             </MudText>
 
             <div class="promo-actions">
-                <MudButton Variant="Variant.Filled" Color="Color.Primary">
+                <MudButton Variant="Variant.Filled"
+                           Color="Color.Primary"
+                           OnClick="RequestQuote">
                     Get a Free Quote
                 </MudButton>
 
-                <MudButton Variant="Variant.Filled" Color="Color.Default" Class="hero-secondary-btn">
+                <MudButton Variant="Variant.Filled"
+                           Color="Color.Default"
+                           Class="hero-secondary-btn"
+                           OnClick="ChatWithUs">
                     Chat with Us
                 </MudButton>
             </div>
@@ -607,5 +614,31 @@
         });
 
         Snackbar.Add($"{meal.Name} added to cart.", Severity.Success);
+    }
+
+    private string _deliveryLocation = "Davao City, Davao del Sur";
+    private string _newsletterEmail = string.Empty;
+
+
+    private void RequestQuote()
+    {
+        Snackbar.Add("Quote request feature will open soon.", Severity.Info);
+    }
+
+    private void ChatWithUs()
+    {
+        Snackbar.Add("Chat support will be available soon.", Severity.Info);
+    }
+
+    private void JoinNewsletter()
+    {
+        if (string.IsNullOrWhiteSpace(_newsletterEmail))
+        {
+            Snackbar.Add("Please enter your email address.", Severity.Warning);
+            return;
+        }
+
+        Snackbar.Add("Thanks for joining our newsletter!", Severity.Success);
+        _newsletterEmail = string.Empty;
     }
 }
