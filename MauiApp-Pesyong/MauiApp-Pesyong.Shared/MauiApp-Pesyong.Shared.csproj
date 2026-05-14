@@ -16,9 +16,12 @@
   </ItemGroup>
 
   <ItemGroup>
-    <Folder Include="Admin-Main\Admin-Pages\" />
     <Folder Include="Admin-Main\Admin-Components\" />
     <Folder Include="Admin-Main\Admin-Layout\" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\..\CMS.Contracts\CMS.Contracts.csproj" />
   </ItemGroup>
 
 </Project>

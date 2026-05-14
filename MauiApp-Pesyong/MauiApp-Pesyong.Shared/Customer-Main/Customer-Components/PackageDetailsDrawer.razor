@@ -1,6 +1,7 @@
 ﻿@using System.Linq
 @implements IDisposable
 @inject CustomerDrawerState DrawerState
+@inject ISnackbar Snackbar
 
 <MudDrawer Open="@DrawerState.IsPackageDrawerOpen"
            OpenChanged="OnOpenChanged"
@@ -70,35 +71,105 @@
                         <MudText Typo="Typo.caption">Choose one</MudText>
                     </div>
 
-                    <div class="size-grid">
+                    <div class="package-size-grid">
                         @for (var i = 0; i < packageItem.Sizes.Count; i++)
                         {
-                            var size = packageItem.Sizes[i];
-                            var isSelected = i == _selectedSizeIndex;
+                            var index = i;
+                            var size = packageItem.Sizes[index];
+                            var isSelected = index == _selectedSizeIndex;
 
                             <button type="button"
-                                    class="@(isSelected ? "size-card selected" : "size-card")"
-                                    @onclick="@(() => SelectSize(i))">
-                                <MudText Typo="Typo.subtitle2">@size.Label</MudText>
-                                <MudText Typo="Typo.caption">@size.Subtitle</MudText>
-                                <MudText Typo="Typo.h6">@ToPeso(size.Price)</MudText>
+                                    class="@(isSelected ? "choice-card package-size-card selected" : "choice-card package-size-card")"
+                                    aria-pressed="@isSelected"
+                                    @onclick="@(() => SelectSize(index))">
+
+                                <div>
+                                    <MudText Typo="Typo.subtitle2" Class="choice-title">@size.Label</MudText>
+                                    <MudText Typo="Typo.caption" Class="choice-subtitle">@size.Subtitle</MudText>
+                                </div>
+
+                                <MudText Typo="Typo.h6" Class="choice-price">@ToPeso(size.Price)</MudText>
                             </button>
                         }
                     </div>
                 }
 
-                @if (packageItem.Addons.Any())
+                @if (packageItem.SelectionRules.Any())
                 {
                     <MudDivider Class="my-4" />
 
+                    @foreach (var rule in packageItem.SelectionRules.OrderBy(x => x.DisplayOrder))
+                    {
+                        <div class="drawer-section-head">
+                            <div>
+                                <MudText Typo="Typo.h6">@rule.Title</MudText>
+                                <MudText Typo="Typo.caption">@rule.Description</MudText>
+                            </div>
+
+                            <MudText Typo="Typo.caption">
+                                @GetRuleCaption(rule)
+                            </MudText>
+                        </div>
+
+                        <div class="option-grid">
+                            @foreach (var option in rule.Options)
+                            {
+                                var currentRule = rule;
+                                var currentOption = option;
+                                var isSelected = IsMealSelected(currentRule.Id, currentOption.MealId);
+
+                                <button type="button"
+                                        class="@(isSelected ? "choice-card option-card selected" : "choice-card option-card")"
+                                        aria-pressed="@isSelected"
+                                        @onclick="@(() => ToggleMeal(currentRule, currentOption))">
+
+                                    <div class="option-copy">
+                                        <div class="option-title-row">
+                                            <MudText Typo="Typo.subtitle2" Class="choice-title">
+                                                @currentOption.Meal.Name
+                                            </MudText>
+
+                                            @if (isSelected)
+                                            {
+                                                <MudIcon Icon="@Icons.Material.Filled.CheckCircle"
+                                                         Size="Size.Small"
+                                                         Class="option-check-icon" />
+                                            }
+                                        </div>
+
+                                        <MudText Typo="Typo.caption" Class="choice-subtitle">
+                                            @currentOption.Meal.Description
+                                        </MudText>
+                                    </div>
+
+                                    <div class="option-price-pill">
+                                        @if (currentOption.AdditionalPrice > 0)
+                                        {
+                                            <span>+@ToPeso(currentOption.AdditionalPrice)</span>
+                                        }
+                                        else
+                                        {
+                                            <span>Included</span>
+                                        }
+                                    </div>
+                                </button>
+                            }
+                        </div>
+
+                        <MudDivider Class="my-4" />
+                    }
+                }
+
+                @if (packageItem.Addons.Any())
+                {
                     <MudText Typo="Typo.h6" Class="mb-3">Recommended Add-ons</MudText>
 
-                    @foreach (var addon in packageItem.Addons)
+                    @foreach (var addon in packageItem.Addons.Where(x => x.IsAvailable))
                     {
                         <MudPaper Class="addon-row" Elevation="0">
                             <MudCheckBox T="bool"
-                                         Value="@_selectedAddons.Contains(addon.Name)"
-                                         ValueChanged="@(value => ToggleAddon(addon.Name, value))" />
+                                         Value="@_selectedAddonIds.Contains(addon.Id)"
+                                         ValueChanged="@(value => ToggleAddon(addon.Id, value))" />
 
                             <div class="addon-copy">
                                 <MudText Typo="Typo.subtitle2">@addon.Name</MudText>
@@ -144,10 +215,12 @@
 </MudDrawer>
 
 @code {
-    private readonly HashSet<string> _selectedAddons = new();
-    private string? _lastPackageId;
+    private int? _lastPackageId;
     private int _selectedSizeIndex;
     private int _quantity = 1;
+
+    private readonly HashSet<int> _selectedAddonIds = new();
+    private readonly Dictionary<int, HashSet<int>> _selectedMealIdsByRule = new();
 
     protected override void OnInitialized()
     {
@@ -156,17 +229,39 @@
 
     private void HandleStateChanged()
     {
-        var currentPackageId = DrawerState.SelectedPackage?.Id;
+        var currentPackageId = DrawerState.SelectedPackage?.PackageId;
 
-        if (!string.IsNullOrWhiteSpace(currentPackageId) && _lastPackageId != currentPackageId)
+        if (currentPackageId.HasValue && _lastPackageId != currentPackageId.Value)
         {
-            _lastPackageId = currentPackageId;
-            _selectedAddons.Clear();
-            _quantity = 1;
-            _selectedSizeIndex = DrawerState.SelectedPackage!.Sizes.Count > 1 ? 1 : 0;
+            _lastPackageId = currentPackageId.Value;
+            ResetSelections();
         }
 
         InvokeAsync(StateHasChanged);
+    }
+
+    private void ResetSelections()
+    {
+        _selectedAddonIds.Clear();
+        _selectedMealIdsByRule.Clear();
+        _quantity = 1;
+
+        var package = DrawerState.SelectedPackage;
+        _selectedSizeIndex = package is not null && package.Sizes.Count > 1 ? 1 : 0;
+
+        if (package is null)
+            return;
+
+        foreach (var rule in package.SelectionRules)
+        {
+            var defaults = rule.Options
+                .Where(x => x.IsDefault)
+                .Take(rule.MaxSelections > 0 ? rule.MaxSelections : int.MaxValue)
+                .Select(x => x.MealId)
+                .ToHashSet();
+
+            _selectedMealIdsByRule[rule.Id] = defaults;
+        }
     }
 
     private PackageSizeUiModel? SelectedSize =>
@@ -179,11 +274,27 @@
 
     private decimal SelectedAddonTotal =>
         DrawerState.SelectedPackage?.Addons
-            .Where(x => _selectedAddons.Contains(x.Name))
+            .Where(x => _selectedAddonIds.Contains(x.Id))
             .Sum(x => x.Price) ?? 0m;
 
+    private decimal SelectedMealTotal =>
+        GetSelectedMealOptions().Sum(x => x.AdditionalPrice);
+
     private decimal EstimatedTotal =>
-        ((SelectedSize?.Price ?? 0m) + SelectedAddonTotal) * _quantity;
+        ((SelectedSize?.Price ?? 0m) + SelectedAddonTotal + SelectedMealTotal) * _quantity;
+
+    private IEnumerable<PackageSelectionOptionUiModel> GetSelectedMealOptions()
+    {
+        var package = DrawerState.SelectedPackage;
+        if (package is null)
+            return Enumerable.Empty<PackageSelectionOptionUiModel>();
+
+        return package.SelectionRules
+            .SelectMany(rule => rule.Options.Where(option => IsMealSelected(rule.Id, option.MealId)));
+    }
+
+    private bool IsMealSelected(int ruleId, int mealId) =>
+        _selectedMealIdsByRule.TryGetValue(ruleId, out var selectedMeals) && selectedMeals.Contains(mealId);
 
     private Task OnOpenChanged(bool open)
     {
@@ -193,17 +304,71 @@
 
     private void SelectSize(int index) => _selectedSizeIndex = index;
 
-    private void ToggleAddon(string addonName, bool isSelected)
+    private void ToggleAddon(int addonId, bool isSelected)
     {
-        if (isSelected) _selectedAddons.Add(addonName);
-        else _selectedAddons.Remove(addonName);
+        if (isSelected)
+            _selectedAddonIds.Add(addonId);
+        else
+            _selectedAddonIds.Remove(addonId);
+    }
+
+    private void ToggleMeal(PackageSelectionRuleUiModel rule, PackageSelectionOptionUiModel option)
+    {
+        if (!_selectedMealIdsByRule.TryGetValue(rule.Id, out var selectedMeals))
+        {
+            selectedMeals = new HashSet<int>();
+            _selectedMealIdsByRule[rule.Id] = selectedMeals;
+        }
+
+        if (selectedMeals.Contains(option.MealId))
+        {
+            if (rule.IsRequired && selectedMeals.Count <= rule.MinSelections)
+            {
+                Snackbar.Add($"'{rule.Title}' requires at least {rule.MinSelections} selection(s).", Severity.Info);
+                return;
+            }
+
+            selectedMeals.Remove(option.MealId);
+            return;
+        }
+
+        if (rule.SelectionType.Equals("ChooseOne", StringComparison.OrdinalIgnoreCase))
+        {
+            selectedMeals.Clear();
+            selectedMeals.Add(option.MealId);
+            return;
+        }
+
+        if (rule.MaxSelections > 0 && selectedMeals.Count >= rule.MaxSelections)
+        {
+            if (rule.IsRequired && rule.MinSelections == rule.MaxSelections)
+            {
+                selectedMeals.Remove(selectedMeals.First());
+                selectedMeals.Add(option.MealId);
+                return;
+            }
+
+            Snackbar.Add($"You can only select up to {rule.MaxSelections} for '{rule.Title}'.", Severity.Warning);
+            return;
+        }
+
+        selectedMeals.Add(option.MealId);
+    }
+
+    private string GetRuleCaption(PackageSelectionRuleUiModel rule)
+    {
+        if (rule.SelectionType.Equals("ChooseOne", StringComparison.OrdinalIgnoreCase))
+            return "Choose one";
+
+        return $"Choose {rule.MinSelections}-{rule.MaxSelections}";
     }
 
     private void IncreaseQty() => _quantity++;
 
     private void DecreaseQty()
     {
-        if (_quantity > 1) _quantity--;
+        if (_quantity > 1)
+            _quantity--;
     }
 
     private Task CloseAsync()
@@ -217,22 +382,70 @@
         if (DrawerState.SelectedPackage is null || SelectedSize is null)
             return Task.CompletedTask;
 
-        var selectedAddonNames = DrawerState.SelectedPackage.Addons
-            .Where(x => _selectedAddons.Contains(x.Name))
-            .Select(x => x.Name)
+        foreach (var rule in DrawerState.SelectedPackage.SelectionRules.Where(x => x.IsRequired))
+        {
+            var selectedCount = _selectedMealIdsByRule.TryGetValue(rule.Id, out var meals)
+                ? meals.Count
+                : 0;
+
+            if (selectedCount < rule.MinSelections)
+            {
+                Snackbar.Add($"Please complete '{rule.Title}'.", Severity.Warning);
+                return Task.CompletedTask;
+            }
+        }
+
+        var selectedAddonModels = DrawerState.SelectedPackage.Addons
+            .Where(x => _selectedAddonIds.Contains(x.Id))
+            .Select(x => new CartAddonSelectionUiModel
+            {
+                PackageAddonId = x.Id,
+                AddonName = x.Name,
+                AdditionalPrice = x.Price
+            })
             .ToList();
 
-        var notes = selectedAddonNames.Count > 0
-            ? $"{SelectedSize.Label} • {string.Join(", ", selectedAddonNames)}"
-            : SelectedSize.Label;
+        var selectedMealModels = DrawerState.SelectedPackage.SelectionRules
+            .SelectMany(rule =>
+            {
+                if (!_selectedMealIdsByRule.TryGetValue(rule.Id, out var selectedMealIds))
+                    return Enumerable.Empty<CartMealSelectionUiModel>();
+
+                return rule.Options
+                    .Where(option => selectedMealIds.Contains(option.MealId))
+                    .Select(option => new CartMealSelectionUiModel
+                    {
+                        PackageSelectionRuleId = rule.Id,
+                        MealId = option.MealId,
+                        MealName = option.Meal.Name,
+                        AdditionalPrice = option.AdditionalPrice
+                    });
+            })
+            .ToList();
+
+        var selectedMealNames = selectedMealModels.Select(x => x.MealName).ToList();
+        var selectedAddonNames = selectedAddonModels.Select(x => x.AddonName).ToList();
+
+        var noteParts = new List<string> { SelectedSize.Label };
+
+        if (selectedMealNames.Count > 0)
+            noteParts.Add(string.Join(", ", selectedMealNames));
+
+        if (selectedAddonNames.Count > 0)
+            noteParts.Add(string.Join(", ", selectedAddonNames));
 
         DrawerState.AddToCart(new CartLineUiModel
         {
+            PackageId = DrawerState.SelectedPackage.PackageId,
+            PackageSizeId = SelectedSize.Id,
             Name = DrawerState.SelectedPackage.Title,
-            Notes = notes,
-            UnitPrice = SelectedSize.Price + SelectedAddonTotal,
+            Notes = string.Join(" • ", noteParts),
+            SizeLabel = SelectedSize.Label,
+            UnitPrice = SelectedSize.Price + SelectedAddonTotal + SelectedMealTotal,
             Quantity = _quantity,
-            ImageClass = DrawerState.SelectedPackage.ImageClass
+            ImageClass = DrawerState.SelectedPackage.ImageClass,
+            MealSelections = selectedMealModels,
+            AddonSelections = selectedAddonModels
         });
 
         return Task.CompletedTask;

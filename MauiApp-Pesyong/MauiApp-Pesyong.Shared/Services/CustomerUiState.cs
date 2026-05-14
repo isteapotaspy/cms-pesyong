@@ -1,4 +1,5 @@
-﻿using MauiApp_Pesyong.Shared.Customer_Main.Customer_Models;
+﻿using CMS.Contracts.Customer.Orders;
+using MauiApp_Pesyong.Shared.Customer_Main.Customer_Models;
 
 namespace MauiApp_Pesyong.Shared.Services;
 
@@ -10,8 +11,10 @@ public class CustomerDrawerState
     public bool IsCartDrawerOpen { get; private set; }
 
     public PackageUiModel? SelectedPackage { get; private set; }
-
     public List<CartLineUiModel> CartItems { get; } = new();
+
+    public int? CurrentOrderId { get; private set; }
+    public string? CurrentOrderNumber { get; private set; }
 
     public int CartCount => CartItems.Sum(x => x.Quantity);
     public decimal SubTotal => CartItems.Sum(x => x.LineTotal);
@@ -34,7 +37,6 @@ public class CustomerDrawerState
     public void SetPackageDrawer(bool open)
     {
         IsPackageDrawerOpen = open;
-
         if (open)
             IsCartDrawerOpen = false;
 
@@ -44,7 +46,6 @@ public class CustomerDrawerState
     public void SetCartDrawer(bool open)
     {
         IsCartDrawerOpen = open;
-
         if (open)
             IsPackageDrawerOpen = false;
 
@@ -60,7 +61,15 @@ public class CustomerDrawerState
 
     public void AddToCart(CartLineUiModel line)
     {
-        var existing = CartItems.FirstOrDefault(x => x.Name == line.Name && x.Notes == line.Notes);
+        var existing = CartItems.FirstOrDefault(x =>
+            x.IsMealItem == line.IsMealItem &&
+            (
+                (x.IsMealItem && x.MealId == line.MealId) ||
+                (!x.IsMealItem &&
+                 x.PackageId == line.PackageId &&
+                 x.PackageSizeId == line.PackageSizeId &&
+                 x.Notes == line.Notes)
+            ));
 
         if (existing is null)
         {
@@ -73,7 +82,6 @@ public class CustomerDrawerState
 
         IsPackageDrawerOpen = false;
         IsCartDrawerOpen = true;
-
         NotifyStateChanged();
     }
 
@@ -95,9 +103,22 @@ public class CustomerDrawerState
     public void RemoveItem(CartLineUiModel item)
     {
         if (CartItems.Remove(item))
-        {
             NotifyStateChanged();
-        }
+    }
+
+    public void SetPlacedOrder(PlaceOrderResponse response)
+    {
+        CurrentOrderId = response.OrderId;
+        CurrentOrderNumber = response.OrderNumber;
+        NotifyStateChanged();
+    }
+
+    public void ClearCartAfterCheckout()
+    {
+        CartItems.Clear();
+        IsCartDrawerOpen = false;
+        IsPackageDrawerOpen = false;
+        NotifyStateChanged();
     }
 
     public void NotifyStateChanged()

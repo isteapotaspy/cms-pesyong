@@ -1,10 +1,16 @@
 ﻿@page "/customer-home"
-@page "/"
+@layout CustomerLayout
 @using System.Linq
+@using MauiApp_Pesyong.Shared.Customer_Main.Customer_Models
+@using MauiApp_Pesyong.Shared.Customer_Main.Customer_Services
 @inject CustomerDrawerState DrawerState
+@inject ICustomerCatalogService CatalogService
+@inject ISnackbar Snackbar
 
 <MudContainer MaxWidth="MaxWidth.False" Class="customer-page">
-    <TopBar />
+    <TopBar SearchText="@_searchText"
+            SearchTextChanged="@((string value) => _searchText = value)"
+            DeliveryLocation="@_deliveryLocation" />
 
     <MudPaper Class="hero-banner" Elevation="0">
         <div class="hero-copy">
@@ -21,12 +27,11 @@
             </MudText>
 
             <div class="hero-actions">
-                <MudButton Variant="Variant.Filled" Color="Color.Primary" Size="Size.Large">
+                <MudButton Variant="Variant.Filled"
+                           Color="Color.Primary"
+                           Size="Size.Large"
+                           OnClick="@(() => SetCategory("All Menu"))">
                     Browse Packages
-                </MudButton>
-
-                <MudButton Variant="Variant.Filled" Color="Color.Default" Size="Size.Large" Class="hero-secondary-btn">
-                    View Kakanin
                 </MudButton>
             </div>
         </div>
@@ -38,17 +43,32 @@
             {
                 <MudButton Variant="Variant.Text"
                            Class="@GetCategoryClass(category)"
-                           OnClick="@(() => _selectedCategory = category)">
+                           OnClick="@(() => SetCategory(category))">
                     @category
                 </MudButton>
             }
         </div>
 
-        <MudButton Variant="Variant.Text"
-                   EndIcon="@Icons.Material.Filled.KeyboardArrowDown"
-                   Class="sort-btn">
-            Popularity
-        </MudButton>
+        <MudMenu>
+            <ActivatorContent>
+                <MudButton Variant="Variant.Text"
+                           EndIcon="@Icons.Material.Filled.KeyboardArrowDown"
+                           Class="sort-btn">
+                    @CurrentSortLabel
+                </MudButton>
+            </ActivatorContent>
+
+            <ChildContent>
+                @if (!IsShortOrdersView)
+                {
+                    <MudMenuItem OnClick="@(() => SetSort(SortPopularity))">Popularity</MudMenuItem>
+                }
+
+                <MudMenuItem OnClick="@(() => SetSort(SortNameAsc))">Name A-Z</MudMenuItem>
+                <MudMenuItem OnClick="@(() => SetSort(SortPriceLowHigh))">Price Low-High</MudMenuItem>
+                <MudMenuItem OnClick="@(() => SetSort(SortPriceHighLow))">Price High-Low</MudMenuItem>
+            </ChildContent>
+        </MudMenu>
     </div>
 
     <div class="toolbar-row">
@@ -72,69 +92,299 @@
 
         <div class="toolbar-actions">
             <MudTextField T="string"
-                          Placeholder="Search dishes..."
+                          Placeholder="@CurrentSearchPlaceholder"
                           Variant="Variant.Outlined"
                           Margin="Margin.Dense"
                           Adornment="Adornment.Start"
                           AdornmentIcon="@Icons.Material.Filled.Search"
-                          Class="dish-search" />
+                          Class="dish-search"
+                          @bind-Value="_searchText" />
 
             <MudButton Variant="Variant.Outlined"
-                       StartIcon="@Icons.Material.Filled.Tune"
-                       Class="filter-btn">
-                Filters
+                       StartIcon="@Icons.Material.Filled.RestartAlt"
+                       Class="filter-btn"
+                       OnClick="ResetFilters">
+                Reset
             </MudButton>
         </div>
     </div>
 
-    <section class="section-block">
-        <div class="section-head">
-            <div>
-                <MudText Typo="Typo.h4" Class="section-title">Catering</MudText>
-                <MudText Typo="Typo.body2" Class="section-subtitle">
-                    Showing delicious options for your event.
-                </MudText>
+    @if (_isLoading)
+    {
+        <MudPaper Class="footer-panel" Elevation="0">
+            <MudProgressCircular Indeterminate="true" Color="Color.Primary" />
+            <MudText Typo="Typo.body1" Class="mt-3">Loading menu...</MudText>
+        </MudPaper>
+    }
+    else if (!string.IsNullOrWhiteSpace(_errorMessage))
+    {
+        <MudPaper Class="footer-panel" Elevation="0">
+            <MudText Typo="Typo.h6" Color="Color.Error">Unable to load menu</MudText>
+            <MudText Typo="Typo.body2">@_errorMessage</MudText>
+
+            <MudButton Variant="Variant.Filled"
+                       Color="Color.Primary"
+                       Class="mt-4"
+                       OnClick="LoadDataAsync">
+                Retry
+            </MudButton>
+        </MudPaper>
+    }
+    else if (IsAllMenuView)
+    {
+        <section class="section-block">
+            <div class="section-head">
+                <div>
+                    <MudText Typo="Typo.h4" Class="section-title">Packages</MudText>
+                    <MudText Typo="Typo.body2" Class="section-subtitle">
+                        Showing @AllMenuPackages.Count() delicious package option(s) for your event.
+                    </MudText>
+                </div>
+
+                <MudButton Variant="Variant.Text"
+                           EndIcon="@Icons.Material.Filled.KeyboardArrowRight"
+                           Class="view-all-btn"
+                           OnClick="@(() => SetCategory("Catering"))">
+                    View Packages
+                </MudButton>
             </div>
 
-            <MudButton Variant="Variant.Text" EndIcon="@Icons.Material.Filled.KeyboardArrowRight" Class="view-all-btn">
-                View All
-            </MudButton>
-        </div>
-
-        <div class="package-grid">
-            @foreach (var packageItem in FilteredPackages)
+            @if (!AllMenuPackages.Any())
             {
-                <MudCard Class="food-card">
-                    <div class="@($"food-card-image {packageItem.ImageClass}")">
-                        @if (!string.IsNullOrWhiteSpace(packageItem.Badge))
-                        {
-                            <MudChip T="string" Size="Size.Small" Color="Color.Error" Variant="Variant.Filled" Class="card-chip">
-                                @packageItem.Badge
-                            </MudChip>
-                        }
-                    </div>
-
-                    <MudCardContent Class="food-card-content">
-                        <MudText Typo="Typo.subtitle1" Class="card-title">@packageItem.Title</MudText>
-                        <MudText Typo="Typo.body2" Class="card-description">@packageItem.CardSummary</MudText>
-                        <MudText Typo="Typo.caption" Class="card-meta">@packageItem.ServesLabel</MudText>
-                    </MudCardContent>
-
-                    <MudCardActions Class="food-card-actions">
-                        <div>
-                            <MudText Typo="Typo.h6" Class="card-price">@ToPeso(packageItem.Sizes.First().Price)</MudText>
-                            <MudText Typo="Typo.caption" Class="card-price-note">PER PACKAGE</MudText>
-                        </div>
-
-                        <MudIconButton Icon="@Icons.Material.Filled.Add"
-                                       Color="Color.Primary"
-                                       Class="card-add-btn"
-                                       OnClick="@(() => OpenPackage(packageItem))" />
-                    </MudCardActions>
-                </MudCard>
+                <MudPaper Class="footer-panel" Elevation="0">
+                    <MudText Typo="Typo.h6">No packages found</MudText>
+                    <MudText Typo="Typo.body2">
+                        Try another search term.
+                    </MudText>
+                </MudPaper>
             }
-        </div>
-    </section>
+            else
+            {
+                <div class="package-grid">
+                    @foreach (var packageItem in AllMenuPackages)
+                    {
+                        <MudCard Class="food-card">
+                            <div class="@($"food-card-image {packageItem.ImageClass}")">
+                                @if (!string.IsNullOrWhiteSpace(packageItem.Badge))
+                                {
+                                    <MudChip T="string" Size="Size.Small" Color="Color.Error" Variant="Variant.Filled" Class="card-chip">
+                                        @packageItem.Badge
+                                    </MudChip>
+                                }
+                            </div>
+
+                            <MudCardContent Class="food-card-content">
+                                <MudText Typo="Typo.subtitle1" Class="card-title">@packageItem.Title</MudText>
+                                <MudText Typo="Typo.body2" Class="card-description">@packageItem.CardSummary</MudText>
+                                <MudText Typo="Typo.caption" Class="card-meta">@packageItem.ServesLabel</MudText>
+                            </MudCardContent>
+
+                            <MudCardActions Class="food-card-actions">
+                                <div>
+                                    <MudText Typo="Typo.h6" Class="card-price">@ToPeso(packageItem.Sizes.FirstOrDefault()?.Price ?? 0)</MudText>
+                                    <MudText Typo="Typo.caption" Class="card-price-note">PER PACKAGE</MudText>
+                                </div>
+
+                                <MudIconButton Icon="@Icons.Material.Filled.Add"
+                                               Color="Color.Primary"
+                                               Class="card-add-btn"
+                                               OnClick="@(() => OpenPackage(packageItem))" />
+                            </MudCardActions>
+                        </MudCard>
+                    }
+                </div>
+            }
+        </section>
+
+        <section class="section-block">
+            <div class="section-head">
+                <div>
+                    <MudText Typo="Typo.h4" Class="section-title">Short Orders</MudText>
+                    <MudText Typo="Typo.body2" Class="section-subtitle">
+                        Showing @AllMenuMeals.Count() delicious meal option(s) for quick ordering.
+                    </MudText>
+                </div>
+
+                <MudButton Variant="Variant.Text"
+                           EndIcon="@Icons.Material.Filled.KeyboardArrowRight"
+                           Class="view-all-btn"
+                           OnClick="@(() => SetCategory("Short Orders"))">
+                    View Short Orders
+                </MudButton>
+            </div>
+
+            @if (!AllMenuMeals.Any())
+            {
+                <MudPaper Class="footer-panel" Elevation="0">
+                    <MudText Typo="Typo.h6">No meals found</MudText>
+                    <MudText Typo="Typo.body2">
+                        Try another search term.
+                    </MudText>
+                </MudPaper>
+            }
+            else
+            {
+                <div class="package-grid">
+                    @foreach (var meal in AllMenuMeals)
+                    {
+                        <MudCard Class="food-card">
+                            <div class="@($"food-card-image {meal.ImageClass}")">
+                                <MudChip T="string"
+                                         Size="Size.Small"
+                                         Color="Color.Primary"
+                                         Variant="Variant.Filled"
+                                         Class="card-chip">
+                                    @meal.MealType
+                                </MudChip>
+                            </div>
+
+                            <MudCardContent Class="food-card-content">
+                                <MudText Typo="Typo.subtitle1" Class="card-title">@meal.Name</MudText>
+                                <MudText Typo="Typo.body2" Class="card-description">@meal.Description</MudText>
+                                <MudText Typo="Typo.caption" Class="card-meta">
+                                    Min order: @meal.MinOrderQuantity
+                                </MudText>
+                            </MudCardContent>
+
+                            <MudCardActions Class="food-card-actions">
+                                <div>
+                                    <MudText Typo="Typo.h6" Class="card-price">@ToPeso(meal.BasePrice)</MudText>
+                                    <MudText Typo="Typo.caption" Class="card-price-note">PER ORDER</MudText>
+                                </div>
+
+                                <MudIconButton Icon="@Icons.Material.Filled.Add"
+                                               Color="Color.Primary"
+                                               Class="card-add-btn"
+                                               OnClick="@(() => AddMealToCart(meal))" />
+                            </MudCardActions>
+                        </MudCard>
+                    }
+                </div>
+            }
+        </section>
+    }
+    else if (IsShortOrdersView)
+    {
+        <section class="section-block">
+            <div class="section-head">
+                <div>
+                    <MudText Typo="Typo.h4" Class="section-title">Short Orders</MudText>
+                    <MudText Typo="Typo.body2" Class="section-subtitle">
+                        Showing @FilteredMeals.Count() delicious meal option(s) for quick ordering.
+                    </MudText>
+                </div>
+            </div>
+
+            @if (!FilteredMeals.Any())
+            {
+                <MudPaper Class="footer-panel" Elevation="0">
+                    <MudText Typo="Typo.h6">No meals found</MudText>
+                    <MudText Typo="Typo.body2">
+                        Try another search term.
+                    </MudText>
+                </MudPaper>
+            }
+            else
+            {
+                <div class="package-grid">
+                    @foreach (var meal in FilteredMeals)
+                    {
+                        <MudCard Class="food-card">
+                            <div class="@($"food-card-image {meal.ImageClass}")">
+                                <MudChip T="string"
+                                         Size="Size.Small"
+                                         Color="Color.Primary"
+                                         Variant="Variant.Filled"
+                                         Class="card-chip">
+                                    @meal.MealType
+                                </MudChip>
+                            </div>
+
+                            <MudCardContent Class="food-card-content">
+                                <MudText Typo="Typo.subtitle1" Class="card-title">@meal.Name</MudText>
+                                <MudText Typo="Typo.body2" Class="card-description">@meal.Description</MudText>
+                                <MudText Typo="Typo.caption" Class="card-meta">
+                                    Min order: @meal.MinOrderQuantity
+                                </MudText>
+                            </MudCardContent>
+
+                            <MudCardActions Class="food-card-actions">
+                                <div>
+                                    <MudText Typo="Typo.h6" Class="card-price">@ToPeso(meal.BasePrice)</MudText>
+                                    <MudText Typo="Typo.caption" Class="card-price-note">PER ORDER</MudText>
+                                </div>
+
+                                <MudIconButton Icon="@Icons.Material.Filled.Add"
+                                               Color="Color.Primary"
+                                               Class="card-add-btn"
+                                               OnClick="@(() => AddMealToCart(meal))" />
+                            </MudCardActions>
+                        </MudCard>
+                    }
+                </div>
+            }
+        </section>
+    }
+    else
+    {
+        <section class="section-block">
+            <div class="section-head">
+                <div>
+                    <MudText Typo="Typo.h4" Class="section-title">@CurrentPackageSectionTitle</MudText>
+                    <MudText Typo="Typo.body2" Class="section-subtitle">
+                        Showing @FilteredPackages.Count() delicious package option(s) for your event.
+                    </MudText>
+                </div>
+
+            </div>
+
+            @if (!FilteredPackages.Any())
+            {
+                <MudPaper Class="footer-panel" Elevation="0">
+                    <MudText Typo="Typo.h6">No packages found</MudText>
+                    <MudText Typo="Typo.body2">
+                        Try another category or search term.
+                    </MudText>
+                </MudPaper>
+            }
+            else
+            {
+                <div class="package-grid">
+                    @foreach (var packageItem in FilteredPackages)
+                    {
+                        <MudCard Class="food-card">
+                            <div class="@($"food-card-image {packageItem.ImageClass}")">
+                                @if (!string.IsNullOrWhiteSpace(packageItem.Badge))
+                                {
+                                    <MudChip T="string" Size="Size.Small" Color="Color.Error" Variant="Variant.Filled" Class="card-chip">
+                                        @packageItem.Badge
+                                    </MudChip>
+                                }
+                            </div>
+
+                            <MudCardContent Class="food-card-content">
+                                <MudText Typo="Typo.subtitle1" Class="card-title">@packageItem.Title</MudText>
+                                <MudText Typo="Typo.body2" Class="card-description">@packageItem.CardSummary</MudText>
+                                <MudText Typo="Typo.caption" Class="card-meta">@packageItem.ServesLabel</MudText>
+                            </MudCardContent>
+
+                            <MudCardActions Class="food-card-actions">
+                                <div>
+                                    <MudText Typo="Typo.h6" Class="card-price">@ToPeso(packageItem.Sizes.FirstOrDefault()?.Price ?? 0)</MudText>
+                                    <MudText Typo="Typo.caption" Class="card-price-note">PER PACKAGE</MudText>
+                                </div>
+
+                                <MudIconButton Icon="@Icons.Material.Filled.Add"
+                                               Color="Color.Primary"
+                                               Class="card-add-btn"
+                                               OnClick="@(() => OpenPackage(packageItem))" />
+                            </MudCardActions>
+                        </MudCard>
+                    }
+                </div>
+            }
+        </section>
+    }
 
     <MudPaper Class="promo-panel" Elevation="0">
         <div>
@@ -144,11 +394,16 @@
             </MudText>
 
             <div class="promo-actions">
-                <MudButton Variant="Variant.Filled" Color="Color.Primary">
+                <MudButton Variant="Variant.Filled"
+                           Color="Color.Primary"
+                           OnClick="RequestQuote">
                     Get a Free Quote
                 </MudButton>
 
-                <MudButton Variant="Variant.Filled" Color="Color.Default" Class="hero-secondary-btn">
+                <MudButton Variant="Variant.Filled"
+                           Color="Color.Default"
+                           Class="hero-secondary-btn"
+                           OnClick="ChatWithUs">
                     Chat with Us
                 </MudButton>
             </div>
@@ -161,112 +416,178 @@
 </MudContainer>
 
 @code {
-    private readonly List<string> _categories = new()
-    {
-        "All Menu",
-        "Catering",
-        "Short Orders",
-        "Authentic Kakanin"
-    };
+    private const string SortPopularity = "Popularity";
+    private const string SortNameAsc = "NameAsc";
+    private const string SortPriceLowHigh = "PriceLowHigh";
+    private const string SortPriceHighLow = "PriceHighLow";
 
-    private string _selectedCategory = "Catering";
+    private List<string> _categories = new() { "All Menu", "Authentic Kakanin", "Catering", "Short Orders" };
+    private List<PackageUiModel> _packages = new();
+    private List<ShortOrderMealUiModel> _meals = new();
 
-    private readonly List<PackageUiModel> _packages = new()
+    private string _selectedCategory = "All Menu";
+    private string _searchText = string.Empty;
+    private string _sortBy = SortPopularity;
+    private bool _isLoading = true;
+    private string? _errorMessage;
+
+    protected override async Task OnInitializedAsync()
     {
-        new PackageUiModel
+        await LoadDataAsync();
+    }
+
+    private async Task LoadDataAsync()
+    {
+        try
         {
-            Title = "Grand Fiesta Package A",
-            MenuCategory = "Catering",
-            CategoryLabel = "Catering Packages",
-            Description = "Complete feast with whole lechon, beef caldereta, pancit bihon, and dessert.",
-            CardSummary = "Complete feast with whole lechon, beef caldereta, pancit bihon, and dessert.",
-            Badge = "Popular",
-            Notice = "24-48h Notice",
-            ServesLabel = "25-30 Pax",
-            InclusionText = "Complete utensils included",
-            ImageClass = "food-image-one",
-            Rating = 4.8m,
-            ReviewCount = 124,
-            Sizes = new()
+            _isLoading = true;
+            _errorMessage = null;
+
+            var categories = await CatalogService.GetCategoriesAsync();
+            var packages = await CatalogService.GetPackagesAsync();
+            var meals = await CatalogService.GetMealsAsync(categorySlug: "short-orders");
+
+            _packages = packages.ToList();
+            _meals = meals.ToList();
+
+            var fetchedPackageCategories = categories
+                .Where(x => !string.IsNullOrWhiteSpace(x))
+                .Distinct()
+                .ToList();
+
+            var finalCategories = new List<string> { "All Menu" };
+
+            if (fetchedPackageCategories.Any(x => x.Equals("Authentic Kakanin", StringComparison.OrdinalIgnoreCase)))
+                finalCategories.Add("Authentic Kakanin");
+
+            if (fetchedPackageCategories.Any(x => x.Equals("Catering", StringComparison.OrdinalIgnoreCase)))
+                finalCategories.Add("Catering");
+
+            if (!finalCategories.Contains("Short Orders"))
+                finalCategories.Add("Short Orders");
+
+            foreach (var extra in fetchedPackageCategories
+                .Where(x => !finalCategories.Contains(x))
+                .OrderBy(x => x))
             {
-                new PackageSizeUiModel { Label = "10 Persons", Subtitle = "4 Main Courses", Price = 2800 },
-                new PackageSizeUiModel { Label = "20 Persons", Subtitle = "5 Main Courses", Price = 4500 },
-                new PackageSizeUiModel { Label = "50 Persons", Subtitle = "7 Main Courses", Price = 9800 }
-            },
-            Addons = new()
-            {
-                new AddonUiModel { Name = "Extra Lechon Sauce", Description = "500ml of our signature liver sauce", Price = 150 },
-                new AddonUiModel { Name = "Premium Dessert Tray", Description = "Add assorted Filipino sweets", Price = 350 }
+                finalCategories.Add(extra);
             }
-        },
-        new PackageUiModel
-        {
-            Title = "Seafood Boodle Fight",
-            MenuCategory = "Catering",
-            CategoryLabel = "Catering Packages",
-            Description = "Crabs, prawns, mussels, grilled fish, and squid served on fresh banana leaves.",
-            CardSummary = "Crabs, prawns, mussels, grilled fish, and squid served on fresh banana leaves.",
-            Badge = "Top Rated",
-            Notice = "Best Seller",
-            ServesLabel = "10-15 Pax",
-            InclusionText = "Complete utensils included",
-            ImageClass = "food-image-two",
-            Rating = 4.9m,
-            ReviewCount = 98,
-            Sizes = new()
+
+            _categories = finalCategories;
+
+            if (!_categories.Contains(_selectedCategory))
             {
-                new PackageSizeUiModel { Label = "10 Persons", Subtitle = "Seafood Feast", Price = 8900 },
-                new PackageSizeUiModel { Label = "20 Persons", Subtitle = "Expanded Spread", Price = 14500 }
-            },
-            Addons = new()
-            {
-                new AddonUiModel { Name = "Garlic Butter Shrimp Tray", Description = "Extra tray for seafood lovers", Price = 550 }
+                _selectedCategory = "All Menu";
             }
-        },
-        new PackageUiModel
-        {
-            Title = "Pork Sisig Short Order",
-            MenuCategory = "Short Orders",
-            CategoryLabel = "Short Orders",
-            Description = "Classic sizzling pork sisig, good for family sharing.",
-            CardSummary = "Classic sizzling pork sisig, good for family sharing.",
-            Badge = "Hot Pick",
-            Notice = "Ready Today",
-            ServesLabel = "Family Size",
-            InclusionText = "Disposable utensils included",
-            ImageClass = "food-image-three",
-            Rating = 4.7m,
-            ReviewCount = 62,
-            Sizes = new()
-            {
-                new PackageSizeUiModel { Label = "Family", Subtitle = "Good for 4-5", Price = 700 }
-            }
-        },
-        new PackageUiModel
-        {
-            Title = "Special Biko with Latik",
-            MenuCategory = "Authentic Kakanin",
-            CategoryLabel = "Authentic Kakanin",
-            Description = "Sticky rice dessert topped with rich coconut latik.",
-            CardSummary = "Sticky rice dessert topped with rich coconut latik.",
-            Badge = "Chef's Choice",
-            Notice = "Freshly Made",
-            ServesLabel = "Medium Tray",
-            InclusionText = "Packed ready for gifting",
-            ImageClass = "food-image-four",
-            Rating = 4.9m,
-            ReviewCount = 47,
-            Sizes = new()
-            {
-                new PackageSizeUiModel { Label = "Medium Tray", Subtitle = "Great for sharing", Price = 280 }
-            }
+
+            EnsureValidSortForCurrentView();
         }
-    };
+        catch (Exception ex)
+        {
+            _errorMessage = ex.Message;
+        }
+        finally
+        {
+            _isLoading = false;
+        }
+    }
+
+    private bool IsAllMenuView =>
+        _selectedCategory.Equals("All Menu", StringComparison.OrdinalIgnoreCase);
+
+    private bool IsShortOrdersView =>
+        _selectedCategory.Equals("Short Orders", StringComparison.OrdinalIgnoreCase);
+
+    private IEnumerable<PackageUiModel> AllMenuPackages =>
+        ApplyPackageSort(_packages.Where(x =>
+            string.IsNullOrWhiteSpace(_searchText) ||
+            x.Title.Contains(_searchText, StringComparison.OrdinalIgnoreCase) ||
+            x.CardSummary.Contains(_searchText, StringComparison.OrdinalIgnoreCase) ||
+            x.Description.Contains(_searchText, StringComparison.OrdinalIgnoreCase)));
+
+    private IEnumerable<ShortOrderMealUiModel> AllMenuMeals =>
+        ApplyMealSort(_meals.Where(x =>
+            string.IsNullOrWhiteSpace(_searchText) ||
+            x.Name.Contains(_searchText, StringComparison.OrdinalIgnoreCase) ||
+            x.Description.Contains(_searchText, StringComparison.OrdinalIgnoreCase) ||
+            x.MealType.Contains(_searchText, StringComparison.OrdinalIgnoreCase)));
 
     private IEnumerable<PackageUiModel> FilteredPackages =>
-        _selectedCategory == "All Menu"
-            ? _packages
-            : _packages.Where(x => x.MenuCategory == _selectedCategory);
+        ApplyPackageSort(_packages.Where(x =>
+            !IsShortOrdersView &&
+            x.MenuCategory.Equals(_selectedCategory, StringComparison.OrdinalIgnoreCase) &&
+            (string.IsNullOrWhiteSpace(_searchText) ||
+             x.Title.Contains(_searchText, StringComparison.OrdinalIgnoreCase) ||
+             x.CardSummary.Contains(_searchText, StringComparison.OrdinalIgnoreCase) ||
+             x.Description.Contains(_searchText, StringComparison.OrdinalIgnoreCase))));
+
+    private IEnumerable<ShortOrderMealUiModel> FilteredMeals =>
+        ApplyMealSort(_meals.Where(x =>
+            IsShortOrdersView &&
+            (string.IsNullOrWhiteSpace(_searchText) ||
+             x.Name.Contains(_searchText, StringComparison.OrdinalIgnoreCase) ||
+             x.Description.Contains(_searchText, StringComparison.OrdinalIgnoreCase) ||
+             x.MealType.Contains(_searchText, StringComparison.OrdinalIgnoreCase))));
+
+    private string CurrentPackageSectionTitle => _selectedCategory;
+
+    private string CurrentSearchPlaceholder =>
+        IsAllMenuView ? "Search packages or meals..."
+        : IsShortOrdersView ? "Search meals..."
+        : "Search packages...";
+
+    private string CurrentSortLabel =>
+        _sortBy switch
+        {
+            SortNameAsc => "Name A-Z",
+            SortPriceLowHigh => "Price Low-High",
+            SortPriceHighLow => "Price High-Low",
+            _ => "Popularity"
+        };
+
+    private void SetCategory(string category)
+    {
+        _selectedCategory = category;
+        EnsureValidSortForCurrentView();
+    }
+
+    private void SetSort(string sort)
+    {
+        _sortBy = sort;
+        EnsureValidSortForCurrentView();
+    }
+
+    private void EnsureValidSortForCurrentView()
+    {
+        if (IsShortOrdersView && _sortBy == SortPopularity)
+        {
+            _sortBy = SortNameAsc;
+        }
+    }
+
+    private IEnumerable<PackageUiModel> ApplyPackageSort(IEnumerable<PackageUiModel> query) =>
+        _sortBy switch
+        {
+            SortNameAsc => query.OrderBy(x => x.Title),
+            SortPriceLowHigh => query.OrderBy(x => x.Sizes.FirstOrDefault()?.Price ?? 0m).ThenBy(x => x.Title),
+            SortPriceHighLow => query.OrderByDescending(x => x.Sizes.FirstOrDefault()?.Price ?? 0m).ThenBy(x => x.Title),
+            _ => query.OrderByDescending(x => x.Rating).ThenByDescending(x => x.ReviewCount).ThenBy(x => x.Title)
+        };
+
+    private IEnumerable<ShortOrderMealUiModel> ApplyMealSort(IEnumerable<ShortOrderMealUiModel> query) =>
+        _sortBy switch
+        {
+            SortPriceLowHigh => query.OrderBy(x => x.BasePrice).ThenBy(x => x.Name),
+            SortPriceHighLow => query.OrderByDescending(x => x.BasePrice).ThenBy(x => x.Name),
+            _ => query.OrderBy(x => x.Name)
+        };
+
+    private void ResetFilters()
+    {
+        _selectedCategory = "All Menu";
+        _searchText = string.Empty;
+        _sortBy = SortPopularity;
+    }
 
     private void OpenPackage(PackageUiModel packageItem)
     {
@@ -277,4 +598,47 @@
         category == _selectedCategory ? "category-btn selected" : "category-btn";
 
     private static string ToPeso(decimal amount) => $"₱{amount:N0}";
+
+    private void AddMealToCart(ShortOrderMealUiModel meal)
+    {
+        DrawerState.AddToCart(new CartLineUiModel
+        {
+            Id = $"meal-{meal.Id}",
+            MealId = meal.Id,
+            IsMealItem = true,
+            Name = meal.Name,
+            Notes = $"Short Order • Min qty {meal.MinOrderQuantity}",
+            UnitPrice = meal.BasePrice,
+            Quantity = Math.Max(1, meal.MinOrderQuantity),
+            ImageClass = meal.ImageClass
+        });
+
+        Snackbar.Add($"{meal.Name} added to cart.", Severity.Success);
+    }
+
+    private string _deliveryLocation = "Davao City, Davao del Sur";
+    private string _newsletterEmail = string.Empty;
+
+
+    private void RequestQuote()
+    {
+        Snackbar.Add("Quote request feature will open soon.", Severity.Info);
+    }
+
+    private void ChatWithUs()
+    {
+        Snackbar.Add("Chat support will be available soon.", Severity.Info);
+    }
+
+    private void JoinNewsletter()
+    {
+        if (string.IsNullOrWhiteSpace(_newsletterEmail))
+        {
+            Snackbar.Add("Please enter your email address.", Severity.Warning);
+            return;
+        }
+
+        Snackbar.Add("Thanks for joining our newsletter!", Severity.Success);
+        _newsletterEmail = string.Empty;
+    }
 }

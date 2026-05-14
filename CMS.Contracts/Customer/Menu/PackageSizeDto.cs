@@ -1,0 +1,14 @@
+﻿using System;
+using System.Collections.Generic;
+using System.Text;
+
+namespace CMS.Contracts.Customer.Menu;
+
+public class PackageSizeDto
+{
+    public int Id { get; set; }
+    public string Label { get; set; } = string.Empty;
+    public string Subtitle { get; set; } = string.Empty;
+    public int PaxCount { get; set; }
+    public decimal Price { get; set; }
+}

@@ -1,0 +1,290 @@
+﻿@page "/short-orders"
+@layout CustomerLayout
+@using System.Linq
+@using MauiApp_Pesyong.Shared.Customer_Main.Customer_Models
+@using MauiApp_Pesyong.Shared.Customer_Main.Customer_Services
+@inject NavigationManager NavManager
+@inject ICustomerCatalogService CatalogService
+
+<MudContainer MaxWidth="MaxWidth.False" Class="customer-page">
+    <TopBar />
+
+    <MudPaper Class="hero-banner" Elevation="0">
+        <div class="hero-copy">
+            <MudChip T="string" Color="Color.Primary" Variant="Variant.Filled" Size="Size.Small" Class="hero-chip">
+                Quick Picks
+            </MudChip>
+
+            <MudText Typo="Typo.h3" Class="hero-title">
+                Short Orders
+            </MudText>
+
+            <MudText Typo="Typo.body1" Class="hero-subtitle">
+                Browse individual meals for quick ordering. Search, filter, and sort meals in real time.
+            </MudText>
+
+            <div class="hero-actions">
+                <MudButton Variant="Variant.Filled"
+                           Color="Color.Primary"
+                           Size="Size.Large"
+                           OnClick="ReloadAsync">
+                    Refresh Meals
+                </MudButton>
+
+                <MudButton Variant="Variant.Filled"
+                           Color="Color.Default"
+                           Size="Size.Large"
+                           Class="hero-secondary-btn"
+                           OnClick="@(() => NavManager.NavigateTo("/customer-home"))">
+                    Back to Packages
+                </MudButton>
+            </div>
+        </div>
+    </MudPaper>
+
+    <div class="category-row">
+        <div class="category-left">
+            @foreach (var mealType in _mealTypes)
+            {
+                <MudButton Variant="Variant.Text"
+                           Class="@GetMealTypeClass(mealType)"
+                           OnClick="@(() => _selectedMealType = mealType)">
+                    @mealType
+                </MudButton>
+            }
+        </div>
+
+        <MudSelect T="string"
+                   Variant="Variant.Outlined"
+                   Margin="Margin.Dense"
+                   Class="dish-search"
+                   Value="_sortBy"
+                   ValueChanged="OnSortChanged">
+            <MudSelectItem Value="@("NameAsc")">Name A-Z</MudSelectItem>
+            <MudSelectItem Value="@("PriceLowHigh")">Price Low-High</MudSelectItem>
+            <MudSelectItem Value="@("PriceHighLow")">Price High-Low</MudSelectItem>
+        </MudSelect>
+    </div>
+
+    <div class="toolbar-row">
+        <div class="toolbar-pills">
+            <MudPaper Class="toolbar-pill" Elevation="0">
+                <MudIcon Icon="@Icons.Material.Filled.Restaurant" Size="Size.Small" />
+                <div>
+                    <MudText Typo="Typo.caption">CATEGORY</MudText>
+                    <MudText Typo="Typo.body2">Short Orders</MudText>
+                </div>
+            </MudPaper>
+
+            <MudPaper Class="toolbar-pill" Elevation="0">
+                <MudIcon Icon="@Icons.Material.Filled.Inventory2" Size="Size.Small" />
+                <div>
+                    <MudText Typo="Typo.caption">VISIBLE ITEMS</MudText>
+                    <MudText Typo="Typo.body2">@FilteredMeals.Count() meal(s)</MudText>
+                </div>
+            </MudPaper>
+        </div>
+
+        <div class="toolbar-actions">
+            <MudTextField T="string"
+                          Placeholder="Search meals..."
+                          Variant="Variant.Outlined"
+                          Margin="Margin.Dense"
+                          Adornment="Adornment.Start"
+                          AdornmentIcon="@Icons.Material.Filled.Search"
+                          Immediate="true"
+                          Class="dish-search"
+                          @bind-Value="_searchText" />
+
+            <MudButton Variant="Variant.Outlined"
+                       StartIcon="@Icons.Material.Filled.RestartAlt"
+                       Class="filter-btn"
+                       OnClick="ResetFilters">
+                Reset
+            </MudButton>
+        </div>
+    </div>
+
+    <section class="section-block">
+        <div class="section-head">
+            <div>
+                <MudText Typo="Typo.h4" Class="section-title">Short Orders</MudText>
+                <MudText Typo="Typo.body2" Class="section-subtitle">
+                    Showing @FilteredMeals.Count() meal(s) matching your filters.
+                </MudText>
+            </div>
+        </div>
+
+        @if (_isLoading)
+        {
+            <MudPaper Class="footer-panel" Elevation="0">
+                <MudProgressCircular Indeterminate="true" Color="Color.Primary" />
+                <MudText Typo="Typo.body1" Class="mt-3">Loading short orders...</MudText>
+            </MudPaper>
+        }
+        else if (!string.IsNullOrWhiteSpace(_errorMessage))
+        {
+            <MudPaper Class="footer-panel" Elevation="0">
+                <MudText Typo="Typo.h6" Color="Color.Error">Unable to load short orders</MudText>
+                <MudText Typo="Typo.body2">@_errorMessage</MudText>
+
+                <MudButton Variant="Variant.Filled"
+                           Color="Color.Primary"
+                           Class="mt-4"
+                           OnClick="ReloadAsync">
+                    Retry
+                </MudButton>
+            </MudPaper>
+        }
+        else if (!FilteredMeals.Any())
+        {
+            <MudPaper Class="footer-panel" Elevation="0">
+                <MudText Typo="Typo.h6">No meals found</MudText>
+                <MudText Typo="Typo.body2">
+                    Try another search term or filter.
+                </MudText>
+            </MudPaper>
+        }
+        else
+        {
+            <div class="package-grid">
+                @foreach (var meal in FilteredMeals)
+                {
+                    <MudCard Class="food-card">
+                        <div class="@($"food-card-image {meal.ImageClass}")">
+                            <MudChip T="string"
+                                     Size="Size.Small"
+                                     Color="Color.Primary"
+                                     Variant="Variant.Filled"
+                                     Class="card-chip">
+                                @meal.MealType
+                            </MudChip>
+                        </div>
+
+                        <MudCardContent Class="food-card-content">
+                            <MudText Typo="Typo.subtitle1" Class="card-title">@meal.Name</MudText>
+                            <MudText Typo="Typo.body2" Class="card-description">@meal.Description</MudText>
+                            <MudText Typo="Typo.caption" Class="card-meta">
+                                Min order: @meal.MinOrderQuantity
+                            </MudText>
+                        </MudCardContent>
+
+                        <MudCardActions Class="food-card-actions">
+                            <div>
+                                <MudText Typo="Typo.h6" Class="card-price">@ToPeso(meal.BasePrice)</MudText>
+                                <MudText Typo="Typo.caption" Class="card-price-note">PER ORDER</MudText>
+                            </div>
+
+                            <MudButton Variant="Variant.Filled"
+                                       Color="Color.Primary"
+                                       Disabled="true">
+                                Ordering Soon
+                            </MudButton>
+                        </MudCardActions>
+                    </MudCard>
+                }
+            </div>
+        }
+    </section>
+
+    <Footer />
+</MudContainer>
+
+@code {
+    private readonly List<string> _mealTypes = new()
+    {
+        "All",
+        "MainDish",
+        "Viand",
+        "SideDish",
+        "Dessert",
+        "Kakanin",
+        "Beverage"
+    };
+
+    private List<ShortOrderMealUiModel> _allMeals = new();
+    private string _selectedMealType = "All";
+    private string _searchText = string.Empty;
+    private string _sortBy = "NameAsc";
+    private bool _isLoading = true;
+    private string? _errorMessage;
+
+    protected override async Task OnInitializedAsync()
+    {
+        await LoadMealsAsync();
+    }
+
+    private async Task ReloadAsync()
+    {
+        await LoadMealsAsync();
+    }
+
+    private async Task LoadMealsAsync()
+    {
+        try
+        {
+            _isLoading = true;
+            _errorMessage = null;
+
+            var meals = await CatalogService.GetMealsAsync(categorySlug: "short-orders");
+            _allMeals = meals.ToList();
+        }
+        catch (Exception ex)
+        {
+            _errorMessage = ex.Message;
+            _allMeals = new();
+        }
+        finally
+        {
+            _isLoading = false;
+        }
+    }
+
+    private IEnumerable<ShortOrderMealUiModel> FilteredMeals
+    {
+        get
+        {
+            IEnumerable<ShortOrderMealUiModel> query = _allMeals;
+
+            if (_selectedMealType != "All")
+            {
+                query = query.Where(x => x.MealType.Equals(_selectedMealType, StringComparison.OrdinalIgnoreCase));
+            }
+
+            if (!string.IsNullOrWhiteSpace(_searchText))
+            {
+                query = query.Where(x =>
+                    x.Name.Contains(_searchText, StringComparison.OrdinalIgnoreCase) ||
+                    x.Description.Contains(_searchText, StringComparison.OrdinalIgnoreCase) ||
+                    x.MealType.Contains(_searchText, StringComparison.OrdinalIgnoreCase));
+            }
+
+            query = _sortBy switch
+            {
+                "PriceLowHigh" => query.OrderBy(x => x.BasePrice).ThenBy(x => x.Name),
+                "PriceHighLow" => query.OrderByDescending(x => x.BasePrice).ThenBy(x => x.Name),
+                _ => query.OrderBy(x => x.Name)
+            };
+
+            return query;
+        }
+    }
+
+    private Task OnSortChanged(string? value)
+    {
+        _sortBy = string.IsNullOrWhiteSpace(value) ? "NameAsc" : value;
+        return Task.CompletedTask;
+    }
+
+    private void ResetFilters()
+    {
+        _selectedMealType = "All";
+        _searchText = string.Empty;
+        _sortBy = "NameAsc";
+    }
+
+    private string GetMealTypeClass(string mealType) =>
+        mealType == _selectedMealType ? "category-btn selected" : "category-btn";
+
+    private static string ToPeso(decimal amount) => $"₱{amount:N0}";
+}
