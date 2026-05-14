@@ -32,46 +32,102 @@
                 </Trigger>
             </Style.Triggers>
         </Style>
+        
     </Page.Resources>
 
-    <Grid Background="{DynamicResource {x:Static SystemColors.ControlDarkDarkColor}}">
-        <ScrollViewer Margin="262,-2,0,2" Width="536">
-            <Grid>
-                <Grid>
-                    <Grid.ColumnDefinitions>
-                        <ColumnDefinition Width="*"/>
-                        <ColumnDefinition Width="Auto"/>
-                    </Grid.ColumnDefinitions>
+    <Grid Background="{DynamicResource 
+        {x:Static SystemColors.ControlDarkDarkColor}}"
+        Margin="262,-2,0,2" Width="536">
+            <Grid Grid.Row="1">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="*"/>
+                <ColumnDefinition Width="Auto"/>
+            </Grid.ColumnDefinitions>
 
-                    <TextBlock Grid.Column="0"
+            <TextBlock Grid.Column="0"
                                HorizontalAlignment="Left" 
                                Margin="12,12,0,0"
                                Text="Meal Details" 
                                FontSize="22"
                                FontWeight="Bold"
                                Foreground="White"/>
-                    
-                    <StackPanel Grid.Column="1" 
+
+            <StackPanel Grid.Column="1" 
                                 Orientation="Horizontal" 
                                 VerticalAlignment="Top"
                                 HorizontalAlignment="Right" 
                                 Margin="0,12,12,0">
-                        
-                                <Button Content="New" 
+
+                <Button Content="New" 
                                         Style="{DynamicResource AccentButtonStyle}"/>
-                                <Button Content="Edit" 
+                <Button Content="Edit" 
                                         Margin="12,0,0,0"/>
-                                <Button Content="  Delete  " 
+                <Button Content="  Delete  " 
                                         Margin="12,0,24,0"
                                         Style="{StaticResource DestructiveButtonStyle}"/>
-                    </StackPanel>
-                </Grid>
+            </StackPanel>
+        </Grid>
+        <ScrollViewer Grid.Row="1" >
+            <StackPanel>
+                <StackPanel Orientation="Vertical">
+                    <TextBlock>Entity Details</TextBlock>
+                    <TextBlock>Meal ID:</TextBlock>
+                    <TextBlock>Creation date:</TextBlock>
+                    <TextBlock>Last update:</TextBlock>
+                </StackPanel>
 
-                <GroupBox>
-                    <TextBlock></TextBlock>
-                </GroupBox>
-            </Grid>
+                <StackPanel Orientation="Vertical">
+                        
+                    <TextBlock Margin="0,12,0,0">Meal Name</TextBlock>
+                    <TextBox Margin="0,2,24,0"/>
+
+                    <TextBlock Margin="0,12,0,0">Meal Description</TextBlock>
+                    <TextBox Margin="0,2,24,0"
+                             TextWrapping="Wrap" 
+                             AcceptsReturn="True"
+                             />
+
+                    <StackPanel Orientation="Vertical">
+                        <StackPanel Orientation="Horizontal"
+                                    Margin="0,12,0,0">
+                            <TextBlock Width="100">Diet Type</TextBlock>
+                            <ComboBox Width="100"/>
+                        </StackPanel>
+
+                        <StackPanel Orientation="Horizontal"
+                                    Margin="0,12,0,0">
+                            <TextBlock Width="100">Meal Type</TextBlock>
+                            <ComboBox Width="100"/>
+                        </StackPanel>
+                    </StackPanel>
+
+                    <StackPanel>
+                        <StackPanel>
+                            <TextBlock>Base Price</TextBlock>
+                            <TextBox />
+                        </StackPanel>                        
+                        
+                        <StackPanel>
+                            <TextBlock>Stock Quantity</TextBlock>
+                            <TextBox />   
+                        </StackPanel>
+                                                
+                        <StackPanel>
+                            <TextBlock>Minimum Order Quantity</TextBlock>
+                            <TextBox />   
+                        </StackPanel>
+                    </StackPanel>
+
+                    <StackPanel>
+                        <CheckBox Content="Categorize this meal as a viand (sud-an)?" />
+                        <CheckBox Content="Mark this meal as unavailable to customers?" />
+                    </StackPanel>
+                </StackPanel>
+
+
+            </StackPanel>
         </ScrollViewer>
+
         <StackPanel HorizontalAlignment="Left" Width="240" Margin="12,12,0,12">
             <ListView Height="425" d:ItemsSource="{d:SampleData ItemCount=5}" SelectionChanged="ListView_SelectionChanged">
                 <ListView.View>
@@ -82,4 +138,6 @@
             </ListView>
         </StackPanel>
     </Grid>
+
+
 </Page>
