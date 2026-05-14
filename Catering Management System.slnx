@@ -9,4 +9,5 @@
   <Project Path="MauiApp-Pesyong/MauiApp-Pesyong/MauiApp-Pesyong.csproj" Id="7ca91a3b-3f83-431a-b2f7-27c830a54efd">
     <Deploy Solution="Debug|*" />
   </Project>
+  <Project Path="PESYONG.Presentation.Admin/PESYONG.Presentation.Admin.csproj" />
 </Solution>
