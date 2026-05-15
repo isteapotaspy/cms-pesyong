@@ -1,4 +1,5 @@
 <Solution>
+  <Project Path="../rizzlerpesyong-app-/PESYONG.Presentation.Admin/PESYONG.Presentation.Admin.csproj" />
   <Project Path="CMS.Application/CMS.Application.csproj" />
   <Project Path="CMS.Contracts/CMS.Contracts.csproj" Id="ad8dce47-3008-4a3c-b2e4-29e10fd28430" />
   <Project Path="CMS.Domain/CMS.Domain.csproj" />
