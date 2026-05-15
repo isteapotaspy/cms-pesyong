@@ -8,6 +8,7 @@
       d:DesignHeight="450" d:DesignWidth="800"
       Title="OrderPage">
 
+
     <Page.Resources>
         <!-- Destructive Button Style -->
         <Style x:Key="DestructiveButtonStyle" TargetType="Button">
@@ -32,18 +33,26 @@
                 </Trigger>
             </Style.Triggers>
         </Style>
+
     </Page.Resources>
 
-    <Grid Background="{DynamicResource {x:Static SystemColors.ControlDarkDarkColor}}">
-        <ScrollViewer Margin="262,-2,0,2" Width="536">
-            <Grid>
-                <Grid>
-                    <Grid.ColumnDefinitions>
-                        <ColumnDefinition Width="*"/>
-                        <ColumnDefinition Width="Auto"/>
-                    </Grid.ColumnDefinitions>
+    <Grid Background="{DynamicResource 
+        {x:Static SystemColors.ControlDarkDarkColor}}"
+        Margin="262,-2,0,2" Width="536">
 
-                    <TextBlock Grid.Column="0"
+        <Grid>
+            <Grid.RowDefinitions>
+                <RowDefinition Height="Auto" />
+                <RowDefinition Height="*" />
+            </Grid.RowDefinitions>
+
+            <Grid Grid.Row="0" Margin="0,0,0,12">
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="*"/>
+                    <ColumnDefinition Width="Auto"/>
+                </Grid.ColumnDefinitions>
+
+                <TextBlock Grid.Column="0"
                                HorizontalAlignment="Left" 
                                Margin="12,12,0,0"
                                Text="Order Details" 
@@ -51,27 +60,150 @@
                                FontWeight="Bold"
                                Foreground="White"/>
 
-                    <StackPanel Grid.Column="1" 
+                <StackPanel Grid.Column="1" 
                                 Orientation="Horizontal" 
                                 VerticalAlignment="Top"
                                 HorizontalAlignment="Right" 
                                 Margin="0,12,12,0">
 
-                        <Button Content="New" 
+                    <Button Content="New" 
                                         Style="{DynamicResource AccentButtonStyle}"/>
-                        <Button Content="Edit" 
+                    <Button Content="Edit" 
                                         Margin="12,0,0,0"/>
-                        <Button Content="  Delete  " 
+                    <Button Content="  Delete  " 
                                         Margin="12,0,24,0"
                                         Style="{StaticResource DestructiveButtonStyle}"/>
-                    </StackPanel>
-                </Grid>
-
-                <GroupBox>
-                    <TextBlock></TextBlock>
-                </GroupBox>
+                </StackPanel>
             </Grid>
-        </ScrollViewer>
+            <ScrollViewer Grid.Row="1" 
+                      Margin="12,0,0,0" 
+                      VerticalScrollBarVisibility="Visible"
+                      Foreground="White">
+                <StackPanel>
+                    <Grid Margin="0,12,0,0">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="100" />
+                            <ColumnDefinition Width="40" />
+                            <ColumnDefinition Width="100" />
+                            <ColumnDefinition Width="80" />
+                            <ColumnDefinition Width="100" />
+                            <ColumnDefinition Width="80" />
+                        </Grid.ColumnDefinitions>
+
+                        <TextBlock Grid.Column="0" Foreground="White">Order ID:</TextBlock>
+                        <TextBlock Grid.Column="1" Foreground="White"></TextBlock>
+
+                        <TextBlock Grid.Column="2" Foreground="White">Creation date:</TextBlock>
+                        <TextBlock Grid.Column="3" Foreground="White"></TextBlock>
+
+                        <TextBlock Grid.Column="4" Foreground="White">Last update:</TextBlock>
+                        <TextBlock Grid.Column="5" Foreground="White"></TextBlock>
+
+                    </Grid>
+
+                    <StackPanel Orientation="Vertical">
+                        <GroupBox>
+                            <Grid>
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="Auto"></ColumnDefinition>
+                                    <ColumnDefinition Width="Auto"></ColumnDefinition>
+                                </Grid.ColumnDefinitions>
+                                <Grid.RowDefinitions>
+                                    <RowDefinition Height="Auto"></RowDefinition>
+                                    <RowDefinition Height="Auto"></RowDefinition>
+                                </Grid.RowDefinitions>
+                                
+                                <StackPanel Grid.Column="0" Grid.Row="0" Orientation="Horizontal">
+                                    <TextBlock Margin="0,12,0,0" Foreground="White">Customer Details</TextBlock>
+                                    <Button>Modify</Button>
+                                </StackPanel>
+                                <TextBlock Grid.Column="0" Grid.Row="1">This is the mock address</TextBlock>
+
+                                <StackPanel Grid.Column="1" Grid.Row="0" Orientation="Horizontal">
+                                    <TextBlock Margin="0,12,0,0" Foreground="White">Address ID</TextBlock>
+                                    <Button>Modify</Button>
+                                </StackPanel>
+                                <TextBlock Grid.Column="1" Grid.Row="1">This is the mock address</TextBlock>
+                            </Grid>
+                        </GroupBox>
+
+                        <GroupBox>
+                            <Grid>
+                                <Grid>
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="Auto"></ColumnDefinition>
+                                        <ColumnDefinition Width="Auto"></ColumnDefinition>
+                                        <ColumnDefinition Width="Auto"></ColumnDefinition>
+                                    </Grid.ColumnDefinitions>
+                                    <Grid.RowDefinitions>
+                                        <RowDefinition Height="Auto"></RowDefinition>
+                                        <RowDefinition Height="Auto"></RowDefinition>
+                                        <RowDefinition Height="Auto"></RowDefinition>
+                                    </Grid.RowDefinitions>
+
+                                    <StackPanel Grid.Row="0" Grid.Column="0" Orientation="Horizontal"
+                                                Margin="0,12,0,0">
+                                        <TextBlock Width="100">Order Date</TextBlock>
+                                        <DatePicker/>
+                                    </StackPanel>
+
+                                    <StackPanel Grid.Row="1" Grid.Column="0" Orientation="Horizontal"
+                                                Margin="0,12,0,0">
+                                        <TextBlock Width="100">Delivery Date</TextBlock>
+                                        <DatePicker/>
+                                    </StackPanel>
+
+                                    <StackPanel Grid.Row="2" Grid.Column="0" Orientation="Horizontal"
+                                                Margin="0,12,0,0">
+                                        <TextBlock Width="100">Time Slot</TextBlock>
+                                        <ComboBox Width="127"></ComboBox>
+                                    </StackPanel>
+
+                                    <StackPanel Grid.Row="0" Grid.Column="1" Orientation="Horizontal"
+                                                Margin="12,12,0,0">
+                                        <TextBlock Width="120">Order Status</TextBlock>
+                                        <ComboBox Width="127"></ComboBox>
+                                    </StackPanel>
+
+                                    <StackPanel Grid.Row="1" Grid.Column="1" Orientation="Horizontal"
+                                                Margin="12,12,0,0">
+                                        <TextBlock Width="120">Payment Method</TextBlock>
+                                        <ComboBox Width="127"></ComboBox>
+                                    </StackPanel>
+
+                                    <StackPanel Grid.Row="2" Grid.Column="1" Orientation="Horizontal"
+                                                Margin="12,12,0,0">
+                                        <TextBlock Width="120">Payment Status</TextBlock>
+                                        <ComboBox Width="127"></ComboBox>
+                                    </StackPanel>
+                                </Grid>
+                            </Grid>
+                        </GroupBox>
+
+                        <GroupBox>
+                            <StackPanel>
+                                <StackPanel>
+                                    <TextBlock>Customer's Name</TextBlock>
+                                    <TextBox></TextBox>
+                                </StackPanel>
+
+                                <StackPanel>
+                                    <TextBlock>Customer's Email</TextBlock>
+                                    <TextBox></TextBox>
+                                </StackPanel>
+
+
+                                <StackPanel>
+                                    <TextBlock>Customer's Mobile Number</TextBlock>
+                                    <TextBox></TextBox>
+                                </StackPanel>
+                            </StackPanel>
+                        </GroupBox>
+                    </StackPanel>
+                </StackPanel>
+            </ScrollViewer>
+        </Grid>
+
         <StackPanel HorizontalAlignment="Left" Width="240" Margin="12,12,0,12">
             <ListView Height="425" d:ItemsSource="{d:SampleData ItemCount=5}">
                 <ListView.View>
