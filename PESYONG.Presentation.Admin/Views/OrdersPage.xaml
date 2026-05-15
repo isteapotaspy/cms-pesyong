@@ -79,7 +79,7 @@
                       Margin="12,0,0,0" 
                       VerticalScrollBarVisibility="Visible"
                       Foreground="White">
-                <StackPanel Background="DarkSlateGray">
+                <StackPanel>
                     <Grid Margin="0,12,0,0">
                         <Grid.ColumnDefinitions>
                             <ColumnDefinition Width="100" />
@@ -103,16 +103,28 @@
 
                     <StackPanel Orientation="Vertical">
                         <GroupBox>
-                            <StackPanel>
-                                <TextBlock Margin="0,12,0,0" Foreground="White">Customer ID</TextBlock>
-                                <TextBox Margin="0,2,24,0"/>
+                            <Grid>
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="Auto"></ColumnDefinition>
+                                    <ColumnDefinition Width="Auto"></ColumnDefinition>
+                                </Grid.ColumnDefinitions>
+                                <Grid.RowDefinitions>
+                                    <RowDefinition Height="Auto"></RowDefinition>
+                                    <RowDefinition Height="Auto"></RowDefinition>
+                                </Grid.RowDefinitions>
+                                
+                                <StackPanel Grid.Column="0" Grid.Row="0" Orientation="Horizontal">
+                                    <TextBlock Margin="0,12,0,0" Foreground="White">Customer Details</TextBlock>
+                                    <Button>Modify</Button>
+                                </StackPanel>
+                                <TextBlock Grid.Column="0" Grid.Row="1">This is the mock address</TextBlock>
 
-                                <TextBlock Margin="0,12,0,0" Foreground="White">Address ID</TextBlock>
-                                <TextBox Margin="0,2,24,0"
-                                     TextWrapping="Wrap" 
-                                     AcceptsReturn="True"
-                                     />
-                            </StackPanel>
+                                <StackPanel Grid.Column="1" Grid.Row="0" Orientation="Horizontal">
+                                    <TextBlock Margin="0,12,0,0" Foreground="White">Address ID</TextBlock>
+                                    <Button>Modify</Button>
+                                </StackPanel>
+                                <TextBlock Grid.Column="1" Grid.Row="1">This is the mock address</TextBlock>
+                            </Grid>
                         </GroupBox>
 
                         <GroupBox>
@@ -129,72 +141,71 @@
                                         <RowDefinition Height="Auto"></RowDefinition>
                                     </Grid.RowDefinitions>
 
+                                    <StackPanel Grid.Row="0" Grid.Column="0" Orientation="Horizontal"
+                                                Margin="0,12,0,0">
+                                        <TextBlock Width="100">Order Date</TextBlock>
+                                        <DatePicker/>
+                                    </StackPanel>
 
+                                    <StackPanel Grid.Row="1" Grid.Column="0" Orientation="Horizontal"
+                                                Margin="0,12,0,0">
+                                        <TextBlock Width="100">Delivery Date</TextBlock>
+                                        <DatePicker/>
+                                    </StackPanel>
+
+                                    <StackPanel Grid.Row="2" Grid.Column="0" Orientation="Horizontal"
+                                                Margin="0,12,0,0">
+                                        <TextBlock Width="100">Time Slot</TextBlock>
+                                        <ComboBox Width="127"></ComboBox>
+                                    </StackPanel>
+
+                                    <StackPanel Grid.Row="0" Grid.Column="1" Orientation="Horizontal"
+                                                Margin="12,12,0,0">
+                                        <TextBlock Width="120">Order Status</TextBlock>
+                                        <ComboBox Width="127"></ComboBox>
+                                    </StackPanel>
+
+                                    <StackPanel Grid.Row="1" Grid.Column="1" Orientation="Horizontal"
+                                                Margin="12,12,0,0">
+                                        <TextBlock Width="120">Payment Method</TextBlock>
+                                        <ComboBox Width="127"></ComboBox>
+                                    </StackPanel>
+
+                                    <StackPanel Grid.Row="2" Grid.Column="1" Orientation="Horizontal"
+                                                Margin="12,12,0,0">
+                                        <TextBlock Width="120">Payment Status</TextBlock>
+                                        <ComboBox Width="127"></ComboBox>
+                                    </StackPanel>
                                 </Grid>
-                            </Grid>
-                        </GroupBox>
-
-                        <GroupBox>
-                            <Grid>
-                                <Grid.ColumnDefinitions>
-                                    <ColumnDefinition Width="Auto"></ColumnDefinition>
-                                    <ColumnDefinition Width="Auto"></ColumnDefinition>
-                                </Grid.ColumnDefinitions>
-                                <Grid.RowDefinitions>
-                                    <RowDefinition Height="Auto"></RowDefinition>
-                                    <RowDefinition Height="Auto"></RowDefinition>
-                                </Grid.RowDefinitions>
-
-                                <StackPanel Orientation="Horizontal"
-                                        Margin="0,12,0,0"
-                                        Grid.Row="0" Grid.Column="0">
-                                    <TextBlock Width="100">Diet Type</TextBlock>
-                                    <ComboBox Width="100"/>
-                                </StackPanel>
-
-                                <StackPanel Orientation="Horizontal"
-                                        Grid.Row="1" Grid.Column="0"
-                                        Margin="0,12,0,0">
-                                    <TextBlock Width="100">Meal Type</TextBlock>
-                                    <ComboBox Width="100"/>
-                                </StackPanel>
-
-                                <StackPanel Orientation="Horizontal"
-                                        Margin="50,12,0,0"
-                                        Grid.Row="0" Grid.Column="1">
-                                    <TextBlock Width="140">Stock Quantity</TextBlock>
-                                    <TextBox Width="110"/>
-                                </StackPanel>
-
-                                <StackPanel Orientation="Horizontal"
-                                        Margin="50,12,0,12"
-                                        Grid.Row="1" Grid.Column="1">
-                                    <TextBlock Width="140">Min Order Quantity</TextBlock>
-                                    <TextBox Width="110"/>
-                                </StackPanel>
                             </Grid>
                         </GroupBox>
 
                         <GroupBox>
                             <StackPanel>
                                 <StackPanel>
-                                    <TextBlock>Base Price</TextBlock>
-                                    <TextBox />
+                                    <TextBlock>Customer's Name</TextBlock>
+                                    <TextBox></TextBox>
                                 </StackPanel>
+
                                 <StackPanel>
-                                    <CheckBox Content="Categorize this meal as a viand (sud-an)?" />
-                                    <CheckBox Content="Mark this meal as unavailable to customers?" />
+                                    <TextBlock>Customer's Email</TextBlock>
+                                    <TextBox></TextBox>
+                                </StackPanel>
+
+
+                                <StackPanel>
+                                    <TextBlock>Customer's Mobile Number</TextBlock>
+                                    <TextBox></TextBox>
                                 </StackPanel>
                             </StackPanel>
                         </GroupBox>
-
                     </StackPanel>
                 </StackPanel>
             </ScrollViewer>
         </Grid>
 
         <StackPanel HorizontalAlignment="Left" Width="240" Margin="12,12,0,12">
-            <ListView Height="425" d:ItemsSource="{d:SampleData ItemCount=5}" SelectionChanged="ListView_SelectionChanged">
+            <ListView Height="425" d:ItemsSource="{d:SampleData ItemCount=5}">
                 <ListView.View>
                     <GridView>
                         <GridViewColumn/>
