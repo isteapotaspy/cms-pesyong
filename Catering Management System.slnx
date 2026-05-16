@@ -1,14 +1,13 @@
 <Solution>
-  <Project Path="../rizzlerpesyong-app-/PESYONG.Presentation.Admin/PESYONG.Presentation.Admin.csproj" />
-  <Project Path="CMS.Application/CMS.Application.csproj" />
-  <Project Path="CMS.Contracts/CMS.Contracts.csproj" Id="ad8dce47-3008-4a3c-b2e4-29e10fd28430" />
   <Project Path="CMS.Domain/CMS.Domain.csproj" />
+  <Project Path="CMS.Contracts/CMS.Contracts.csproj" />
+  <Project Path="CMS.Application/CMS.Application.csproj" />
   <Project Path="CMS.Infrastructure/CMS.Infrastructure.csproj" />
   <Project Path="CMS.Server/CMS.Server.csproj" />
-  <Project Path="MauiApp-Pesyong/MauiApp-Pesyong.Shared/MauiApp-Pesyong.Shared.csproj" Id="587d4621-3ed3-40d2-8454-6ab21815ba75" />
-  <Project Path="MauiApp-Pesyong/MauiApp-Pesyong.Web/MauiApp-Pesyong.Web.csproj" Id="743939b2-271a-443f-af56-473cdae1874c" />
-  <Project Path="MauiApp-Pesyong/MauiApp-Pesyong/MauiApp-Pesyong.csproj" Id="7ca91a3b-3f83-431a-b2f7-27c830a54efd">
+  <Project Path="PESYONG.Presentation.Admin/PESYONG.Presentation.Admin.csproj" />
+  <Project Path="MauiApp-Pesyong/MauiApp-Pesyong.Shared/MauiApp-Pesyong.Shared.csproj" />
+  <Project Path="MauiApp-Pesyong/MauiApp-Pesyong.Web/MauiApp-Pesyong.Web.csproj" />
+  <Project Path="MauiApp-Pesyong/MauiApp-Pesyong/MauiApp-Pesyong.csproj">
     <Deploy Solution="Debug|*" />
   </Project>
-  <Project Path="PESYONG.Presentation.Admin/PESYONG.Presentation.Admin.csproj" />
 </Solution>
