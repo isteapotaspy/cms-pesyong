@@ -259,7 +259,7 @@ public static class CmsDbContextSeeder
             Title = "Choose 1 Dessert",
             Description = "Select one dessert for this package.",
             SelectionType = PackageSelectionType.ChooseOne,
-            AllowedMealType = MealType.Dessert,
+            AllowedMealType = (MealType)MealType.Dessert,
             MinSelections = 1,
             MaxSelections = 1,
             IsRequired = true,

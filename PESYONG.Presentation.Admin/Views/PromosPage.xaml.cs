@@ -14,11 +14,11 @@ using System.Windows.Shapes;
 namespace PESYONG.Presentation.Admin.Views
 {
     /// <summary>
-    /// Interaction logic for PacksPage.xaml
+    /// Interaction logic for PromosPage.xaml
     /// </summary>
-    public partial class PacksPage : Page
+    public partial class PromosPage : Page
     {
-        public PacksPage()
+        public PromosPage()
         {
             InitializeComponent();
         }
