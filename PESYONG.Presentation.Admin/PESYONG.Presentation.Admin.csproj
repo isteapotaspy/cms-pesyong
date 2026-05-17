@@ -9,12 +9,15 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <Folder Include="Layouts\" />
-    <Folder Include="ViewModel\" />
+    <Compile Remove="Layouts\**" />
+    <EmbeddedResource Remove="Layouts\**" />
+    <None Remove="Layouts\**" />
+    <Page Remove="Layouts\**" />
   </ItemGroup>
 
   <ItemGroup>
     <PackageReference Include="AutoMapper" Version="16.1.1" />
+    <PackageReference Include="CommunityToolkit.Mvvm" Version="8.4.2" />
   </ItemGroup>
 
 </Project>

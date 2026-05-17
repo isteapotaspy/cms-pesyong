@@ -44,35 +44,20 @@ public partial class MainAdminWindow : Window
                 case "Meals":
                     MainAdminFrame.Navigate(new MealsPage());
                     break;
-                case "Packs":
-                    MainAdminFrame.Navigate(new PacksPage());
+                case "Packages":
+                    MainAdminFrame.Navigate(new PackagesPage());
+                    break;
+                case "Payments":
+                    MainAdminFrame.Navigate(new PaymentsPage());
+                    break;
+                case "Promos":
+                    MainAdminFrame.Navigate(new PromosPage());
                     break;
                 case "Orders":
                     MainAdminFrame.Navigate(new OrdersPage());
                     break;
-                case "Receipts":
-                    MainAdminFrame.Navigate(new ReceiptsPage());
-                    break;
                 case "Deliveries":
                     MainAdminFrame.Navigate(new DeliveryPage());
-                    break;
-                case "Customers":
-                    //MainAdminFrame.Navigate(new CustomersPage());
-                    break;
-                case "ReissueReceipt":
-                    //MainAdminFrame.Navigate(new ReissueReceiptPage());
-                    break;
-                case "SalesReport":
-                    //MainAdminFrame.Navigate(new SalesReportPage());
-                    break;
-                case "InventoryReport":
-                    //MainAdminFrame.Navigate(new InventoryReportPage());
-                    break;
-                case "UserManagement":
-                    //MainAdminFrame.Navigate(new UserManagementPage());
-                    break;
-                case "SystemPreferences":
-                    //MainAdminFrame.Navigate(new SystemPreferencesPage());
                     break;
                 default:
                     MainAdminFrame.Navigate(new TextBlock
@@ -105,6 +90,11 @@ public partial class MainAdminWindow : Window
         NavigateToPage("Packs");
     }
 
+    private void PackagesMenuItem_Click(object sender, RoutedEventArgs e)
+    {
+        NavigateToPage("Packages");
+    }
+
     private void OrdersMenuItem_Click(object sender, RoutedEventArgs e)
     {
             NavigateToPage("Orders");
@@ -118,5 +108,14 @@ public partial class MainAdminWindow : Window
     private void DeliveriesMenuItem_Click(object sender, RoutedEventArgs e)
     {
         NavigateToPage("Deliveries");
+    }
+    private void PromosMenuItem_Click(object sender, RoutedEventArgs e)
+    {
+        NavigateToPage("Promos");
+    }
+
+    private void PaymentsMenuItem_Click(object sender, RoutedEventArgs e)
+    {
+        NavigateToPage("Payments");
     }
 }

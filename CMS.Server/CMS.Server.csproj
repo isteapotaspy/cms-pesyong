@@ -22,5 +22,10 @@
     <ProjectReference Include="..\CMS.Contracts\CMS.Contracts.csproj" />
     <ProjectReference Include="..\CMS.Infrastructure\CMS.Infrastructure.csproj" />
   </ItemGroup>
+
+  <ItemGroup>
+    <Folder Include="Controller\Admin\" />
+    <Folder Include="Controller\Shared\" />
+  </ItemGroup>
   
 </Project>
