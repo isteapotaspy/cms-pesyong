@@ -18,6 +18,7 @@ using PESYONG.Presentation.Admin.Views;
 
 namespace PESYONG.Presentation.Admin;
 
+// minor changes
 public partial class App : Application
 {
     private IHost _host = default!;
