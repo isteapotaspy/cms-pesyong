@@ -9,12 +9,29 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <Folder Include="Layouts\" />
-    <Folder Include="ViewModel\" />
+    <Compile Remove="Layouts\**" />
+    <EmbeddedResource Remove="Layouts\**" />
+    <None Remove="Layouts\**" />
+    <Page Remove="Layouts\**" />
   </ItemGroup>
 
   <ItemGroup>
     <PackageReference Include="AutoMapper" Version="16.1.1" />
+    <PackageReference Include="CommunityToolkit.Mvvm" Version="8.4.2" />
+    <PackageReference Include="Microsoft.Extensions.Configuration.Json" Version="10.0.8" />
+    <PackageReference Include="Microsoft.Extensions.DependencyInjection" Version="10.0.8" />
+    <PackageReference Include="Microsoft.Extensions.Hosting" Version="10.0.8" />
+    <PackageReference Include="Microsoft.Extensions.Http" Version="10.0.8" />
+  </ItemGroup>
+	
+  <ItemGroup>
+    <None Update="appsettings.json">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\CMS.Contracts\CMS.Contracts.csproj" />
   </ItemGroup>
 
 </Project>

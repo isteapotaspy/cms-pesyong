@@ -32,7 +32,6 @@
                 </Trigger>
             </Style.Triggers>
         </Style>
-        
     </Page.Resources>
 
     <Grid Background="{DynamicResource 
@@ -44,139 +43,202 @@
                 <RowDefinition Height="Auto" />
                 <RowDefinition Height="*" />
             </Grid.RowDefinitions>
-            
+
             <Grid Grid.Row="0" Margin="0,0,0,12">
-            <Grid.ColumnDefinitions>
-                <ColumnDefinition Width="*"/>
-                <ColumnDefinition Width="Auto"/>
-            </Grid.ColumnDefinitions>
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="*"/>
+                    <ColumnDefinition Width="Auto"/>
+                </Grid.ColumnDefinitions>
 
-            <TextBlock Grid.Column="0"
-                               HorizontalAlignment="Left" 
-                               Margin="12,12,0,0"
-                               Text="Meal Details" 
-                               FontSize="22"
-                               FontWeight="Bold"
-                               Foreground="White"/>
+                <TextBlock Grid.Column="0"
+                           HorizontalAlignment="Left" 
+                           Margin="12,12,0,0"
+                           Text="Meal Details" 
+                           FontSize="22"
+                           FontWeight="Bold"
+                           Foreground="White"/>
 
-            <StackPanel Grid.Column="1" 
-                                Orientation="Horizontal" 
-                                VerticalAlignment="Top"
-                                HorizontalAlignment="Right" 
-                                Margin="0,12,12,0">
+                <StackPanel Grid.Column="1" 
+                            Orientation="Horizontal" 
+                            VerticalAlignment="Top"
+                            HorizontalAlignment="Right" 
+                            Margin="0,12,12,0">
 
-                <Button Content="New" 
-                                        Style="{DynamicResource AccentButtonStyle}"/>
-                <Button Content="Edit" 
-                                        Margin="12,0,0,0"/>
-                <Button Content="  Delete  " 
-                                        Margin="12,0,24,0"
-                                        Style="{StaticResource DestructiveButtonStyle}"/>
-            </StackPanel>
-        </Grid>
-            <ScrollViewer Grid.Row="1" 
-                      Margin="12,0,0,0" 
-                      VerticalScrollBarVisibility="Visible"
-                      Foreground="White">
-                <StackPanel Background="DarkSlateGray">
-                <Grid Margin="0,12,0,0">
-                    <Grid.ColumnDefinitions>
-                        <ColumnDefinition Width="100" />
-                        <ColumnDefinition Width="40" />
-                        <ColumnDefinition Width="100" />
-                        <ColumnDefinition Width="80" />
-                        <ColumnDefinition Width="100" />
-                        <ColumnDefinition Width="80" />    
-                    </Grid.ColumnDefinitions>
-                    
-                    <TextBlock Grid.Column="0" Foreground="White">Meal ID:</TextBlock>
-                    <TextBlock Grid.Column="1" Foreground="White"></TextBlock>
-                    
-                    <TextBlock Grid.Column="2" Foreground="White">Creation date:</TextBlock>
-                    <TextBlock Grid.Column="3" Foreground="White"></TextBlock>
-                    
-                    <TextBlock Grid.Column="4" Foreground="White">Last update:</TextBlock>
-                    <TextBlock Grid.Column="5" Foreground="White"></TextBlock>                    
-                </Grid>
+                            <Button Content="New" 
+                                    Command="{Binding NewMealCommand}" />   
 
-                <StackPanel Orientation="Vertical">
-                        
-                    <GroupBox>
-                        <StackPanel>                            
-                            <TextBlock Margin="0,12,0,0" Foreground="White">Meal Name</TextBlock>
-                            <TextBox Margin="0,2,24,0"/>
+                            <Button Content="{Binding EditSaveButtonText}"
+                                    Command="{Binding EditOrSaveCommand}"
+                                    Margin="12,0,0,0"/>
 
-                            <TextBlock Margin="0,12,0,0" Foreground="White">Meal Description</TextBlock>
-                            <TextBox Margin="0,2,24,0"
-                                     TextWrapping="Wrap" 
-                                     AcceptsReturn="True"/>
-                        </StackPanel>
-                    </GroupBox>
-
-                    <GroupBox>
-                        <Grid>
-                            <Grid.ColumnDefinitions>
-                                <ColumnDefinition Width="Auto"></ColumnDefinition>
-                                <ColumnDefinition Width="Auto"></ColumnDefinition>
-                            </Grid.ColumnDefinitions>                         
-                            <Grid.RowDefinitions>
-                                <RowDefinition Height="Auto"></RowDefinition>
-                                <RowDefinition Height="Auto"></RowDefinition>
-                            </Grid.RowDefinitions>
-                            
-                            <StackPanel Orientation="Horizontal"
-                                        Margin="0,12,0,0"
-                                        Grid.Row="0" Grid.Column="0">
-                                <TextBlock Width="100">Diet Type</TextBlock>
-                                <ComboBox Width="100"/>
-                            </StackPanel>
-
-                            <StackPanel Orientation="Horizontal"
-                                        Grid.Row="1" Grid.Column="0"
-                                        Margin="0,12,0,0">
-                                <TextBlock Width="100">Meal Type</TextBlock>
-                                <ComboBox Width="100"/>
-                            </StackPanel>
-
-                            <StackPanel Orientation="Horizontal"
-                                        Margin="50,12,0,0"
-                                        Grid.Row="0" Grid.Column="1">
-                                <TextBlock Width="140">Stock Quantity</TextBlock>
-                                <TextBox Width="110"/>
-                            </StackPanel>
-
-                            <StackPanel Orientation="Horizontal"
-                                        Margin="50,12,0,12"
-                                        Grid.Row="1" Grid.Column="1">
-                                <TextBlock Width="140">Min Order Quantity</TextBlock>
-                                <TextBox Width="110"/>
-                            </StackPanel>
-                        </Grid>
-                    </GroupBox>
-
-                    <GroupBox>
-                        <StackPanel>
-                            <StackPanel>
-                                <TextBlock>Base Price</TextBlock>
-                                <TextBox />
-                            </StackPanel>               
-                            <StackPanel>
-                                <CheckBox Content="Categorize this meal as a viand (sud-an)?" />
-                                <CheckBox Content="Mark this meal as unavailable to customers?" />
-                            </StackPanel>
-                        </StackPanel>
-                    </GroupBox>
-
+                            <Button Content="  Delete  " 
+                                    Command="{Binding DeleteCommand}"
+                                    Margin="12,0,24,0"
+                                    Style="{StaticResource DestructiveButtonStyle}"/>
                 </StackPanel>
-            </StackPanel>
-        </ScrollViewer>
+            </Grid>
+
+            <ScrollViewer Grid.Row="1" 
+                          Margin="12,0,24,0" 
+                          VerticalScrollBarVisibility="Visible"
+                          Foreground="White">
+
+                <StackPanel IsEnabled="{Binding IsEditing}">
+
+                    <TextBlock Foreground="Tomato"
+                               Text="{Binding ErrorMessage}"
+                               TextWrapping="Wrap"
+                               Margin="0,0,0,8"/>
+
+                    <Grid Margin="0,12,0,0">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="100" />
+                            <ColumnDefinition Width="40" />
+                            <ColumnDefinition Width="100" />
+                            <ColumnDefinition Width="80" />
+                            <ColumnDefinition Width="100" />
+                            <ColumnDefinition Width="80" />
+                        </Grid.ColumnDefinitions>
+
+                        <TextBlock Grid.Column="0" Foreground="White">Meal ID:</TextBlock>
+                        <TextBlock Grid.Column="1"
+                                   Foreground="White"
+                                   Text="{Binding SelectedMeal.Id}" />
+
+                        <TextBlock Grid.Column="2" Foreground="White">Creation date:</TextBlock>
+                        <TextBlock Grid.Column="3" Foreground="White"></TextBlock>
+
+                        <TextBlock Grid.Column="4" Foreground="White">Last update:</TextBlock>
+                        <TextBlock Grid.Column="5" Foreground="White"></TextBlock>
+                    </Grid>
+
+                    <StackPanel Orientation="Vertical">
+
+                        <GroupBox>
+                            <StackPanel>
+
+                                <TextBlock Margin="0,12,0,0" Foreground="White">Meal Name</TextBlock>
+                                <TextBox Margin="0,2,24,0"
+                                         Text="{Binding SelectedMeal.Name, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"/>
+
+                                <TextBlock Margin="0,12,0,0" Foreground="White">Meal Description</TextBlock>
+                                <TextBox Margin="0,2,24,0"
+                                         TextWrapping="Wrap" 
+                                         AcceptsReturn="True"
+                                         Text="{Binding SelectedMeal.Description, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"/>
+
+                                <TextBlock Margin="0,12,0,0" Foreground="White">Image URL</TextBlock>
+                                <TextBox Margin="0,2,24,12"
+                                         Text="{Binding SelectedMeal.ImageUrl, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"/>
+
+                            </StackPanel>
+                        </GroupBox>
+
+                        <GroupBox>
+                            <Grid>
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="Auto"></ColumnDefinition>
+                                    <ColumnDefinition Width="Auto"></ColumnDefinition>
+                                </Grid.ColumnDefinitions>
+
+                                <Grid.RowDefinitions>
+                                    <RowDefinition Height="Auto"></RowDefinition>
+                                    <RowDefinition Height="Auto"></RowDefinition>
+                                    <RowDefinition Height="Auto"></RowDefinition>
+                                </Grid.RowDefinitions>
+
+                                <StackPanel Orientation="Horizontal"
+                                            Margin="0,12,0,0"
+                                            Grid.Row="0" Grid.Column="0">
+                                    <TextBlock Width="100">Category ID</TextBlock>
+                                    <TextBox Width="100"
+                                             Text="{Binding SelectedMeal.CategoryId, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"/>
+                                </StackPanel>
+
+                                <StackPanel Orientation="Horizontal"
+                                            Grid.Row="1" Grid.Column="0"
+                                            Margin="0,12,0,0">
+                                    <TextBlock Width="100">Category Name</TextBlock>
+                                    <TextBox Width="100"
+                                             IsReadOnly="True"
+                                             Text="{Binding SelectedMeal.CategoryName}"/>
+                                </StackPanel>
+
+                                <StackPanel Orientation="Horizontal"
+                                            Grid.Row="2" Grid.Column="0"
+                                            Margin="0,12,0,12">
+                                    <TextBlock Width="100">Meal Type</TextBlock>
+                                    <ComboBox Width="100"
+                                              SelectedValuePath="Content"
+                                              SelectedValue="{Binding SelectedMeal.MealType, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}">
+                                        <ComboBoxItem Content="Breakfast"/>
+                                        <ComboBoxItem Content="Lunch"/>
+                                        <ComboBoxItem Content="Dinner"/>
+                                        <ComboBoxItem Content="Snack"/>
+                                        <ComboBoxItem Content="Beverage"/>
+                                    </ComboBox>
+                                </StackPanel>
+
+                                <StackPanel Orientation="Horizontal"
+                                            Margin="50,12,0,0"
+                                            Grid.Row="0" Grid.Column="1">
+                                    <TextBlock Width="140">Stock Quantity</TextBlock>
+                                    <TextBox Width="110"
+                                             Text="{Binding SelectedMeal.StockQuantity, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"/>
+                                </StackPanel>
+
+                                <StackPanel Orientation="Horizontal"
+                                            Margin="50,12,0,0"
+                                            Grid.Row="1" Grid.Column="1">
+                                    <TextBlock Width="140">Min Order Quantity</TextBlock>
+                                    <TextBox Width="110"
+                                             Text="{Binding SelectedMeal.MinOrderQuantity, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"/>
+                                </StackPanel>
+
+                                <StackPanel Orientation="Horizontal"
+                                            Margin="50,12,0,12"
+                                            Grid.Row="2" Grid.Column="1">
+                                    <TextBlock Width="140">Base Price</TextBlock>
+                                    <TextBox Width="110"
+                                             Text="{Binding SelectedMeal.BasePrice, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"/>
+                                </StackPanel>
+                            </Grid>
+                        </GroupBox>
+
+                        <GroupBox>
+                            <StackPanel>
+                                <CheckBox Content="Categorize this meal as a viand (sud-an)?"
+                                          IsChecked="{Binding SelectedMeal.IsViandOption, Mode=TwoWay}"
+                                          Margin="0,12,0,0"/>
+
+                                <CheckBox Content="Available to customers?"
+                                          IsChecked="{Binding SelectedMeal.IsAvailable, Mode=TwoWay}"
+                                          Margin="0,6,0,12"/>
+                            </StackPanel>
+                        </GroupBox>
+
+                    </StackPanel>
+                </StackPanel>
+            </ScrollViewer>
         </Grid>
 
         <StackPanel HorizontalAlignment="Left" Width="240" Margin="12,12,0,12">
-            <ListView Height="425" d:ItemsSource="{d:SampleData ItemCount=5}" SelectionChanged="ListView_SelectionChanged">
+            <ListView Height="425"
+                      ItemsSource="{Binding Meals}"
+                      SelectedItem="{Binding SelectedMeal, Mode=TwoWay}">
                 <ListView.View>
                     <GridView>
-                        <GridViewColumn/>
+                        <GridViewColumn Header="ID"
+                                        Width="40"
+                                        DisplayMemberBinding="{Binding Id}" />
+
+                        <GridViewColumn Header="Meal"
+                                        Width="110"
+                                        DisplayMemberBinding="{Binding Name}" />
+
+                        <GridViewColumn Header="Price"
+                                        Width="70"
+                                        DisplayMemberBinding="{Binding BasePrice}" />
                     </GridView>
                 </ListView.View>
             </ListView>

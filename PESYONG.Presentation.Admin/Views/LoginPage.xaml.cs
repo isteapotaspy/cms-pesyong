@@ -1,32 +1,28 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.Text;
 using System.Windows;
 using System.Windows.Controls;
-using System.Windows.Data;
-using System.Windows.Documents;
-using System.Windows.Input;
-using System.Windows.Media;
-using System.Windows.Media.Imaging;
-using System.Windows.Navigation;
-using System.Windows.Shapes;
+using Microsoft.Extensions.DependencyInjection;
 
 namespace PESYONG.Presentation.Admin.Views;
 
-/// <summary>
-/// Interaction logic for LoginPage.xaml
-/// </summary>
 public partial class LoginPage : Page
 {
-    public LoginPage()
+    private readonly IServiceProvider _serviceProvider;
+
+    public LoginPage(IServiceProvider serviceProvider)
     {
         InitializeComponent();
+
+        _serviceProvider = serviceProvider;
     }
 
     private void LoginButton_Click(object sender, RoutedEventArgs e)
     {
-        // If the authentication was successful
-        new MainAdminWindow().Show();
+        // If authentication is successful
+        var mainAdminWindow = _serviceProvider.GetRequiredService<MainAdminWindow>();
+
+        mainAdminWindow.Show();
+
         Window.GetWindow(this)?.Close();
     }
 }
