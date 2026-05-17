@@ -9,8 +9,6 @@ namespace CMS.Infrastructure.Persistence;
 
 public static class CmsDbContextSeeder
 {
-    static MealType MealType = (CMS.Domain.Enums.MealType) MealType.Viand;
-
     public static async Task SeedAsync(CmsDbContext db, CancellationToken cancellationToken = default)
     {
         // Safe in development. 

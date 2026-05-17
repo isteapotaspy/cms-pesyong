@@ -35,51 +35,95 @@
         </Style>
     </Page.Resources>
 
-    <Grid Background="{DynamicResource {x:Static SystemColors.ControlDarkDarkColor}}">
-        <ScrollViewer Margin="262,-2,0,2" Width="536">
-            <Grid>
-                <Grid>
-                    <Grid.ColumnDefinitions>
-                        <ColumnDefinition Width="*"/>
-                        <ColumnDefinition Width="Auto"/>
-                    </Grid.ColumnDefinitions>
+    <Grid Background="{DynamicResource 
+        {x:Static SystemColors.ControlDarkDarkColor}}"
+        Margin="262,-2,0,2" Width="536">
 
-                    <TextBlock Grid.Column="0"
-                               HorizontalAlignment="Left" 
-                               Margin="12,12,0,0"
-                               Text="Delivery Details" 
-                               FontSize="22"
-                               FontWeight="Bold"
-                               Foreground="White"/>
+        <Grid>
+            <Grid.RowDefinitions>
+                <RowDefinition Height="Auto" />
+                <RowDefinition Height="*" />
+            </Grid.RowDefinitions>
 
-                    <StackPanel Grid.Column="1" 
-                                Orientation="Horizontal" 
-                                VerticalAlignment="Top"
-                                HorizontalAlignment="Right" 
-                                Margin="0,12,12,0">
+            <Grid Grid.Row="0" Margin="0,0,0,12">
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="*"/>
+                    <ColumnDefinition Width="Auto"/>
+                </Grid.ColumnDefinitions>
 
-                        <Button Content="New" 
-                                        Style="{DynamicResource AccentButtonStyle}"/>
-                        <Button Content="Edit" 
-                                        Margin="12,0,0,0"/>
-                        <Button Content="  Delete  " 
-                                        Margin="12,0,24,0"
-                                        Style="{StaticResource DestructiveButtonStyle}"/>
-                    </StackPanel>
-                </Grid>
+                <TextBlock Grid.Column="0"
+                           HorizontalAlignment="Left" 
+                           Margin="12,12,0,0"
+                           Text="Meal Details" 
+                           FontSize="22"
+                           FontWeight="Bold"
+                           Foreground="White"/>
 
-                <GroupBox>
-                    <TextBlock></TextBlock>
-                </GroupBox>
+                <StackPanel Grid.Column="1" 
+                            Orientation="Horizontal" 
+                            VerticalAlignment="Top"
+                            HorizontalAlignment="Right" 
+                            Margin="0,12,12,0">
+
+                    <Button Content="New" 
+                                    Command="{Binding NewMealCommand}" />
+
+                    <Button Content="{Binding EditSaveButtonText}"
+                                    Command="{Binding EditOrSaveCommand}"
+                                    Margin="12,0,0,0"/>
+
+                    <Button Content="  Delete  " 
+                                    Command="{Binding DeleteCommand}"
+                                    Margin="12,0,24,0"
+                                    Style="{StaticResource DestructiveButtonStyle}"/>
+                </StackPanel>
             </Grid>
-        </ScrollViewer>
+
+            <ScrollViewer Grid.Row="1" 
+                          Margin="12,0,24,0" 
+                          VerticalScrollBarVisibility="Visible"
+                          Foreground="White">
+
+                <StackPanel IsEnabled="{Binding IsEditing}">
+
+                    <TextBlock Foreground="Tomato"
+                               Text="{Binding ErrorMessage}"
+                               TextWrapping="Wrap"
+                               Margin="0,0,0,8"/>
+
+                    <Grid Margin="0,12,0,0">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="100" />
+                            <ColumnDefinition Width="40" />
+                            <ColumnDefinition Width="100" />
+                            <ColumnDefinition Width="80" />
+                            <ColumnDefinition Width="100" />
+                            <ColumnDefinition Width="80" />
+                        </Grid.ColumnDefinitions>
+
+                        <TextBlock Grid.Column="0" Foreground="White">Meal ID:</TextBlock>
+                        <TextBlock Grid.Column="1"
+                                   Foreground="White"
+                                   Text="{Binding SelectedMeal.Id}" />
+
+                        <TextBlock Grid.Column="2" Foreground="White">Creation date:</TextBlock>
+                        <TextBlock Grid.Column="3" Foreground="White"></TextBlock>
+
+                        <TextBlock Grid.Column="4" Foreground="White">Last update:</TextBlock>
+                        <TextBlock Grid.Column="5" Foreground="White"></TextBlock>
+                    </Grid>
+
+                    <StackPanel Orientation="Vertical">
+
+                        <!-- INSERT ADDITIONAL FIELDS HERE FOUND IN THE ENTITY. KEEP IT MINIMAL, ONLY TEXTBLOCK FOR DESCRIPTION AND A DATA ENTRY COMPONENT LIKE COMBOBOX OR TEXTBOX-->
+
+                    </StackPanel>
+                </StackPanel>
+            </ScrollViewer>
+        </Grid>
+
         <StackPanel HorizontalAlignment="Left" Width="240" Margin="12,12,0,12">
-            <ListView Height="425" d:ItemsSource="{d:SampleData ItemCount=5}">
-                <ListView.View>
-                    <GridView>
-                        <GridViewColumn/>
-                    </GridView>
-                </ListView.View>
+            <ListView Height="425">
             </ListView>
         </StackPanel>
     </Grid>
