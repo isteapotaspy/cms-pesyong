@@ -1,0 +1,340 @@
+﻿@page "/customer-register"
+@layout CustomerLayout
+@inject ICustomerAuthService AuthService
+@inject NavigationManager NavManager
+
+<MudContainer MaxWidth="MaxWidth.False" Class="register-page-shell">
+    <div class="register-page-bg"></div>
+
+    <MudContainer MaxWidth="MaxWidth.Large" Class="register-content-wrap">
+        <MudGrid Spacing="4" AlignItems="AlignItems.Center" Justify="Justify.Center">
+            <MudItem xs="12" md="6">
+                <div class="register-welcome-panel">
+                    <MudChip T="string"
+                             Variant="Variant.Filled"
+                             Size="Size.Small"
+                             Class="register-chip">
+                        Pesyong Fiesta
+                    </MudChip>
+
+                    <MudText Typo="Typo.h2" Class="register-title">
+                        Let’s get you started
+                    </MudText>
+
+                    <MudText Typo="Typo.h6" Class="register-subtitle">
+                        Create your account and start ordering your favorite meals, kakanin, and catering packages with ease.
+                    </MudText>
+
+                    <div class="register-feature-list">
+                        <div class="register-feature-item">
+                            <MudIcon Icon="@Icons.Material.Filled.RestaurantMenu" />
+                            <span>Browse short orders and catering packages</span>
+                        </div>
+
+                        <div class="register-feature-item">
+                            <MudIcon Icon="@Icons.Material.Filled.LocalOffer" />
+                            <span>Get updates on promos and featured offers</span>
+                        </div>
+
+                        <div class="register-feature-item">
+                            <MudIcon Icon="@Icons.Material.Filled.DeliveryDining" />
+                            <span>Track your orders and manage your profile</span>
+                        </div>
+                    </div>
+                </div>
+            </MudItem>
+
+            <MudItem xs="12" md="6">
+                <MudPaper Class="register-card" Elevation="0">
+                    <div class="register-card-top">
+                        <MudText Typo="Typo.h4" Class="register-card-title">
+                            Create account
+                        </MudText>
+
+                        <MudText Typo="Typo.body2" Class="register-card-copy">
+                            Fill in your details to join Pesyong.
+                        </MudText>
+                    </div>
+
+                    @if (!string.IsNullOrWhiteSpace(_errorMessage))
+                    {
+                        <MudAlert Severity="Severity.Error" Variant="Variant.Filled" Class="mb-4">
+                            @_errorMessage
+                        </MudAlert>
+                    }
+
+                    <MudGrid Spacing="2">
+                        <MudItem xs="12" sm="6">
+                            <MudTextField T="string"
+                                          Label="First Name"
+                                          Variant="Variant.Outlined"
+                                          Adornment="Adornment.Start"
+                                          AdornmentIcon="@Icons.Material.Filled.Badge"
+                                          Class="register-input"
+                                          @bind-Value="_vm.FirstName" />
+                        </MudItem>
+
+                        <MudItem xs="12" sm="6">
+                            <MudTextField T="string"
+                                          Label="Last Name"
+                                          Variant="Variant.Outlined"
+                                          Adornment="Adornment.Start"
+                                          AdornmentIcon="@Icons.Material.Filled.Badge"
+                                          Class="register-input"
+                                          @bind-Value="_vm.LastName" />
+                        </MudItem>
+
+                        <MudItem xs="12">
+                            <MudTextField T="string"
+                                          Label="Username"
+                                          Variant="Variant.Outlined"
+                                          Adornment="Adornment.Start"
+                                          AdornmentIcon="@Icons.Material.Filled.AlternateEmail"
+                                          Class="register-input"
+                                          @bind-Value="_vm.UserName" />
+                        </MudItem>
+
+                        <MudItem xs="12">
+                            <MudTextField T="string"
+                                          Label="Email Address"
+                                          Variant="Variant.Outlined"
+                                          Adornment="Adornment.Start"
+                                          AdornmentIcon="@Icons.Material.Filled.Email"
+                                          Class="register-input"
+                                          @bind-Value="_vm.Email" />
+                        </MudItem>
+
+                        <MudItem xs="12">
+                            <MudTextField T="string"
+                                          Label="Mobile Number"
+                                          Variant="Variant.Outlined"
+                                          Adornment="Adornment.Start"
+                                          AdornmentIcon="@Icons.Material.Filled.Phone"
+                                          Class="register-input"
+                                          @bind-Value="_vm.MobileNumber" />
+                        </MudItem>
+
+                        <MudItem xs="12">
+                            <MudTextField T="string"
+                                          Label="Password"
+                                          Variant="Variant.Outlined"
+                                          InputType="InputType.Password"
+                                          Adornment="Adornment.Start"
+                                          AdornmentIcon="@Icons.Material.Filled.Lock"
+                                          HelperText="Use at least 8 characters with uppercase, lowercase, number, and symbol."
+                                          Class="register-input"
+                                          @bind-Value="_vm.Password" />
+                        </MudItem>
+
+                        <MudItem xs="12">
+                            <MudButton Variant="Variant.Filled"
+                                       FullWidth="true"
+                                       Disabled="_isLoading"
+                                       Class="register-btn"
+                                       OnClick="RegisterAsync">
+                                @(_isLoading ? "Creating account..." : "Create account")
+                            </MudButton>
+                        </MudItem>
+                    </MudGrid>
+
+                    <MudDivider Class="my-5" />
+
+                    <div class="register-login-row">
+                        <MudText Typo="Typo.body2" Class="register-login-text">
+                            Already have an account?
+                        </MudText>
+
+                        <MudButton Variant="Variant.Text"
+                                   Class="register-login-link"
+                                   OnClick="@(() => NavManager.NavigateTo("/customer-login"))">
+                            Sign in
+                        </MudButton>
+                    </div>
+                </MudPaper>
+            </MudItem>
+        </MudGrid>
+    </MudContainer>
+</MudContainer>
+
+<style>
+    .register-page-shell {
+        position: relative;
+        min-height: calc(100vh - 64px);
+        overflow: hidden;
+        padding: 2rem 1rem;
+    }
+
+    .register-page-bg {
+        position: absolute;
+        inset: 0;
+        background:
+            radial-gradient(circle at top left, rgba(255, 188, 122, 0.26), transparent 32%),
+            radial-gradient(circle at bottom right, rgba(255, 134, 61, 0.18), transparent 28%),
+            linear-gradient(135deg, #fff8f2 0%, #fff3e7 40%, #fffaf6 100%);
+        z-index: 0;
+    }
+
+    .register-content-wrap {
+        position: relative;
+        z-index: 1;
+        min-height: calc(100vh - 120px);
+        display: flex;
+        align-items: center;
+    }
+
+    .register-welcome-panel {
+        padding: 1rem 1rem 1rem 0.5rem;
+    }
+
+    .register-chip {
+        background: linear-gradient(90deg, #f18a3b 0%, #de6d1d 100%) !important;
+        color: white !important;
+        font-weight: 600;
+        margin-bottom: 1rem;
+    }
+
+    .register-title {
+        font-weight: 800;
+        color: #2f1a0f;
+        line-height: 1.05;
+        margin-bottom: 0.75rem;
+    }
+
+    .register-subtitle {
+        color: #74492e;
+        font-weight: 400;
+        line-height: 1.5;
+        max-width: 32rem;
+        margin-bottom: 1.5rem;
+    }
+
+    .register-feature-list {
+        display: flex;
+        flex-direction: column;
+        gap: 0.9rem;
+    }
+
+    .register-feature-item {
+        display: flex;
+        align-items: center;
+        gap: 0.75rem;
+        color: #5f3822;
+        font-size: 0.98rem;
+        font-weight: 500;
+    }
+
+    .register-feature-item .mud-icon-root {
+        color: #dc6f27;
+        background: rgba(255, 170, 102, 0.18);
+        border-radius: 999px;
+        padding: 0.45rem;
+        font-size: 1.2rem;
+    }
+
+    .register-card {
+        padding: 2rem;
+        border-radius: 28px;
+        background: rgba(255, 255, 255, 0.94);
+        border: 1px solid rgba(240, 162, 104, 0.25);
+        box-shadow: 0 20px 50px rgba(118, 63, 24, 0.12);
+        backdrop-filter: blur(12px);
+    }
+
+    .register-card-top {
+        margin-bottom: 1.2rem;
+    }
+
+    .register-card-title {
+        color: #2e1b10;
+        font-weight: 800;
+        margin-bottom: 0.35rem;
+    }
+
+    .register-card-copy {
+        color: #7a5237;
+    }
+
+    .register-input .mud-input-control {
+        background: rgba(255, 248, 242, 0.75);
+        border-radius: 16px;
+    }
+
+    .register-btn {
+        height: 52px;
+        border-radius: 16px !important;
+        background: linear-gradient(90deg, #f08a3d 0%, #dd6b1d 100%) !important;
+        color: white !important;
+        font-weight: 700 !important;
+        text-transform: none !important;
+        box-shadow: 0 10px 24px rgba(223, 107, 29, 0.28);
+    }
+
+    .register-btn:hover {
+        filter: brightness(1.02);
+    }
+
+    .register-login-row {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 0.25rem;
+    }
+
+    .register-login-text {
+        color: #7a5237;
+    }
+
+    .register-login-link {
+        color: #d86b23 !important;
+        font-weight: 700 !important;
+        text-transform: none !important;
+    }
+
+    @@media (max-width: 960px) {
+        .register-page-shell {
+            padding: 1.25rem 0.75rem 2rem;
+        }
+
+        .register-content-wrap {
+            min-height: auto;
+        }
+
+        .register-welcome-panel {
+            padding: 0 0 0.5rem 0;
+        }
+
+        .register-title {
+            font-size: 2.3rem !important;
+        }
+
+        .register-card {
+            padding: 1.35rem;
+        }
+    }
+</style>
+
+@code {
+    private readonly CustomerRegisterVm _vm = new();
+    private bool _isLoading;
+    private string? _errorMessage;
+
+    private async Task RegisterAsync()
+    {
+        try
+        {
+            _isLoading = true;
+            _errorMessage = null;
+
+            var result = await AuthService.RegisterAsync(_vm.ToRequest());
+            NavManager.NavigateTo($"/verify-email?email={Uri.EscapeDataString(result.Email)}", true);
+        }
+        catch (Exception ex)
+        {
+            _errorMessage = ex.Message;
+        }
+        finally
+        {
+            _isLoading = false;
+        }
+    }
+}

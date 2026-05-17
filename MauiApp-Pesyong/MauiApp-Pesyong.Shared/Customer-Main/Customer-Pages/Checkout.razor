@@ -5,6 +5,8 @@
 @inject CustomerDrawerState DrawerState
 @inject NavigationManager NavManager
 @inject ICustomerOrderService OrderService
+@inject ICustomerAuthService AuthService
+@inject CustomerSession Session
 
 <MudContainer MaxWidth="MaxWidth.False" Class="customer-page">
     <TopBar />
@@ -260,9 +262,19 @@
     private bool _isPlacingOrder;
     private string? _errorMessage;
 
-    protected override void OnInitialized()
+    protected override async Task OnInitializedAsync()
     {
         Vm = CheckoutVm.FromCart(DrawerState.CartItems);
+
+        var restored = await AuthService.TryRestoreSessionAsync();
+
+        if (!restored || !Session.IsAuthenticated || Session.Profile is null)
+        {
+            NavManager.NavigateTo(string.IsNullOrWhiteSpace(ReturnUrl) ? "/customer-home" : ReturnUrl, true);
+            return;
+        }
+
+        Vm.ApplyCustomerProfile(Session.Profile);
     }
 
     private async Task PlaceOrderAsync()
@@ -297,5 +309,7 @@
     }
 
     private static string ToPeso(decimal amount) => $"₱{amount:N0}";
-    private bool HasMealItems => Vm.Items.Any(x => x.IsMealItem);
+
+    [SupplyParameterFromQuery]
+    public string? ReturnUrl { get; set; }
 }

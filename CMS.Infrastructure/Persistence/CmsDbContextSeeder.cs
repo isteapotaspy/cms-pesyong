@@ -171,7 +171,7 @@ public static class CmsDbContextSeeder
         var fiestaPackage = await EnsurePackageAsync(db, new Package
         {
             MenuCategoryId = cateringCategory.Id,
-            Title = "Grand Fiesta Package A",
+            Title = "Grand Fiesta Package A - Updated",
             Description = "Complete feast for celebrations with customizable viands, dessert, and beverage.",
             CardSummary = "A flexible catering package for family gatherings and events.",
             Badge = "Popular",
@@ -264,7 +264,7 @@ public static class CmsDbContextSeeder
             Title = "Choose 1 Dessert",
             Description = "Select one dessert for this package size.",
             SelectionType = PackageSelectionType.ChooseOne,
-            AllowedMealType = (MealType)MealType.Dessert,
+            AllowedMealType = MealType.Dessert,
             MinSelections = 1,
             MaxSelections = 1,
             IsRequired = true,
@@ -587,7 +587,7 @@ public static class CmsDbContextSeeder
         string subtitle,
         int paxCount,
         decimal price,
-        CancellationToken cancellationToken)
+    CancellationToken cancellationToken)
     {
         var existing = await db.PackageSizes
             .FirstOrDefaultAsync(
@@ -595,7 +595,15 @@ public static class CmsDbContextSeeder
                 cancellationToken);
 
         if (existing is not null)
+        {
+            existing.Subtitle = subtitle;
+            existing.PaxCount = paxCount;
+            existing.Price = price;
+            existing.IsAvailable = true;
+
+            await db.SaveChangesAsync(cancellationToken);
             return existing;
+        }
 
         var size = new PackageSize
         {
@@ -603,7 +611,8 @@ public static class CmsDbContextSeeder
             Label = label,
             Subtitle = subtitle,
             PaxCount = paxCount,
-            Price = price
+            Price = price,
+            IsAvailable = true
         };
 
         db.PackageSizes.Add(size);
@@ -644,9 +653,9 @@ public static class CmsDbContextSeeder
     }
 
     private static async Task<PackageSelectionRule> EnsurePackageSelectionRuleAsync(
-    CmsDbContext db,
-    PackageSelectionRule seed,
-    CancellationToken cancellationToken)
+        CmsDbContext db,
+        PackageSelectionRule seed,
+        CancellationToken cancellationToken)
     {
         var existing = await db.PackageSelectionRules
             .FirstOrDefaultAsync(
@@ -654,7 +663,21 @@ public static class CmsDbContextSeeder
                 cancellationToken);
 
         if (existing is not null)
+        {
+            existing.Description = seed.Description;
+            existing.SelectionType = seed.SelectionType;
+            existing.AllowedMealType = seed.AllowedMealType;
+            existing.MinSelections = seed.MinSelections;
+            existing.MaxSelections = seed.MaxSelections;
+            existing.IsRequired = seed.IsRequired;
+            existing.DisplayOrder = seed.DisplayOrder;
+            existing.IsActive = true;
+
+            await db.SaveChangesAsync(cancellationToken);
             return existing;
+        }
+
+        seed.IsActive = true;
 
         db.PackageSelectionRules.Add(seed);
         await db.SaveChangesAsync(cancellationToken);
@@ -676,14 +699,22 @@ public static class CmsDbContextSeeder
                 cancellationToken);
 
         if (existing is not null)
+        {
+            existing.AdditionalPrice = additionalPrice;
+            existing.IsDefault = isDefault;
+            existing.IsActive = true;
+
+            await db.SaveChangesAsync(cancellationToken);
             return existing;
+        }
 
         var option = new PackageSelectionOption
         {
             PackageSelectionRuleId = ruleId,
             MealId = mealId,
             AdditionalPrice = additionalPrice,
-            IsDefault = isDefault
+            IsDefault = isDefault,
+            IsActive = true
         };
 
         db.PackageSelectionOptions.Add(option);

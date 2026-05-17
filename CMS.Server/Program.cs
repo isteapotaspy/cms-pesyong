@@ -1,21 +1,33 @@
 using CMS.Contracts.Customer.Menu;
 using CMS.Contracts.Customer.Orders;
 using CMS.Contracts.Customer.Meals;
+using CMS.Contracts.Customer.Auth;
 using CMS.Domain.Entities;
 using CMS.Domain.Entities.Orders;
 using CMS.Domain.Entities.Packages;
 using CMS.Domain.Entities.User;
+using CMS.Domain.Entities.Menu;
+using CMS.Domain.Enums;
 using CMS.Contracts.Admin.Dashboard;
 using CMS.Contracts.Admin.Packages;
 using CMS.Contracts.Admin.Orders;
 using CMS.Contracts.Admin.Customers;
 using CMS.Contracts.Admin.Meals;
-using CMS.Domain.Enums;
 using CMS.Infrastructure;
 using CMS.Infrastructure.Persistence;
 using Microsoft.EntityFrameworkCore;
 using System.Text.Json.Serialization;
-using CMS.Domain.Entities.Menu;
+using System.IdentityModel.Tokens.Jwt;
+using System.Security.Claims;
+using System.Text;
+using CMS.Server.Options;
+using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Microsoft.AspNetCore.Identity;
+using Microsoft.Extensions.Options;
+using Microsoft.IdentityModel.Tokens;
+using System.Net.Mail;
+using System.Text.RegularExpressions;
+using CMS.Server.Services;
 
 namespace CMS.Server
 {
@@ -34,14 +46,52 @@ namespace CMS.Server
             builder.Services.AddOpenApi();
 
             builder.Services.AddInfrastructure(builder.Configuration);
+            builder.Services.Configure<SmtpOptions>(
+            builder.Configuration.GetSection("Smtp"));
+
+            builder.Services.AddScoped<IEmailSender, SmtpEmailSender>();
+
+            builder.Services.Configure<JwtOptions>(
+            builder.Configuration.GetSection("Jwt"));
+
+            builder.Services.AddScoped<IPasswordHasher<AppUser>, PasswordHasher<AppUser>>();
+
+            var jwtSection = builder.Configuration.GetSection("Jwt");
+            var jwtOptions = jwtSection.Get<JwtOptions>() ?? new JwtOptions();
+            var jwtKey = Encoding.UTF8.GetBytes(jwtOptions.Key);
+
+            builder.Services
+                .AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
+                .AddJwtBearer(options =>
+                {
+                    options.TokenValidationParameters = new TokenValidationParameters
+                    {
+                        ValidateIssuer = true,
+                        ValidateAudience = true,
+                        ValidateLifetime = true,
+                        ValidateIssuerSigningKey = true,
+                        ValidIssuer = jwtOptions.Issuer,
+                        ValidAudience = jwtOptions.Audience,
+                        IssuerSigningKey = new SymmetricSecurityKey(jwtKey),
+                        ClockSkew = TimeSpan.Zero
+                    };
+                });
+
+            builder.Services.AddAuthorization();
 
             var app = builder.Build();
+
+            app.UseAuthentication();
+            app.UseAuthorization();
 
             if (app.Environment.IsDevelopment())
             {
                 app.MapOpenApi();
                 await app.Services.SeedDatabaseAsync();
             }
+
+
+            // =================== CUSTOMER ENDPOINTS =================== //
 
             //GET all menu data for customer menu page
             app.MapGet("/api/customer/menu", async (CmsDbContext db) =>
@@ -738,10 +788,313 @@ namespace CMS.Server
                     : Results.NotFound(new { message = $"Meal with id {id} was not found." });
             });
 
+            //POST customer registration and login endpoints
+            app.MapPost("/api/customer/auth/register", async (
+                CustomerRegisterRequest request,
+                CmsDbContext db,
+                IPasswordHasher<AppUser> passwordHasher,
+                IEmailSender emailSender) =>
+            {
+                var normalizedUserName = request.UserName?.Trim() ?? string.Empty;
+                var normalizedEmail = request.Email?.Trim() ?? string.Empty;
+
+                if (!IsValidUsername(normalizedUserName))
+                {
+                    return Results.BadRequest(new
+                    {
+                        message = "Username must be 4-20 characters and contain only letters, numbers, underscore, or dot."
+                    });
+                }
+
+                if (!IsValidEmail(normalizedEmail))
+                {
+                    return Results.BadRequest(new
+                    {
+                        message = "Please enter a valid email address."
+                    });
+                }
+
+                if (!IsStrongPassword(request.Password))
+                {
+                    return Results.BadRequest(new
+                    {
+                        message = "Password must be at least 8 characters and include uppercase, lowercase, number, and symbol."
+                    });
+                }
+
+                if (string.IsNullOrWhiteSpace(request.FirstName))
+                {
+                    return Results.BadRequest(new { message = "First name is required." });
+                }
+
+                if (string.IsNullOrWhiteSpace(request.LastName))
+                {
+                    return Results.BadRequest(new { message = "Last name is required." });
+                }
+
+                var userNameExists = await db.AppUsers.AnyAsync(x =>
+                    x.UserName.ToLower() == normalizedUserName.ToLower());
+
+                if (userNameExists)
+                {
+                    return Results.BadRequest(new
+                    {
+                        message = $"Username '{normalizedUserName}' is already taken."
+                    });
+                }
+
+                var emailExists = await db.AppUsers.AnyAsync(x =>
+                    x.Email.ToLower() == normalizedEmail.ToLower());
+
+                if (emailExists)
+                {
+                    return Results.BadRequest(new
+                    {
+                        message = $"Email '{normalizedEmail}' is already registered."
+                    });
+                }
+
+                var verificationCode = GenerateVerificationCode();
+
+                var user = new AppUser
+                {
+                    UserName = normalizedUserName,
+                    Email = normalizedEmail,
+                    FirstName = request.FirstName.Trim(),
+                    LastName = request.LastName.Trim(),
+                    Role = UserRole.Customer,
+                    IsActive = true,
+                    IsEmailVerified = false,
+                    EmailVerificationCode = verificationCode,
+                    EmailVerificationCodeExpiresAtUtc = DateTime.UtcNow.AddMinutes(10)
+                };
+
+                user.PasswordHash = passwordHasher.HashPassword(user, request.Password);
+
+                db.AppUsers.Add(user);
+                await db.SaveChangesAsync();
+
+                var profile = new CustomerProfile
+                {
+                    AppUserId = user.Id,
+                    MobileNumber = request.MobileNumber?.Trim() ?? string.Empty
+                };
+
+                db.CustomerProfiles.Add(profile);
+                await db.SaveChangesAsync();
+
+                await emailSender.SendAsync(
+                    user.Email,
+                    "Verify your Pesyong account",
+                    $"""
+                        <div style="font-family:Arial,sans-serif;line-height:1.5">
+                            <h2>Welcome to Pesyong!</h2>
+                            <p>Your verification code is:</p>
+                            <div style="font-size:32px;font-weight:bold;letter-spacing:6px;color:#d86b23">
+                                {verificationCode}
+                            </div>
+                            <p>This code will expire in 10 minutes.</p>
+                        </div>
+                        """);
+
+                return Results.Ok(new RegisterResponse
+                {
+                    RequiresEmailVerification = true,
+                    Email = user.Email,
+                    Message = "Registration successful. Please check your email for the verification code."
+                });
+            });
+
+            //POST customer login endpoint
+            app.MapPost("/api/customer/auth/login", async (
+                CustomerLoginRequest request,
+                CmsDbContext db,
+                IPasswordHasher<AppUser> passwordHasher,
+                IOptions<JwtOptions> jwtOptionsAccessor) =>
+            {
+                if (string.IsNullOrWhiteSpace(request.UserNameOrEmail))
+                    return Results.BadRequest(new { message = "Username or email is required." });
+
+                if (string.IsNullOrWhiteSpace(request.Password))
+                    return Results.BadRequest(new { message = "Password is required." });
+
+                var input = request.UserNameOrEmail.Trim();
+
+                var user = await db.AppUsers
+                    .FirstOrDefaultAsync(x =>
+                        x.UserName == input || x.Email == input);
+
+                if (user is null || !user.IsActive)
+                    return Results.BadRequest(new { message = "Invalid login credentials." });
+
+                if (user.Role != UserRole.Customer)
+                    return Results.BadRequest(new { message = "This login is not a customer account." });
+
+                if (!user.IsEmailVerified)
+                    return Results.BadRequest(new { message = "Please verify your email before signing in." });
+
+                var verifyResult = passwordHasher.VerifyHashedPassword(user, user.PasswordHash, request.Password);
+                if (verifyResult == PasswordVerificationResult.Failed)
+                    return Results.BadRequest(new { message = "Invalid login credentials." });
+
+                var profile = await db.CustomerProfiles
+                    .FirstOrDefaultAsync(x => x.AppUserId == user.Id);
+
+                if (profile is null)
+                    return Results.BadRequest(new { message = "Customer profile was not found." });
+
+                var tokenResult = CreateCustomerAuthResponse(user, profile, jwtOptionsAccessor.Value);
+
+                return Results.Ok(tokenResult);
+            });
+
+
+            //POST verify email endpoint for customer email verification flow after registration
+            app.MapPost("/api/customer/auth/verify-email", async (
+                VerifyEmailRequest request,
+                CmsDbContext db,
+                IOptions<JwtOptions> jwtOptionsAccessor) =>
+            {
+                var email = request.Email?.Trim() ?? string.Empty;
+                var code = request.Code?.Trim() ?? string.Empty;
+
+                if (string.IsNullOrWhiteSpace(email) || string.IsNullOrWhiteSpace(code))
+                {
+                    return Results.BadRequest(new { message = "Email and code are required." });
+                }
+
+                var user = await db.AppUsers
+                    .FirstOrDefaultAsync(x => x.Email.ToLower() == email.ToLower());
+
+                if (user is null)
+                {
+                    return Results.BadRequest(new { message = "Invalid verification request." });
+                }
+
+                if (user.IsEmailVerified)
+                {
+                    return Results.BadRequest(new { message = "Email is already verified." });
+                }
+
+                if (user.EmailVerificationCode != code)
+                {
+                    return Results.BadRequest(new { message = "Invalid verification code." });
+                }
+
+                if (!user.EmailVerificationCodeExpiresAtUtc.HasValue ||
+                    user.EmailVerificationCodeExpiresAtUtc.Value < DateTime.UtcNow)
+                {
+                    return Results.BadRequest(new { message = "Verification code has expired." });
+                }
+
+                user.IsEmailVerified = true;
+                user.EmailVerificationCode = null;
+                user.EmailVerificationCodeExpiresAtUtc = null;
+
+                await db.SaveChangesAsync();
+
+                var profile = await db.CustomerProfiles
+                    .FirstOrDefaultAsync(x => x.AppUserId == user.Id);
+
+                if (profile is null)
+                {
+                    return Results.BadRequest(new { message = "Customer profile was not found." });
+                }
+
+                var authResponse = CreateCustomerAuthResponse(user, profile, jwtOptionsAccessor.Value);
+                return Results.Ok(authResponse);
+            });
+
+
+            //POST resend verification code endpoint for customer email verification flow
+            app.MapPost("/api/customer/auth/resend-code", async (
+                ResendVerificationCodeRequest request,
+                CmsDbContext db,
+                IEmailSender emailSender) =>
+            {
+                var email = request.Email?.Trim() ?? string.Empty;
+
+                if (string.IsNullOrWhiteSpace(email))
+                {
+                    return Results.BadRequest(new { message = "Email is required." });
+                }
+
+                var user = await db.AppUsers
+                    .FirstOrDefaultAsync(x => x.Email.ToLower() == email.ToLower());
+
+                if (user is null)
+                {
+                    return Results.BadRequest(new { message = "Email was not found." });
+                }
+
+                if (user.IsEmailVerified)
+                {
+                    return Results.BadRequest(new { message = "Email is already verified." });
+                }
+
+                var code = GenerateVerificationCode();
+                user.EmailVerificationCode = code;
+                user.EmailVerificationCodeExpiresAtUtc = DateTime.UtcNow.AddMinutes(10);
+
+                await db.SaveChangesAsync();
+
+                await emailSender.SendAsync(
+                    user.Email,
+                    "Your Pesyong verification code",
+                    $"""
+                        <div style="font-family:Arial,sans-serif;line-height:1.5">
+                            <h2>Verify your Pesyong account</h2>
+                            <p>Your new verification code is:</p>
+                            <div style="font-size:32px;font-weight:bold;letter-spacing:6px;color:#d86b23">
+                                {code}
+                            </div>
+                            <p>This code will expire in 10 minutes.</p>
+                        </div>
+                        """);
+
+                return Results.Ok(new
+                {
+                    message = "A new verification code was sent to your email."
+                });
+            });
+
+            //GET current authenticated customer details
+            app.MapGet("/api/customer/auth/me", async (
+                ClaimsPrincipal claims,
+                CmsDbContext db) =>
+            {
+                var appUserIdClaim = claims.FindFirstValue(ClaimTypes.NameIdentifier);
+
+                if (!int.TryParse(appUserIdClaim, out var appUserId))
+                    return Results.Unauthorized();
+
+                var result = await db.AppUsers
+                    .Where(x => x.Id == appUserId && x.Role == UserRole.Customer)
+                    .Join(
+                        db.CustomerProfiles,
+                        user => user.Id,
+                        profile => profile.AppUserId,
+                        (user, profile) => new CustomerMeResponse
+                        {
+                            AppUserId = user.Id,
+                            CustomerProfileId = profile.Id,
+                            UserName = user.UserName,
+                            Email = user.Email,
+                            FirstName = user.FirstName,
+                            LastName = user.LastName,
+                            FullName = $"{user.FirstName} {user.LastName}".Trim(),
+                            MobileNumber = profile.MobileNumber
+                        })
+                    .FirstOrDefaultAsync();
+
+                return result is not null
+                    ? Results.Ok(result)
+                    : Results.NotFound(new { message = "Customer profile was not found." });
+            }).RequireAuthorization();
 
 
 
-            //ADMIN
+            //================================= ADMIN ENDPOINTS ================================= //
 
             //GET dashboard stats
             app.MapGet("/api/admin/dashboard/stats", async (CmsDbContext db) =>
@@ -2070,6 +2423,85 @@ namespace CMS.Server
         {
             itemType = value;
             return true;
+        }
+
+        private static AuthResponse CreateCustomerAuthResponse(
+            AppUser user,
+            CustomerProfile profile,
+            JwtOptions jwtOptions)
+        {
+            var expiresAtUtc = DateTime.UtcNow.AddMinutes(jwtOptions.ExpiryMinutes);
+
+            var claims = new List<Claim>
+        {
+            new(ClaimTypes.NameIdentifier, user.Id.ToString()),
+            new(ClaimTypes.Name, user.UserName),
+            new(ClaimTypes.Email, user.Email),
+            new(ClaimTypes.Role, user.Role.ToString()),
+            new("customer_profile_id", profile.Id.ToString())
+        };
+
+            var key = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(jwtOptions.Key));
+            var credentials = new SigningCredentials(key, SecurityAlgorithms.HmacSha256);
+
+            var token = new JwtSecurityToken(
+                issuer: jwtOptions.Issuer,
+                audience: jwtOptions.Audience,
+                claims: claims,
+                expires: expiresAtUtc,
+                signingCredentials: credentials);
+
+            var tokenValue = new JwtSecurityTokenHandler().WriteToken(token);
+
+            return new AuthResponse
+            {
+                Token = tokenValue,
+                ExpiresAtUtc = expiresAtUtc,
+                AppUserId = user.Id,
+                CustomerProfileId = profile.Id,
+                UserName = user.UserName,
+                Email = user.Email,
+                FullName = $"{user.FirstName} {user.LastName}".Trim(),
+                Role = user.Role.ToString()
+            };
+        }
+
+        private static bool IsValidEmail(string email)
+        {
+            if (string.IsNullOrWhiteSpace(email))
+                return false;
+
+            try
+            {
+                var addr = new MailAddress(email);
+                return addr.Address == email;
+            }
+            catch
+            {
+                return false;
+            }
+        }
+
+        private static bool IsValidUsername(string userName)
+        {
+            if (string.IsNullOrWhiteSpace(userName))
+                return false;
+
+            return Regex.IsMatch(userName, @"^[a-zA-Z0-9._]{4,20}$");
+        }
+
+        private static bool IsStrongPassword(string password)
+        {
+            if (string.IsNullOrWhiteSpace(password))
+                return false;
+
+            return Regex.IsMatch(password,
+                @"^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[^A-Za-z\d]).{8,}$");
+        }
+
+        private static string GenerateVerificationCode()
+        {
+            return Random.Shared.Next(100000, 999999).ToString();
         }
     }
 

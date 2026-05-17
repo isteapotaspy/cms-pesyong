@@ -57,6 +57,7 @@ html, body {
     background: var(--pesyong-bg);
 }
 
+
 .customer-page {
     padding: 22px 26px 40px;
 }
@@ -119,6 +120,10 @@ html, body {
 
 .nav-action-btn {
     min-width: 70px;
+}
+
+.nav-avatar-clickable {
+    cursor: pointer;
 }
 
 .cart-icon-btn {

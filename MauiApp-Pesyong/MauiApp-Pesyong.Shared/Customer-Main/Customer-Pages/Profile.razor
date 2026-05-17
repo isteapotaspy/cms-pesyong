@@ -1,0 +1,60 @@
+﻿@page "/customer-profile"
+@layout CustomerLayout
+@inject ICustomerAuthService AuthService
+@inject CustomerSession Session
+@inject NavigationManager NavManager
+
+<MudContainer MaxWidth="MaxWidth.Small" Class="py-8">
+    <MudPaper Class="pa-6" Elevation="0">
+        <MudText Typo="Typo.h4" Class="mb-4">My Profile</MudText>
+
+        @if (_isLoading)
+        {
+            <MudProgressCircular Indeterminate="true" Color="Color.Primary" />
+        }
+        else if (Session.Profile is null)
+        {
+            <MudAlert Severity="Severity.Warning" Variant="Variant.Outlined" Class="mb-4">
+                You are not logged in.
+            </MudAlert>
+
+            <MudButton Variant="Variant.Filled"
+                       Color="Color.Primary"
+                       OnClick="@(() => NavManager.NavigateTo("/login"))">
+                Go to Login
+            </MudButton>
+        }
+        else
+        {
+            <MudList Dense="true" T="string">
+                <MudListItem>Full Name: @Session.Profile.FullName</MudListItem>
+                <MudListItem>Username: @Session.Profile.UserName</MudListItem>
+                <MudListItem>Email: @Session.Profile.Email</MudListItem>
+                <MudListItem>Mobile: @Session.Profile.MobileNumber</MudListItem>
+            </MudList>
+
+            <MudButton Variant="Variant.Outlined"
+                       Color="Color.Error"
+                       Class="mt-4"
+                       OnClick="LogoutAsync">
+                Logout
+            </MudButton>
+        }
+    </MudPaper>
+</MudContainer>
+
+@code {
+    private bool _isLoading = true;
+
+    protected override async Task OnInitializedAsync()
+    {
+        await AuthService.TryRestoreSessionAsync();
+        _isLoading = false;
+    }
+
+    private async Task LogoutAsync()
+    {
+        await AuthService.LogoutAsync();
+        NavManager.NavigateTo("/customer-login", true);
+    }
+}
