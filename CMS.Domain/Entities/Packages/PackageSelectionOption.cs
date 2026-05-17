@@ -10,6 +10,7 @@ public class PackageSelectionOption : BaseEntity
 
     public decimal AdditionalPrice { get; set; } = 0m;
     public bool IsDefault { get; set; }
+    public bool IsActive { get; set; } = true;
 
     public PackageSelectionRule PackageSelectionRule { get; set; } = default!;
     public Meal Meal { get; set; } = default!;

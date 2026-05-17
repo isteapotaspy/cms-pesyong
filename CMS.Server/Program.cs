@@ -62,11 +62,11 @@ namespace CMS.Server
                     .AsNoTracking()
                     .Where(x => x.IsAvailable)
                     .Include(x => x.MenuCategory)
-                    .Include(x => x.Sizes)
                     .Include(x => x.Addons)
-                    .Include(x => x.SelectionRules)
-                        .ThenInclude(x => x.Options)
-                            .ThenInclude(x => x.Meal)
+                    .Include(x => x.Sizes)
+                        .ThenInclude(s => s.SelectionRules)
+                            .ThenInclude(r => r.Options)
+                                .ThenInclude(o => o.Meal)
                     .OrderBy(x => x.Title)
                     .Select(x => new MenuPackageDto
                     {
@@ -90,6 +90,7 @@ namespace CMS.Server
                         IsCustomizable = x.IsCustomizable,
 
                         Sizes = x.Sizes
+                            .Where(s => s.IsAvailable)
                             .OrderBy(s => s.PaxCount)
                             .Select(s => new PackageSizeDto
                             {
@@ -97,7 +98,45 @@ namespace CMS.Server
                                 Label = s.Label,
                                 Subtitle = s.Subtitle,
                                 PaxCount = s.PaxCount,
-                                Price = s.Price
+                                Price = s.Price,
+                                SelectionRules = s.SelectionRules
+                                    .Where(r => r.IsActive)
+                                    .OrderBy(r => r.DisplayOrder)
+                                    .Select(r => new PackageSelectionRuleDto
+                                    {
+                                        Id = r.Id,
+                                        Title = r.Title,
+                                        Description = r.Description,
+                                        SelectionType = r.SelectionType.ToString(),
+                                        AllowedMealType = r.AllowedMealType.ToString(),
+                                        MinSelections = r.MinSelections,
+                                        MaxSelections = r.MaxSelections,
+                                        IsRequired = r.IsRequired,
+                                        DisplayOrder = r.DisplayOrder,
+                                        Options = r.Options
+                                            .Where(o => o.IsActive && o.Meal.IsAvailable)
+                                            .OrderBy(o => o.Meal.Name)
+                                            .Select(o => new PackageSelectionOptionDto
+                                            {
+                                                Id = o.Id,
+                                                MealId = o.MealId,
+                                                AdditionalPrice = o.AdditionalPrice,
+                                                IsDefault = o.IsDefault,
+                                                Meal = new MealOptionDto
+                                                {
+                                                    Id = o.Meal.Id,
+                                                    Name = o.Meal.Name,
+                                                    Description = o.Meal.Description,
+                                                    MealType = o.Meal.MealType.ToString(),
+                                                    BasePrice = o.Meal.BasePrice,
+                                                    AdditionalPrice = o.AdditionalPrice,
+                                                    ImageUrl = o.Meal.ImageUrl,
+                                                    IsDefault = o.IsDefault
+                                                }
+                                            })
+                                            .ToList()
+                                    })
+                                    .ToList()
                             })
                             .ToList(),
 
@@ -111,44 +150,6 @@ namespace CMS.Server
                                 Description = a.Description,
                                 Price = a.Price,
                                 IsAvailable = a.IsAvailable
-                            })
-                            .ToList(),
-
-                        SelectionRules = x.SelectionRules
-                            .OrderBy(r => r.DisplayOrder)
-                            .Select(r => new PackageSelectionRuleDto
-                            {
-                                Id = r.Id,
-                                Title = r.Title,
-                                Description = r.Description,
-                                SelectionType = r.SelectionType.ToString(),
-                                AllowedMealType = r.AllowedMealType.ToString(),
-                                MinSelections = r.MinSelections,
-                                MaxSelections = r.MaxSelections,
-                                IsRequired = r.IsRequired,
-                                DisplayOrder = r.DisplayOrder,
-
-                                Options = r.Options
-                                    .OrderBy(o => o.Meal.Name)
-                                    .Select(o => new PackageSelectionOptionDto
-                                    {
-                                        Id = o.Id,
-                                        MealId = o.MealId,
-                                        AdditionalPrice = o.AdditionalPrice,
-                                        IsDefault = o.IsDefault,
-                                        Meal = new MealOptionDto
-                                        {
-                                            Id = o.Meal.Id,
-                                            Name = o.Meal.Name,
-                                            Description = o.Meal.Description,
-                                            MealType = o.Meal.MealType.ToString(),
-                                            BasePrice = o.Meal.BasePrice,
-                                            AdditionalPrice = o.AdditionalPrice,
-                                            ImageUrl = o.Meal.ImageUrl,
-                                            IsDefault = o.IsDefault
-                                        }
-                                    })
-                                    .ToList()
                             })
                             .ToList()
                     })
@@ -171,11 +172,11 @@ namespace CMS.Server
                     .AsNoTracking()
                     .Where(x => x.Id == id && x.IsAvailable)
                     .Include(x => x.MenuCategory)
-                    .Include(x => x.Sizes)
                     .Include(x => x.Addons)
-                    .Include(x => x.SelectionRules)
-                        .ThenInclude(x => x.Options)
-                            .ThenInclude(x => x.Meal)
+                    .Include(x => x.Sizes)
+                        .ThenInclude(s => s.SelectionRules)
+                            .ThenInclude(r => r.Options)
+                                .ThenInclude(o => o.Meal)
                     .Select(x => new MenuPackageDto
                     {
                         Id = x.Id,
@@ -198,6 +199,7 @@ namespace CMS.Server
                         IsCustomizable = x.IsCustomizable,
 
                         Sizes = x.Sizes
+                            .Where(s => s.IsAvailable)
                             .OrderBy(s => s.PaxCount)
                             .Select(s => new PackageSizeDto
                             {
@@ -205,7 +207,45 @@ namespace CMS.Server
                                 Label = s.Label,
                                 Subtitle = s.Subtitle,
                                 PaxCount = s.PaxCount,
-                                Price = s.Price
+                                Price = s.Price,
+                                SelectionRules = s.SelectionRules
+                                    .Where(r => r.IsActive)
+                                    .OrderBy(r => r.DisplayOrder)
+                                    .Select(r => new PackageSelectionRuleDto
+                                    {
+                                        Id = r.Id,
+                                        Title = r.Title,
+                                        Description = r.Description,
+                                        SelectionType = r.SelectionType.ToString(),
+                                        AllowedMealType = r.AllowedMealType.ToString(),
+                                        MinSelections = r.MinSelections,
+                                        MaxSelections = r.MaxSelections,
+                                        IsRequired = r.IsRequired,
+                                        DisplayOrder = r.DisplayOrder,
+                                        Options = r.Options
+                                            .Where(o => o.IsActive && o.Meal.IsAvailable)
+                                            .OrderBy(o => o.Meal.Name)
+                                            .Select(o => new PackageSelectionOptionDto
+                                            {
+                                                Id = o.Id,
+                                                MealId = o.MealId,
+                                                AdditionalPrice = o.AdditionalPrice,
+                                                IsDefault = o.IsDefault,
+                                                Meal = new MealOptionDto
+                                                {
+                                                    Id = o.Meal.Id,
+                                                    Name = o.Meal.Name,
+                                                    Description = o.Meal.Description,
+                                                    MealType = o.Meal.MealType.ToString(),
+                                                    BasePrice = o.Meal.BasePrice,
+                                                    AdditionalPrice = o.AdditionalPrice,
+                                                    ImageUrl = o.Meal.ImageUrl,
+                                                    IsDefault = o.IsDefault
+                                                }
+                                            })
+                                            .ToList()
+                                    })
+                                    .ToList()
                             })
                             .ToList(),
 
@@ -219,44 +259,6 @@ namespace CMS.Server
                                 Description = a.Description,
                                 Price = a.Price,
                                 IsAvailable = a.IsAvailable
-                            })
-                            .ToList(),
-
-                        SelectionRules = x.SelectionRules
-                            .OrderBy(r => r.DisplayOrder)
-                            .Select(r => new PackageSelectionRuleDto
-                            {
-                                Id = r.Id,
-                                Title = r.Title,
-                                Description = r.Description,
-                                SelectionType = r.SelectionType.ToString(),
-                                AllowedMealType = r.AllowedMealType.ToString(),
-                                MinSelections = r.MinSelections,
-                                MaxSelections = r.MaxSelections,
-                                IsRequired = r.IsRequired,
-                                DisplayOrder = r.DisplayOrder,
-
-                                Options = r.Options
-                                    .OrderBy(o => o.Meal.Name)
-                                    .Select(o => new PackageSelectionOptionDto
-                                    {
-                                        Id = o.Id,
-                                        MealId = o.MealId,
-                                        AdditionalPrice = o.AdditionalPrice,
-                                        IsDefault = o.IsDefault,
-                                        Meal = new MealOptionDto
-                                        {
-                                            Id = o.Meal.Id,
-                                            Name = o.Meal.Name,
-                                            Description = o.Meal.Description,
-                                            MealType = o.Meal.MealType.ToString(),
-                                            BasePrice = o.Meal.BasePrice,
-                                            AdditionalPrice = o.AdditionalPrice,
-                                            ImageUrl = o.Meal.ImageUrl,
-                                            IsDefault = o.IsDefault
-                                        }
-                                    })
-                                    .ToList()
                             })
                             .ToList()
                     })
@@ -330,6 +332,9 @@ namespace CMS.Server
                         });
                     }
 
+                    // =========================
+                    // MEAL ITEM FLOW
+                    // =========================
                     if (itemType == OrderItemType.Meal)
                     {
                         if (!item.MealId.HasValue)
@@ -384,18 +389,20 @@ namespace CMS.Server
                         continue;
                     }
 
+                    // =========================
                     // PACKAGE ITEM FLOW
+                    // =========================
                     if (!item.PackageId.HasValue)
                     {
                         return Results.BadRequest(new { message = "PackageId is required for package order items." });
                     }
 
                     var package = await db.Packages
-                        .Include(x => x.Sizes)
                         .Include(x => x.Addons)
-                        .Include(x => x.SelectionRules)
-                            .ThenInclude(x => x.Options)
-                                .ThenInclude(x => x.Meal)
+                        .Include(x => x.Sizes)
+                            .ThenInclude(s => s.SelectionRules)
+                                .ThenInclude(r => r.Options)
+                                    .ThenInclude(o => o.Meal)
                         .FirstOrDefaultAsync(x => x.Id == item.PackageId.Value && x.IsAvailable);
 
                     if (package is null)
@@ -407,17 +414,22 @@ namespace CMS.Server
 
                     if (item.PackageSizeId.HasValue)
                     {
-                        selectedSize = package.Sizes.FirstOrDefault(x => x.Id == item.PackageSizeId.Value);
+                        selectedSize = package.Sizes.FirstOrDefault(x => x.Id == item.PackageSizeId.Value && x.IsAvailable);
                     }
                     else if (package.Sizes.Count == 1)
                     {
-                        selectedSize = package.Sizes.First();
+                        selectedSize = package.Sizes.FirstOrDefault(x => x.IsAvailable);
                     }
 
                     if (selectedSize is null)
                     {
                         return Results.BadRequest(new { message = $"A valid package size is required for package '{package.Title}'." });
                     }
+
+                    var activeRules = selectedSize.SelectionRules
+                        .Where(x => x.IsActive)
+                        .OrderBy(x => x.DisplayOrder)
+                        .ToList();
 
                     var orderItemMealSelections = new List<OrderItemMealSelection>();
                     var orderItemAddonSelections = new List<OrderItemAddonSelection>();
@@ -427,7 +439,7 @@ namespace CMS.Server
 
                     var consumedMealSelections = 0;
 
-                    foreach (var rule in package.SelectionRules.OrderBy(x => x.DisplayOrder))
+                    foreach (var rule in activeRules)
                     {
                         var selectedForRule = requestMealSelections
                             .Where(x => x.PackageSelectionRuleId == rule.Id)
@@ -451,13 +463,16 @@ namespace CMS.Server
 
                         foreach (var selected in selectedForRule)
                         {
-                            var option = rule.Options.FirstOrDefault(x => x.MealId == selected.MealId);
+                            var option = rule.Options.FirstOrDefault(x =>
+                                x.MealId == selected.MealId &&
+                                x.IsActive &&
+                                x.Meal.IsAvailable);
 
                             if (option is null)
                             {
                                 return Results.BadRequest(new
                                 {
-                                    message = $"Meal id {selected.MealId} is not allowed for rule '{rule.Title}'."
+                                    message = $"Meal id {selected.MealId} is not allowed for rule '{rule.Title}' in size '{selectedSize.Label}'."
                                 });
                             }
 
@@ -478,7 +493,7 @@ namespace CMS.Server
                     {
                         return Results.BadRequest(new
                         {
-                            message = "One or more meal selections do not match the package rules."
+                            message = "One or more meal selections do not match the selected package size rules."
                         });
                     }
 
@@ -771,8 +786,8 @@ namespace CMS.Server
                     .AsNoTracking()
                     .Include(x => x.MenuCategory)
                     .Include(x => x.Sizes)
+                        .ThenInclude(s => s.SelectionRules)
                     .Include(x => x.Addons)
-                    .Include(x => x.SelectionRules)
                     .OrderBy(x => x.Title)
                     .Select(x => new AdminPackageListItemDto
                     {
@@ -788,12 +803,13 @@ namespace CMS.Server
                         IsCustomizable = x.IsCustomizable,
                         SizeCount = x.Sizes.Count,
                         AddonCount = x.Addons.Count,
-                        SelectionRuleCount = x.SelectionRules.Count
+                        SelectionRuleCount = x.Sizes.SelectMany(s => s.SelectionRules).Count()
                     })
                     .ToListAsync();
 
                 return Results.Ok(packages);
             });
+
 
             //GET package details by id for admin package management page
             app.MapGet("/api/admin/packages/{id:int}", async (int id, CmsDbContext db) =>
@@ -802,11 +818,11 @@ namespace CMS.Server
                     .AsNoTracking()
                     .Where(x => x.Id == id)
                     .Include(x => x.MenuCategory)
-                    .Include(x => x.Sizes)
                     .Include(x => x.Addons)
-                    .Include(x => x.SelectionRules)
-                        .ThenInclude(x => x.Options)
-                            .ThenInclude(x => x.Meal)
+                    .Include(x => x.Sizes)
+                        .ThenInclude(s => s.SelectionRules)
+                            .ThenInclude(r => r.Options)
+                                .ThenInclude(o => o.Meal)
                     .Select(x => new AdminPackageDetailsDto
                     {
                         Id = x.Id,
@@ -836,7 +852,36 @@ namespace CMS.Server
                                 Label = s.Label,
                                 Subtitle = s.Subtitle,
                                 PaxCount = s.PaxCount,
-                                Price = s.Price
+                                Price = s.Price,
+                                SelectionRules = s.SelectionRules
+                                    .Where(r => r.IsActive)
+                                    .OrderBy(r => r.DisplayOrder)
+                                    .Select(r => new AdminPackageSelectionRuleDto
+                                    {
+                                        Id = r.Id,
+                                        Title = r.Title,
+                                        Description = r.Description,
+                                        SelectionType = r.SelectionType.ToString(),
+                                        AllowedMealType = r.AllowedMealType.ToString(),
+                                        MinSelections = r.MinSelections,
+                                        MaxSelections = r.MaxSelections,
+                                        IsRequired = r.IsRequired,
+                                        DisplayOrder = r.DisplayOrder,
+                                        Options = r.Options
+                                            .Where(o => o.IsActive)
+                                            .OrderBy(o => o.Meal.Name)
+                                            .Select(o => new AdminPackageSelectionOptionDto
+                                            {
+                                                Id = o.Id,
+                                                MealId = o.MealId,
+                                                MealName = o.Meal.Name,
+                                                MealType = o.Meal.MealType.ToString(),
+                                                AdditionalPrice = o.AdditionalPrice,
+                                                IsDefault = o.IsDefault
+                                            })
+                                            .ToList()
+                                    })
+                                    .ToList()
                             })
                             .ToList(),
 
@@ -849,34 +894,6 @@ namespace CMS.Server
                                 Description = a.Description,
                                 Price = a.Price,
                                 IsAvailable = a.IsAvailable
-                            })
-                            .ToList(),
-
-                        SelectionRules = x.SelectionRules
-                            .OrderBy(r => r.DisplayOrder)
-                            .Select(r => new AdminPackageSelectionRuleDto
-                            {
-                                Id = r.Id,
-                                Title = r.Title,
-                                Description = r.Description,
-                                SelectionType = r.SelectionType.ToString(),
-                                AllowedMealType = r.AllowedMealType.ToString(),
-                                MinSelections = r.MinSelections,
-                                MaxSelections = r.MaxSelections,
-                                IsRequired = r.IsRequired,
-                                DisplayOrder = r.DisplayOrder,
-                                Options = r.Options
-                                    .OrderBy(o => o.Meal.Name)
-                                    .Select(o => new AdminPackageSelectionOptionDto
-                                    {
-                                        Id = o.Id,
-                                        MealId = o.MealId,
-                                        MealName = o.Meal.Name,
-                                        MealType = o.Meal.MealType.ToString(),
-                                        AdditionalPrice = o.AdditionalPrice,
-                                        IsDefault = o.IsDefault
-                                    })
-                                    .ToList()
                             })
                             .ToList()
                     })
@@ -1212,30 +1229,109 @@ namespace CMS.Server
                     IsCustomizable = request.IsCustomizable
                 };
 
-                foreach (var size in request.Sizes)
+                foreach (var sizeRequest in request.Sizes)
                 {
-                    if (string.IsNullOrWhiteSpace(size.Label))
+                    if (string.IsNullOrWhiteSpace(sizeRequest.Label))
                     {
                         return Results.BadRequest(new { message = "Each package size must have a label." });
                     }
 
-                    if (size.PaxCount <= 0)
+                    if (sizeRequest.PaxCount <= 0)
                     {
-                        return Results.BadRequest(new { message = $"Package size '{size.Label}' must have a pax count greater than zero." });
+                        return Results.BadRequest(new { message = $"Package size '{sizeRequest.Label}' must have a pax count greater than zero." });
                     }
 
-                    if (size.Price < 0)
+                    if (sizeRequest.Price < 0)
                     {
-                        return Results.BadRequest(new { message = $"Package size '{size.Label}' cannot have a negative price." });
+                        return Results.BadRequest(new { message = $"Package size '{sizeRequest.Label}' cannot have a negative price." });
                     }
 
-                    package.Sizes.Add(new PackageSize
+                    var size = new PackageSize
                     {
-                        Label = size.Label.Trim(),
-                        Subtitle = size.Subtitle.Trim(),
-                        PaxCount = size.PaxCount,
-                        Price = size.Price
-                    });
+                        Label = sizeRequest.Label.Trim(),
+                        Subtitle = sizeRequest.Subtitle.Trim(),
+                        PaxCount = sizeRequest.PaxCount,
+                        Price = sizeRequest.Price,
+                        IsAvailable = true
+                    };
+
+                    foreach (var ruleRequest in sizeRequest.SelectionRules)
+                    {
+                        if (!TryResolvePackageSelectionType(ruleRequest.SelectionType, out var selectionType))
+                        {
+                            return Results.BadRequest(new
+                            {
+                                message = $"Invalid selection type '{ruleRequest.SelectionType}' for rule '{ruleRequest.Title}'."
+                            });
+                        }
+
+                        if (!TryResolveMealType(ruleRequest.AllowedMealType, out var allowedMealType))
+                        {
+                            return Results.BadRequest(new
+                            {
+                                message = $"Invalid meal type '{ruleRequest.AllowedMealType}' for rule '{ruleRequest.Title}'."
+                            });
+                        }
+
+                        if (string.IsNullOrWhiteSpace(ruleRequest.Title))
+                        {
+                            return Results.BadRequest(new { message = "Each selection rule must have a title." });
+                        }
+
+                        if (ruleRequest.MaxSelections < ruleRequest.MinSelections)
+                        {
+                            return Results.BadRequest(new
+                            {
+                                message = $"Rule '{ruleRequest.Title}' has MaxSelections lower than MinSelections."
+                            });
+                        }
+
+                        var rule = new PackageSelectionRule
+                        {
+                            Title = ruleRequest.Title.Trim(),
+                            Description = ruleRequest.Description.Trim(),
+                            SelectionType = selectionType,
+                            AllowedMealType = allowedMealType,
+                            MinSelections = ruleRequest.MinSelections,
+                            MaxSelections = ruleRequest.MaxSelections,
+                            IsRequired = ruleRequest.IsRequired,
+                            DisplayOrder = ruleRequest.DisplayOrder,
+                            IsActive = true
+                        };
+
+                        foreach (var optionRequest in ruleRequest.Options)
+                        {
+                            var meal = await db.Meals.FirstOrDefaultAsync(x => x.Id == optionRequest.MealId);
+
+                            if (meal is null)
+                            {
+                                return Results.BadRequest(new
+                                {
+                                    message = $"Meal with id {optionRequest.MealId} was not found for rule '{ruleRequest.Title}'."
+                                });
+                            }
+
+                            if (meal.MealType != allowedMealType)
+                            {
+                                return Results.BadRequest(new
+                                {
+                                    message = $"Meal '{meal.Name}' does not match the allowed meal type '{allowedMealType}' for rule '{ruleRequest.Title}'."
+                                });
+                            }
+
+                            rule.Options.Add(new PackageSelectionOption
+                            {
+                                MealId = meal.Id,
+                                AdditionalPrice = optionRequest.AdditionalPrice,
+                                IsDefault = optionRequest.IsDefault,
+                                IsActive = true
+                            });
+                        }
+
+                        size.SelectionRules.Add(rule);
+                    }
+
+                    package.Sizes.Add(size);
                 }
 
                 foreach (var addon in request.Addons)
@@ -1259,168 +1355,10 @@ namespace CMS.Server
                     });
                 }
 
-                foreach (var ruleRequest in request.SelectionRules)
-                {
-                    if (!TryResolvePackageSelectionType(ruleRequest.SelectionType, out var selectionType))
-                    {
-                        return Results.BadRequest(new
-                        {
-                            message = $"Invalid selection type '{ruleRequest.SelectionType}' for rule '{ruleRequest.Title}'."
-                        });
-                    }
-
-                    if (!TryResolveMealType(ruleRequest.AllowedMealType, out var allowedMealType))
-                    {
-                        return Results.BadRequest(new
-                        {
-                            message = $"Invalid meal type '{ruleRequest.AllowedMealType}' for rule '{ruleRequest.Title}'."
-                        });
-                    }
-
-                    if (string.IsNullOrWhiteSpace(ruleRequest.Title))
-                    {
-                        return Results.BadRequest(new { message = "Each selection rule must have a title." });
-                    }
-
-                    if (ruleRequest.MaxSelections < ruleRequest.MinSelections)
-                    {
-                        return Results.BadRequest(new
-                        {
-                            message = $"Rule '{ruleRequest.Title}' has MaxSelections lower than MinSelections."
-                        });
-                    }
-
-                    var rule = new PackageSelectionRule
-                    {
-                        Title = ruleRequest.Title.Trim(),
-                        Description = ruleRequest.Description.Trim(),
-                        SelectionType = selectionType,
-                        AllowedMealType = allowedMealType,
-                        MinSelections = ruleRequest.MinSelections,
-                        MaxSelections = ruleRequest.MaxSelections,
-                        IsRequired = ruleRequest.IsRequired,
-                        DisplayOrder = ruleRequest.DisplayOrder
-                    };
-
-                    foreach (var optionRequest in ruleRequest.Options)
-                    {
-                        var meal = await db.Meals.FirstOrDefaultAsync(x => x.Id == optionRequest.MealId);
-
-                        if (meal is null)
-                        {
-                            return Results.BadRequest(new
-                            {
-                                message = $"Meal with id {optionRequest.MealId} was not found for rule '{ruleRequest.Title}'."
-                            });
-                        }
-
-                        if (meal.MealType != allowedMealType)
-                        {
-                            return Results.BadRequest(new
-                            {
-                                message = $"Meal '{meal.Name}' does not match the allowed meal type '{allowedMealType}' for rule '{ruleRequest.Title}'."
-                            });
-                        }
-
-                        rule.Options.Add(new PackageSelectionOption
-                        {
-                            MealId = meal.Id,
-                            AdditionalPrice = optionRequest.AdditionalPrice,
-                            IsDefault = optionRequest.IsDefault
-                        });
-                    }
-
-                    package.SelectionRules.Add(rule);
-                }
-
                 db.Packages.Add(package);
                 await db.SaveChangesAsync();
 
-                var created = await db.Packages
-                    .AsNoTracking()
-                    .Where(x => x.Id == package.Id)
-                    .Include(x => x.MenuCategory)
-                    .Include(x => x.Sizes)
-                    .Include(x => x.Addons)
-                    .Include(x => x.SelectionRules)
-                        .ThenInclude(x => x.Options)
-                            .ThenInclude(x => x.Meal)
-                    .Select(x => new AdminPackageDetailsDto
-                    {
-                        Id = x.Id,
-                        CategoryId = x.MenuCategoryId,
-                        CategoryName = x.MenuCategory.Name,
-
-                        Title = x.Title,
-                        Description = x.Description,
-                        CardSummary = x.CardSummary,
-                        Badge = x.Badge,
-                        Notice = x.Notice,
-                        ServesLabel = x.ServesLabel,
-                        InclusionText = x.InclusionText,
-                        ImageUrl = x.ImageUrl,
-
-                        Rating = x.Rating,
-                        ReviewCount = x.ReviewCount,
-
-                        IsAvailable = x.IsAvailable,
-                        IsCustomizable = x.IsCustomizable,
-
-                        Sizes = x.Sizes
-                            .OrderBy(s => s.PaxCount)
-                            .Select(s => new AdminPackageSizeDto
-                            {
-                                Id = s.Id,
-                                Label = s.Label,
-                                Subtitle = s.Subtitle,
-                                PaxCount = s.PaxCount,
-                                Price = s.Price
-                            })
-                            .ToList(),
-
-                        Addons = x.Addons
-                            .OrderBy(a => a.Name)
-                            .Select(a => new AdminPackageAddonDto
-                            {
-                                Id = a.Id,
-                                Name = a.Name,
-                                Description = a.Description,
-                                Price = a.Price,
-                                IsAvailable = a.IsAvailable
-                            })
-                            .ToList(),
-
-                        SelectionRules = x.SelectionRules
-                            .OrderBy(r => r.DisplayOrder)
-                            .Select(r => new AdminPackageSelectionRuleDto
-                            {
-                                Id = r.Id,
-                                Title = r.Title,
-                                Description = r.Description,
-                                SelectionType = r.SelectionType.ToString(),
-                                AllowedMealType = r.AllowedMealType.ToString(),
-                                MinSelections = r.MinSelections,
-                                MaxSelections = r.MaxSelections,
-                                IsRequired = r.IsRequired,
-                                DisplayOrder = r.DisplayOrder,
-                                Options = r.Options
-                                    .OrderBy(o => o.Meal.Name)
-                                    .Select(o => new AdminPackageSelectionOptionDto
-                                    {
-                                        Id = o.Id,
-                                        MealId = o.MealId,
-                                        MealName = o.Meal.Name,
-                                        MealType = o.Meal.MealType.ToString(),
-                                        AdditionalPrice = o.AdditionalPrice,
-                                        IsDefault = o.IsDefault
-                                    })
-                                    .ToList()
-                            })
-                            .ToList()
-                    })
-                    .FirstOrDefaultAsync();
-
-                return Results.Created($"/api/admin/packages/{package.Id}", created);
+                return Results.Created($"/api/admin/packages/{package.Id}", new { id = package.Id });
             });
 
 
@@ -1439,9 +1377,9 @@ namespace CMS.Server
 
                 var package = await db.Packages
                     .Include(x => x.Sizes)
+                        .ThenInclude(s => s.SelectionRules)
+                            .ThenInclude(r => r.Options)
                     .Include(x => x.Addons)
-                    .Include(x => x.SelectionRules)
-                        .ThenInclude(x => x.Options)
                     .FirstOrDefaultAsync(x => x.Id == id);
 
                 if (package is null)
@@ -1480,7 +1418,6 @@ namespace CMS.Server
                 package.IsCustomizable = request.IsCustomizable;
                 package.UpdatedAtUtc = DateTime.UtcNow;
 
-                // Sizes: update existing or add new, but do not delete omitted ones
                 foreach (var sizeRequest in request.Sizes)
                 {
                     if (string.IsNullOrWhiteSpace(sizeRequest.Label))
@@ -1498,30 +1435,128 @@ namespace CMS.Server
                         return Results.BadRequest(new { message = $"Package size '{sizeRequest.Label}' cannot have a negative price." });
                     }
 
-                    var existingSize = sizeRequest.Id.HasValue
+                    var size = sizeRequest.Id.HasValue
                         ? package.Sizes.FirstOrDefault(x => x.Id == sizeRequest.Id.Value)
                         : null;
 
-                    if (existingSize is null)
+                    if (size is null)
                     {
-                        package.Sizes.Add(new PackageSize
+                        size = new PackageSize
                         {
                             Label = sizeRequest.Label.Trim(),
                             Subtitle = sizeRequest.Subtitle.Trim(),
                             PaxCount = sizeRequest.PaxCount,
-                            Price = sizeRequest.Price
-                        });
+                            Price = sizeRequest.Price,
+                            IsAvailable = true
+                        };
+
+                        package.Sizes.Add(size);
                     }
                     else
                     {
-                        existingSize.Label = sizeRequest.Label.Trim();
-                        existingSize.Subtitle = sizeRequest.Subtitle.Trim();
-                        existingSize.PaxCount = sizeRequest.PaxCount;
-                        existingSize.Price = sizeRequest.Price;
+                        size.Label = sizeRequest.Label.Trim();
+                        size.Subtitle = sizeRequest.Subtitle.Trim();
+                        size.PaxCount = sizeRequest.PaxCount;
+                        size.Price = sizeRequest.Price;
+                    }
+
+                    foreach (var ruleRequest in sizeRequest.SelectionRules)
+                    {
+                        if (!TryResolvePackageSelectionType(ruleRequest.SelectionType, out var selectionType))
+                        {
+                            return Results.BadRequest(new
+                            {
+                                message = $"Invalid selection type '{ruleRequest.SelectionType}' for rule '{ruleRequest.Title}'."
+                            });
+                        }
+
+                        if (!TryResolveMealType(ruleRequest.AllowedMealType, out var allowedMealType))
+                        {
+                            return Results.BadRequest(new
+                            {
+                                message = $"Invalid meal type '{ruleRequest.AllowedMealType}' for rule '{ruleRequest.Title}'."
+                            });
+                        }
+
+                        if (string.IsNullOrWhiteSpace(ruleRequest.Title))
+                        {
+                            return Results.BadRequest(new { message = "Each selection rule must have a title." });
+                        }
+
+                        if (ruleRequest.MaxSelections < ruleRequest.MinSelections)
+                        {
+                            return Results.BadRequest(new
+                            {
+                                message = $"Rule '{ruleRequest.Title}' has MaxSelections lower than MinSelections."
+                            });
+                        }
+
+                        var rule = ruleRequest.Id.HasValue
+                            ? size.SelectionRules.FirstOrDefault(x => x.Id == ruleRequest.Id.Value)
+                            : null;
+
+                        if (rule is null)
+                        {
+                            rule = new PackageSelectionRule
+                            {
+                                IsActive = true
+                            };
+
+                            size.SelectionRules.Add(rule);
+                        }
+
+                        rule.Title = ruleRequest.Title.Trim();
+                        rule.Description = ruleRequest.Description.Trim();
+                        rule.SelectionType = selectionType;
+                        rule.AllowedMealType = allowedMealType;
+                        rule.MinSelections = ruleRequest.MinSelections;
+                        rule.MaxSelections = ruleRequest.MaxSelections;
+                        rule.IsRequired = ruleRequest.IsRequired;
+                        rule.DisplayOrder = ruleRequest.DisplayOrder;
+                        rule.IsActive = true;
+
+                        foreach (var optionRequest in ruleRequest.Options)
+                        {
+                            var meal = await db.Meals.FirstOrDefaultAsync(x => x.Id == optionRequest.MealId);
+
+                            if (meal is null)
+                            {
+                                return Results.BadRequest(new
+                                {
+                                    message = $"Meal with id {optionRequest.MealId} was not found for rule '{ruleRequest.Title}'."
+                                });
+                            }
+
+                            if (meal.MealType != allowedMealType)
+                            {
+                                return Results.BadRequest(new
+                                {
+                                    message = $"Meal '{meal.Name}' does not match the allowed meal type '{allowedMealType}' for rule '{ruleRequest.Title}'."
+                                });
+                            }
+
+                            var option = optionRequest.Id.HasValue
+                                ? rule.Options.FirstOrDefault(x => x.Id == optionRequest.Id.Value)
+                                : null;
+
+                            if (option is null)
+                            {
+                                option = new PackageSelectionOption
+                                {
+                                    IsActive = true
+                                };
+
+                                rule.Options.Add(option);
+                            }
+
+                            option.MealId = optionRequest.MealId;
+                            option.AdditionalPrice = optionRequest.AdditionalPrice;
+                            option.IsDefault = optionRequest.IsDefault;
+                            option.IsActive = true;
+                        }
                     }
                 }
 
-                // Addons: update existing or add new, but do not delete omitted ones
                 foreach (var addonRequest in request.Addons)
                 {
                     if (string.IsNullOrWhiteSpace(addonRequest.Name))
@@ -1557,196 +1592,9 @@ namespace CMS.Server
                     }
                 }
 
-                // Selection rules and options: update existing or add new, but do not delete omitted ones
-                foreach (var ruleRequest in request.SelectionRules)
-                {
-                    if (!TryResolvePackageSelectionType(ruleRequest.SelectionType, out var selectionType))
-                    {
-                        return Results.BadRequest(new
-                        {
-                            message = $"Invalid selection type '{ruleRequest.SelectionType}' for rule '{ruleRequest.Title}'."
-                        });
-                    }
-
-                    if (!TryResolveMealType(ruleRequest.AllowedMealType, out var allowedMealType))
-                    {
-                        return Results.BadRequest(new
-                        {
-                            message = $"Invalid meal type '{ruleRequest.AllowedMealType}' for rule '{ruleRequest.Title}'."
-                        });
-                    }
-
-                    if (string.IsNullOrWhiteSpace(ruleRequest.Title))
-                    {
-                        return Results.BadRequest(new { message = "Each selection rule must have a title." });
-                    }
-
-                    if (ruleRequest.MaxSelections < ruleRequest.MinSelections)
-                    {
-                        return Results.BadRequest(new
-                        {
-                            message = $"Rule '{ruleRequest.Title}' has MaxSelections lower than MinSelections."
-                        });
-                    }
-
-                    PackageSelectionRule rule;
-
-                    if (ruleRequest.Id.HasValue)
-                    {
-                        rule = package.SelectionRules.FirstOrDefault(x => x.Id == ruleRequest.Id.Value)
-                            ?? new PackageSelectionRule();
-
-                        if (!package.SelectionRules.Contains(rule))
-                        {
-                            package.SelectionRules.Add(rule);
-                        }
-                    }
-                    else
-                    {
-                        rule = new PackageSelectionRule();
-                        package.SelectionRules.Add(rule);
-                    }
-
-                    rule.Title = ruleRequest.Title.Trim();
-                    rule.Description = ruleRequest.Description.Trim();
-                    rule.SelectionType = selectionType;
-                    rule.AllowedMealType = allowedMealType;
-                    rule.MinSelections = ruleRequest.MinSelections;
-                    rule.MaxSelections = ruleRequest.MaxSelections;
-                    rule.IsRequired = ruleRequest.IsRequired;
-                    rule.DisplayOrder = ruleRequest.DisplayOrder;
-
-                    foreach (var optionRequest in ruleRequest.Options)
-                    {
-                        var meal = await db.Meals.FirstOrDefaultAsync(x => x.Id == optionRequest.MealId);
-
-                        if (meal is null)
-                        {
-                            return Results.BadRequest(new
-                            {
-                                message = $"Meal with id {optionRequest.MealId} was not found for rule '{ruleRequest.Title}'."
-                            });
-                        }
-
-                        if (meal.MealType != allowedMealType)
-                        {
-                            return Results.BadRequest(new
-                            {
-                                message = $"Meal '{meal.Name}' does not match the allowed meal type '{allowedMealType}' for rule '{ruleRequest.Title}'."
-                            });
-                        }
-
-                        PackageSelectionOption option;
-
-                        if (optionRequest.Id.HasValue)
-                        {
-                            option = rule.Options.FirstOrDefault(x => x.Id == optionRequest.Id.Value)
-                                ?? new PackageSelectionOption();
-
-                            if (!rule.Options.Contains(option))
-                            {
-                                rule.Options.Add(option);
-                            }
-                        }
-                        else
-                        {
-                            option = new PackageSelectionOption();
-                            rule.Options.Add(option);
-                        }
-
-                        option.MealId = optionRequest.MealId;
-                        option.AdditionalPrice = optionRequest.AdditionalPrice;
-                        option.IsDefault = optionRequest.IsDefault;
-                    }
-                }
-
                 await db.SaveChangesAsync();
 
-                var updated = await db.Packages
-                    .AsNoTracking()
-                    .Where(x => x.Id == package.Id)
-                    .Include(x => x.MenuCategory)
-                    .Include(x => x.Sizes)
-                    .Include(x => x.Addons)
-                    .Include(x => x.SelectionRules)
-                        .ThenInclude(x => x.Options)
-                            .ThenInclude(x => x.Meal)
-                    .Select(x => new AdminPackageDetailsDto
-                    {
-                        Id = x.Id,
-                        CategoryId = x.MenuCategoryId,
-                        CategoryName = x.MenuCategory.Name,
-
-                        Title = x.Title,
-                        Description = x.Description,
-                        CardSummary = x.CardSummary,
-                        Badge = x.Badge,
-                        Notice = x.Notice,
-                        ServesLabel = x.ServesLabel,
-                        InclusionText = x.InclusionText,
-                        ImageUrl = x.ImageUrl,
-
-                        Rating = x.Rating,
-                        ReviewCount = x.ReviewCount,
-
-                        IsAvailable = x.IsAvailable,
-                        IsCustomizable = x.IsCustomizable,
-
-                        Sizes = x.Sizes
-                            .OrderBy(s => s.PaxCount)
-                            .Select(s => new AdminPackageSizeDto
-                            {
-                                Id = s.Id,
-                                Label = s.Label,
-                                Subtitle = s.Subtitle,
-                                PaxCount = s.PaxCount,
-                                Price = s.Price
-                            })
-                            .ToList(),
-
-                        Addons = x.Addons
-                            .OrderBy(a => a.Name)
-                            .Select(a => new AdminPackageAddonDto
-                            {
-                                Id = a.Id,
-                                Name = a.Name,
-                                Description = a.Description,
-                                Price = a.Price,
-                                IsAvailable = a.IsAvailable
-                            })
-                            .ToList(),
-
-                        SelectionRules = x.SelectionRules
-                            .OrderBy(r => r.DisplayOrder)
-                            .Select(r => new AdminPackageSelectionRuleDto
-                            {
-                                Id = r.Id,
-                                Title = r.Title,
-                                Description = r.Description,
-                                SelectionType = r.SelectionType.ToString(),
-                                AllowedMealType = r.AllowedMealType.ToString(),
-                                MinSelections = r.MinSelections,
-                                MaxSelections = r.MaxSelections,
-                                IsRequired = r.IsRequired,
-                                DisplayOrder = r.DisplayOrder,
-                                Options = r.Options
-                                    .OrderBy(o => o.Meal.Name)
-                                    .Select(o => new AdminPackageSelectionOptionDto
-                                    {
-                                        Id = o.Id,
-                                        MealId = o.MealId,
-                                        MealName = o.Meal.Name,
-                                        MealType = o.Meal.MealType.ToString(),
-                                        AdditionalPrice = o.AdditionalPrice,
-                                        IsDefault = o.IsDefault
-                                    })
-                                    .ToList()
-                            })
-                            .ToList()
-                    })
-                    .FirstOrDefaultAsync();
-
-                return Results.Ok(updated);
+                return Results.Ok(new { id = package.Id });
             });
 
             //GET list of meals for admin meal management page
