@@ -1,4 +1,4 @@
-﻿<Project Sdk="Microsoft.NET.Sdk.Web">
+<Project Sdk="Microsoft.NET.Sdk.Web">
 
   <PropertyGroup>
     <TargetFramework>net10.0</TargetFramework>
@@ -21,10 +21,6 @@
     <ProjectReference Include="..\CMS.Application\CMS.Application.csproj" />
     <ProjectReference Include="..\CMS.Contracts\CMS.Contracts.csproj" />
     <ProjectReference Include="..\CMS.Infrastructure\CMS.Infrastructure.csproj" />
-  </ItemGroup>
-
-  <ItemGroup>
-    <Folder Include="Controller\Shared\" />
   </ItemGroup>
   
 </Project>

@@ -1,26 +1,28 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Text;
-using System.Windows;
-using System.Windows.Controls;
-using System.Windows.Data;
-using System.Windows.Documents;
-using System.Windows.Input;
-using System.Windows.Media;
-using System.Windows.Media.Imaging;
-using System.Windows.Navigation;
-using System.Windows.Shapes;
+﻿using System.Windows.Controls;
+using PESYONG.Presentation.Admin.ViewModel;
+using PESYONG.Presentation.Admin.ViewModels;
 
-namespace PESYONG.Presentation.Admin.Views
+namespace PESYONG.Presentation.Admin.Views;
+
+public partial class PromosPage : Page
 {
-    /// <summary>
-    /// Interaction logic for PromosPage.xaml
-    /// </summary>
-    public partial class PromosPage : Page
+    private readonly PromosPageVM _viewModel;
+
+    public PromosPage(PromosPageVM viewModel)
     {
-        public PromosPage()
+        InitializeComponent();
+
+        _viewModel = viewModel;
+        DataContext = _viewModel;
+
+        Loaded += PromosPage_Loaded;
+    }
+
+    private async void PromosPage_Loaded(object sender, System.Windows.RoutedEventArgs e)
+    {
+        if (_viewModel.Promos.Count == 0 && _viewModel.LoadCommand.CanExecute(null))
         {
-            InitializeComponent();
+            await _viewModel.LoadCommand.ExecuteAsync(null);
         }
     }
 }

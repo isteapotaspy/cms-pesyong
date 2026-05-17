@@ -53,11 +53,14 @@ public partial class MainAdminWindow : Window
                     break;
 
                 case "Packages":
-                    MainAdminFrame.Navigate(new PackagesPage());
+                    MainAdminFrame.Navigate(
+                        _serviceProvider.GetRequiredService<PackagesPage>());
                     break;
 
                 case "Payments":
-                    MainAdminFrame.Navigate(new PaymentsPage());
+
+                    MainAdminFrame.Navigate(
+                        _serviceProvider.GetRequiredService<PaymentsPage>());
                     break;
 
                 case "Promos":
@@ -65,11 +68,13 @@ public partial class MainAdminWindow : Window
                     break;
 
                 case "Orders":
-                    MainAdminFrame.Navigate(new OrdersPage());
+                    MainAdminFrame.Navigate(
+                       _serviceProvider.GetRequiredService<OrdersPage>());
                     break;
 
                 case "Deliveries":
-                    MainAdminFrame.Navigate(new DeliveryPage());
+                    MainAdminFrame.Navigate(
+                        _serviceProvider.GetRequiredService<DeliveryPage>());
                     break;
 
                 case "Receipts":

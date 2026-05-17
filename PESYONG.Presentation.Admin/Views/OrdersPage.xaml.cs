@@ -1,26 +1,26 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Text;
-using System.Windows;
-using System.Windows.Controls;
-using System.Windows.Data;
-using System.Windows.Documents;
-using System.Windows.Input;
-using System.Windows.Media;
-using System.Windows.Media.Imaging;
-using System.Windows.Navigation;
-using System.Windows.Shapes;
+﻿using System.Windows.Controls;
+using PESYONG.Presentation.Admin.ViewModels;
+using PESYONG.Presentation.Admin.ViewModels.Orders;
 
-namespace PESYONG.Presentation.Admin.Views
+namespace PESYONG.Presentation.Admin.Views;
+
+public partial class OrdersPage : Page
 {
-    /// <summary>
-    /// Interaction logic for OrderPage.xaml
-    /// </summary>
-    public partial class OrdersPage : Page
+    private readonly OrderPageVM _viewModel;
+
+    public OrdersPage(OrderPageVM viewModel)
     {
-        public OrdersPage()
-        {
-            InitializeComponent();
-        }
+        InitializeComponent();
+
+        _viewModel = viewModel;
+        DataContext = _viewModel;
+
+        Loaded += OrdersPage_Loaded;
+    }
+
+    private async void OrdersPage_Loaded(object sender, System.Windows.RoutedEventArgs e)
+    {
+        if (_viewModel.LoadCommand.CanExecute(null))
+            await _viewModel.LoadCommand.ExecuteAsync(null);
     }
 }

@@ -1,6 +1,6 @@
 ﻿using CMS.Contracts.Admin.Meals;
 
-namespace PESYONG.Presentation.Admin.Services.Meals;
+namespace PESYONG.Presentation.Admin.Interfaces;
 
 public interface IMealApiService
 {

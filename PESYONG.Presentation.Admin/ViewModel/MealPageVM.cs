@@ -2,7 +2,8 @@
 using System.ComponentModel;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
-using PESYONG.Presentation.Admin.Services.Meals;
+using PESYONG.Presentation.Admin.Interfaces;
+using PESYONG.Presentation.Admin.Services;
 
 namespace PESYONG.Presentation.Admin.ViewModels.Meals;
 
