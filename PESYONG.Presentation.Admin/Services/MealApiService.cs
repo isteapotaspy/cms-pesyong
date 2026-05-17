@@ -1,58 +1,83 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Net.Http;
+﻿using System.Net.Http;
 using System.Net.Http.Json;
-using System.Text;
-using PESYONG.Presentation.Admin.Interfaces;
+using CMS.Contracts.Admin.Meals;
 
-namespace PESYONG.Presentation.Admin.Services;
+namespace PESYONG.Presentation.Admin.Services.Meals;
 
 public sealed class MealApiService : IMealApiService
 {
     private readonly HttpClient _httpClient;
+
+    private const string BaseRoute = "api/admin/meals";
 
     public MealApiService(HttpClient httpClient)
     {
         _httpClient = httpClient;
     }
 
-    public async Task<List<MealResponse>> GetMealsAsync()
-    {2
-        var result = await _httpClient.GetFromJsonAsync<List<MealResponse>>("api/meals");
+    public async Task<IReadOnlyList<MealDto>> GetMealsAsync(
+        CancellationToken cancellationToken = default)
+    {
+        var result = await _httpClient.GetFromJsonAsync<List<MealDto>>(
+            BaseRoute,
+            cancellationToken);
 
-        return result ?? new List<MealResponse>();
+        return result ?? [];
     }
 
-    public async Task<MealResponse?> GetMealByIdAsync(int id)
+    public async Task<MealDto?> GetMealByIdAsync(
+        int id,
+        CancellationToken cancellationToken = default)
     {
-        return await _httpClient.GetFromJsonAsync<MealResponse>($"api/meals/{id}");
+        return await _httpClient.GetFromJsonAsync<MealDto>(
+            $"{BaseRoute}/{id}",
+            cancellationToken);
     }
 
-    public async Task<MealResponse> CreateMealAsync(CreateMealRequest request)
+    public async Task<MealDto> CreateMealAsync(
+        CreateMealRequest request,
+        CancellationToken cancellationToken = default)
     {
-        var response = await _httpClient.PostAsJsonAsync("api/meals", request);
+        var response = await _httpClient.PostAsJsonAsync(
+            BaseRoute,
+            request,
+            cancellationToken);
 
         response.EnsureSuccessStatusCode();
 
-        var meal = await response.Content.ReadFromJsonAsync<MealResponse>();
+        var createdMeal = await response.Content.ReadFromJsonAsync<MealDto>(
+            cancellationToken: cancellationToken);
 
-        return meal ?? throw new InvalidOperationException("Server returned an empty meal response.");
+        return createdMeal
+            ?? throw new InvalidOperationException("API did not return the created meal.");
     }
 
-    public async Task<MealResponse> UpdateMealAsync(int id, UpdateMealRequest request)
+    public async Task<MealDto> UpdateMealAsync(
+        int id,
+        UpdateMealRequest request,
+        CancellationToken cancellationToken = default)
     {
-        var response = await _httpClient.PutAsJsonAsync($"api/meals/{id}", request);
+        var response = await _httpClient.PutAsJsonAsync(
+            $"{BaseRoute}/{id}",
+            request,
+            cancellationToken);
 
         response.EnsureSuccessStatusCode();
 
-        var meal = await response.Content.ReadFromJsonAsync<MealResponse>();
+        var updatedMeal = await response.Content.ReadFromJsonAsync<MealDto>(
+            cancellationToken: cancellationToken);
 
-        return meal ?? throw new InvalidOperationException("Server returned an empty meal response.");
+        return updatedMeal
+            ?? throw new InvalidOperationException("API did not return the updated meal.");
     }
 
-    public async Task DeleteMealAsync(int id)
+    public async Task DeleteMealAsync(
+        int id,
+        CancellationToken cancellationToken = default)
     {
-        var response = await _httpClient.DeleteAsync($"api/meals/{id}");
+        var response = await _httpClient.DeleteAsync(
+            $"{BaseRoute}/{id}",
+            cancellationToken);
 
         response.EnsureSuccessStatusCode();
     }

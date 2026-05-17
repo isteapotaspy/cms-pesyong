@@ -9,6 +9,8 @@ namespace CMS.Infrastructure.Persistence;
 
 public static class CmsDbContextSeeder
 {
+    static MealType MealType = (CMS.Domain.Enums.MealType) MealType.Viand;
+
     public static async Task SeedAsync(CmsDbContext db, CancellationToken cancellationToken = default)
     {
         // Safe in development. 
@@ -259,7 +261,7 @@ public static class CmsDbContextSeeder
             Title = "Choose 1 Dessert",
             Description = "Select one dessert for this package.",
             SelectionType = PackageSelectionType.ChooseOne,
-            AllowedMealType = MealType.Dessert,
+            AllowedMealType = (MealType)MealType.Dessert,
             MinSelections = 1,
             MaxSelections = 1,
             IsRequired = true,
