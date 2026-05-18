@@ -1,149 +1,414 @@
 ﻿<Page x:Class="PESYONG.Presentation.Admin.Views.PaymentsPage"
       xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
       xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-      xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006" 
-      xmlns:d="http://schemas.microsoft.com/expression/blend/2008" 
-      xmlns:local="clr-namespace:PESYONG.Presentation.Admin.Views"
-      mc:Ignorable="d" 
-      d:DesignHeight="450" d:DesignWidth="800"
+      xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+      xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+      xmlns:converters="clr-namespace:PESYONG.Presentation.Admin.Converters"
+      mc:Ignorable="d"
+      d:DesignHeight="450"
+      d:DesignWidth="800"
       Title="PaymentsPage">
 
     <Page.Resources>
-        <!-- Destructive Button Style -->
-        <Style x:Key="DestructiveButtonStyle" TargetType="Button">
-            <Setter Property="Background" Value="Red"/>
-            <Setter Property="Foreground" Value="White"/>
-            <Setter Property="Padding" Value="12,12,12,12"/>
-            <Setter Property="Margin" Value="12,12"/>
-            <Setter Property="Template">
-                <Setter.Value>
-                    <ControlTemplate TargetType="Button">
-                        <Border Background="DarkRed"
-                                CornerRadius="4"
-                                BorderThickness="{TemplateBinding BorderThickness}">
-                            <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/>
-                        </Border>
-                    </ControlTemplate>
-                </Setter.Value>
-            </Setter>
-            <Style.Triggers>
-                <Trigger Property="IsMouseOver" Value="True">
-                    <Setter Property="Background" Value="#FF6666"/>
-                </Trigger>
-            </Style.Triggers>
-        </Style>
-
+        <converters:ZeroToVisibleConverter x:Key="ZeroToVisibleConverter"/>
+        <BooleanToVisibilityConverter x:Key="BooleanToVisibilityConverter"/>
     </Page.Resources>
 
-    <Grid Background="{DynamicResource 
-        {x:Static SystemColors.ControlDarkDarkColor}}"
-        Margin="262,-2,0,2" Width="536">
+    <Grid Margin="12">
+        <Grid.ColumnDefinitions>
+            <ColumnDefinition Width="220"/>
+            <ColumnDefinition Width="12"/>
+            <ColumnDefinition Width="*"/>
+        </Grid.ColumnDefinitions>
 
-        <Grid>
+        <!-- LEFT: Payment list -->
+        <ListView Grid.Column="0"
+                  MinHeight="100"
+                  ItemsSource="{Binding Payments}"
+                  SelectedItem="{Binding SelectedPayment, Mode=TwoWay}"
+                  SelectionMode="Single">
+            <ListView.ItemTemplate>
+                <DataTemplate>
+                    <Grid Margin="8,0">
+                        <Grid.RowDefinitions>
+                            <RowDefinition Height="*"/>
+                            <RowDefinition Height="*"/>
+                        </Grid.RowDefinitions>
+
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="Auto"/>
+                            <ColumnDefinition Width="*"/>
+                        </Grid.ColumnDefinitions>
+
+                        <Ellipse Grid.RowSpan="2"
+                                 Width="32"
+                                 Height="32"
+                                 Margin="6"
+                                 HorizontalAlignment="Center"
+                                 VerticalAlignment="Center"/>
+
+                        <TextBlock Grid.Row="0"
+                                   Grid.Column="1"
+                                   Margin="12,6,0,0"
+                                   FontWeight="Bold"
+                                   Text="{Binding ListTitle, Mode=OneWay}"/>
+
+                        <TextBlock Grid.Row="1"
+                                   Grid.Column="1"
+                                   Margin="12,0,0,6"
+                                   Text="{Binding ListSubtitle, Mode=OneWay}"/>
+                    </Grid>
+                </DataTemplate>
+            </ListView.ItemTemplate>
+        </ListView>
+
+        <TextBlock Grid.Column="0"
+                   Text="No payments found."
+                   HorizontalAlignment="Center"
+                   VerticalAlignment="Center"
+                   Foreground="White"
+                   Visibility="{Binding Payments.Count, Converter={StaticResource ZeroToVisibleConverter}}"/>
+
+        <!-- RIGHT: Payment details -->
+        <Grid Grid.Column="2">
             <Grid.RowDefinitions>
-                <RowDefinition Height="Auto" />
-                <RowDefinition Height="*" />
+                <RowDefinition Height="Auto"/>
+                <RowDefinition Height="8"/>
+                <RowDefinition Height="*"/>
             </Grid.RowDefinitions>
 
-            <Grid Grid.Row="0" Margin="0,0,0,12">
+            <!-- Header -->
+            <Grid Grid.Row="0">
                 <Grid.ColumnDefinitions>
                     <ColumnDefinition Width="*"/>
                     <ColumnDefinition Width="Auto"/>
                 </Grid.ColumnDefinitions>
 
                 <TextBlock Grid.Column="0"
-                               HorizontalAlignment="Left" 
-                               Margin="12,12,0,0"
-                               Text="Payment Details" 
-                               FontSize="22"
-                               FontWeight="Bold"
-                               Foreground="White"/>
+                           Text="Payment Details"
+                           FontSize="20"
+                           FontWeight="SemiBold"
+                           Foreground="White"
+                           VerticalAlignment="Center"/>
 
-                <StackPanel Grid.Column="1" 
-                                Orientation="Horizontal" 
-                                VerticalAlignment="Top"
-                                HorizontalAlignment="Right" 
-                                Margin="0,12,12,0">
+                <StackPanel Grid.Column="1"
+                            Orientation="Horizontal">
+                    <Button Content="New"
+                            Command="{Binding NewPaymentCommand}"
+                            Margin="0,0,8,0"/>
 
-                    <Button Content="New" 
-                                        Style="{DynamicResource AccentButtonStyle}"/>
-                    <Button Content="Edit" 
-                                        Margin="12,0,0,0"/>
-                    <Button Content="  Delete  " 
-                                        Margin="12,0,24,0"
-                                        Style="{StaticResource DestructiveButtonStyle}"/>
+                    <Button Content="{Binding EditSaveButtonText}"
+                            Command="{Binding EditOrSaveCommand}"
+                            Margin="0,0,8,0"/>
+
+                    <Button Content="Delete"
+                            Command="{Binding DeleteCommand}"/>
                 </StackPanel>
             </Grid>
-            <ScrollViewer Grid.Row="1" 
-                      Margin="12,0,38,0" 
-                      VerticalScrollBarVisibility="Visible"
-                      Foreground="White">
-                <StackPanel>
-                    <Grid Margin="0,12,0,0">
-                        <Grid.ColumnDefinitions>
-                            <ColumnDefinition Width="100" />
-                            <ColumnDefinition Width="40" />
-                            <ColumnDefinition Width="100" />
-                            <ColumnDefinition Width="80" />
-                            <ColumnDefinition Width="100" />
-                            <ColumnDefinition Width="80" />
-                        </Grid.ColumnDefinitions>
 
-                        <TextBlock Grid.Column="0" Foreground="White">Meal ID:</TextBlock>
-                        <TextBlock Grid.Column="1" Foreground="White"></TextBlock>
+            <TabControl Grid.Row="2">
 
-                        <TextBlock Grid.Column="2" Foreground="White">Timestamp: </TextBlock>
-                        <TextBlock Grid.Column="3" Foreground="White"></TextBlock>
+                <!-- GENERAL TAB -->
+                <TabItem Header="General">
+                    <ScrollViewer VerticalScrollBarVisibility="Auto">
+                        <StackPanel Margin="0,8,8,8">
 
-                        <TextBlock Grid.Column="4" Foreground="White">Last update:</TextBlock>
-                        <TextBlock Grid.Column="5" Foreground="White"></TextBlock>
-                    </Grid>
+                            <TextBlock Text="{Binding LoadingDetailsText}"
+                                       TextWrapping="Wrap"
+                                       Margin="0,0,0,8"
+                                       Visibility="{Binding IsBusy, Converter={StaticResource BooleanToVisibilityConverter}}"/>
 
-                    <Grid>
-                        <Grid.ColumnDefinitions>
-                            <ColumnDefinition Width="200" />
-                            <ColumnDefinition Width="*" />
-                        </Grid.ColumnDefinitions>
+                            <TextBlock Text="{Binding ErrorMessage}"
+                                       TextWrapping="Wrap"
+                                       Margin="0,0,0,8"/>
 
-                        <StackPanel Grid.Column="0">
-                            <TextBlock Text="Commands" />
-                            <Button Content="Print Physical Receipt" />
-                            <Button Content="Send Email Receipt" />
-                            <Button Content="Send SMS Receipt" />
+                            <!-- Metadata -->
+                            <StackPanel>
+                                <Grid Margin="8">
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="80"/>
+                                        <ColumnDefinition Width="120"/>
+                                        <ColumnDefinition Width="80"/>
+                                        <ColumnDefinition Width="*"/>
+                                    </Grid.ColumnDefinitions>
+
+                                    <Grid.RowDefinitions>
+                                        <RowDefinition Height="Auto"/>
+                                        <RowDefinition Height="6"/>
+                                        <RowDefinition Height="Auto"/>
+                                    </Grid.RowDefinitions>
+
+                                    <TextBlock Grid.Row="0"
+                                               Grid.Column="0"
+                                               Text="ID:"/>
+
+                                    <TextBlock Grid.Row="0"
+                                               Grid.Column="1"
+                                               Text="{Binding SelectedPayment.Id}"/>
+
+                                    <TextBlock Grid.Row="0"
+                                               Grid.Column="2"
+                                               Text="Modified:"/>
+
+                                    <TextBlock Grid.Row="0"
+                                               Grid.Column="3"
+                                               Text="{Binding IsModified}"/>
+
+                                    <TextBlock Grid.Row="2"
+                                               Grid.Column="0"
+                                               Text="Created:"/>
+
+                                    <TextBlock Grid.Row="2"
+                                               Grid.Column="1"
+                                               Text="{Binding SelectedPayment.DateCreated, StringFormat={}{0:yyyy-MM-dd HH:mm}}"/>
+
+                                    <TextBlock Grid.Row="2"
+                                               Grid.Column="2"
+                                               Text="Updated:"/>
+
+                                    <TextBlock Grid.Row="2"
+                                               Grid.Column="3"
+                                               Text="{Binding SelectedPayment.DateUpdated, StringFormat={}{0:yyyy-MM-dd HH:mm}}"/>
+                                </Grid>
+                            </StackPanel>
+
+                            <!-- Payment Information -->
+                            <GroupBox Header="Payment Information"
+                                      Margin="0,0,0,8">
+                                <Grid Margin="8">
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="140"/>
+                                        <ColumnDefinition Width="*"/>
+                                    </Grid.ColumnDefinitions>
+
+                                    <Grid.RowDefinitions>
+                                        <RowDefinition Height="Auto"/>
+                                        <RowDefinition Height="8"/>
+                                        <RowDefinition Height="Auto"/>
+                                        <RowDefinition Height="8"/>
+                                        <RowDefinition Height="Auto"/>
+                                        <RowDefinition Height="8"/>
+                                        <RowDefinition Height="Auto"/>
+                                    </Grid.RowDefinitions>
+
+                                    <TextBlock Grid.Row="0"
+                                               Grid.Column="0"
+                                               Text="Order ID"
+                                               VerticalAlignment="Center"/>
+
+                                    <TextBox Grid.Row="0"
+                                             Grid.Column="1"
+                                             IsReadOnly="{Binding IsNotEditing}"
+                                             Text="{Binding SelectedPayment.OrderId, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"/>
+
+                                    <TextBlock Grid.Row="2"
+                                               Grid.Column="0"
+                                               Text="Order Display"
+                                               VerticalAlignment="Center"/>
+
+                                    <TextBox Grid.Row="2"
+                                             Grid.Column="1"
+                                             IsReadOnly="True"
+                                             Text="{Binding SelectedPayment.OrderDisplay, Mode=OneWay}"/>
+
+                                    <TextBlock Grid.Row="4"
+                                               Grid.Column="0"
+                                               Text="External Reference"
+                                               VerticalAlignment="Center"/>
+
+                                    <TextBox Grid.Row="4"
+                                             Grid.Column="1"
+                                             IsReadOnly="{Binding IsNotEditing}"
+                                             Text="{Binding SelectedPayment.ExternalReference, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"/>
+
+                                    <TextBlock Grid.Row="6"
+                                               Grid.Column="0"
+                                               Text="Amount"
+                                               VerticalAlignment="Center"/>
+
+                                    <TextBox Grid.Row="6"
+                                             Grid.Column="1"
+                                             IsReadOnly="{Binding IsNotEditing}"
+                                             Text="{Binding SelectedPayment.Amount, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"/>
+                                </Grid>
+                            </GroupBox>
+
+                            <!-- Payment Timing -->
+                            <GroupBox Header="Payment Timing">
+                                <Grid Margin="8">
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="140"/>
+                                        <ColumnDefinition Width="*"/>
+                                    </Grid.ColumnDefinitions>
+
+                                    <Grid.RowDefinitions>
+                                        <RowDefinition Height="Auto"/>
+                                    </Grid.RowDefinitions>
+
+                                    <TextBlock Grid.Row="0"
+                                               Grid.Column="0"
+                                               Text="Timestamp UTC"
+                                               VerticalAlignment="Center"/>
+
+                                    <TextBox Grid.Row="0"
+                                             Grid.Column="1"
+                                             IsReadOnly="{Binding IsNotEditing}"
+                                             Text="{Binding SelectedPayment.TimestampUtc, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"/>
+                                </Grid>
+                            </GroupBox>
                         </StackPanel>
+                    </ScrollViewer>
+                </TabItem>
 
-                        <StackPanel Grid.Column="1">
-                            <StackPanel>
-                                <TextBlock Text="Amount" />
-                                <TextBox />
-                            </StackPanel>
+                <!-- STATUS TAB -->
+                <TabItem Header="Status">
+                    <ScrollViewer VerticalScrollBarVisibility="Auto">
+                        <StackPanel Margin="0,8,8,8">
 
-                            <StackPanel>
-                                <TextBlock Text="Description" />
-                                <TextBox TextWrapping="Wrap"/>
-                            </StackPanel>
+                            <GroupBox Header="Payment Status"
+                                      Margin="0,0,0,8">
+                                <Grid Margin="8">
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="140"/>
+                                        <ColumnDefinition Width="*"/>
+                                    </Grid.ColumnDefinitions>
 
-                            <StackPanel>
-                                <StackPanel Orientation="Horizontal">
-                                    <TextBlock Text="Payment Method" Width="120" />
-                                    <ComboBox Width="180" />
-                                </StackPanel>
-                            </StackPanel>
+                                    <Grid.RowDefinitions>
+                                        <RowDefinition Height="Auto"/>
+                                        <RowDefinition Height="8"/>
+                                        <RowDefinition Height="Auto"/>
+                                    </Grid.RowDefinitions>
+
+                                    <TextBlock Grid.Row="0"
+                                               Grid.Column="0"
+                                               Text="Payment Method"
+                                               VerticalAlignment="Center"/>
+
+                                    <ComboBox Grid.Row="0"
+                                              Grid.Column="1"
+                                              IsHitTestVisible="{Binding IsEditing}"
+                                              Focusable="{Binding IsEditing}"
+                                              ItemsSource="{Binding PaymentMethods}"
+                                              SelectedItem="{Binding SelectedPayment.PaymentMethod, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"/>
+
+                                    <TextBlock Grid.Row="2"
+                                               Grid.Column="0"
+                                               Text="Payment Status"
+                                               VerticalAlignment="Center"/>
+
+                                    <ComboBox Grid.Row="2"
+                                              Grid.Column="1"
+                                              IsHitTestVisible="{Binding IsEditing}"
+                                              Focusable="{Binding IsEditing}"
+                                              ItemsSource="{Binding PaymentStatuses}"
+                                              SelectedItem="{Binding SelectedPayment.PaymentStatus, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"/>
+                                </Grid>
+                            </GroupBox>
+
+                            <GroupBox Header="Current State">
+                                <Grid Margin="8">
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="140"/>
+                                        <ColumnDefinition Width="*"/>
+                                    </Grid.ColumnDefinitions>
+
+                                    <Grid.RowDefinitions>
+                                        <RowDefinition Height="Auto"/>
+                                        <RowDefinition Height="8"/>
+                                        <RowDefinition Height="Auto"/>
+                                    </Grid.RowDefinitions>
+
+                                    <TextBlock Grid.Row="0"
+                                               Grid.Column="0"
+                                               Text="Method"
+                                               VerticalAlignment="Center"/>
+
+                                    <TextBlock Grid.Row="0"
+                                               Grid.Column="1"
+                                               Text="{Binding SelectedPayment.PaymentMethodDisplay}"/>
+
+                                    <TextBlock Grid.Row="2"
+                                               Grid.Column="0"
+                                               Text="Status"
+                                               VerticalAlignment="Center"/>
+
+                                    <TextBlock Grid.Row="2"
+                                               Grid.Column="1"
+                                               Text="{Binding SelectedPayment.PaymentStatusDisplay}"/>
+                                </Grid>
+                            </GroupBox>
                         </StackPanel>
-                    </Grid>
-                </StackPanel>
-            </ScrollViewer>
+                    </ScrollViewer>
+                </TabItem>
+
+                <!-- NOTES TAB -->
+                <TabItem Header="Notes">
+                    <ScrollViewer VerticalScrollBarVisibility="Auto">
+                        <StackPanel Margin="0,8,8,8">
+
+                            <GroupBox Header="Description"
+                                      Margin="0,0,0,8">
+                                <Grid Margin="8">
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="140"/>
+                                        <ColumnDefinition Width="*"/>
+                                    </Grid.ColumnDefinitions>
+
+                                    <Grid.RowDefinitions>
+                                        <RowDefinition Height="Auto"/>
+                                    </Grid.RowDefinitions>
+
+                                    <TextBlock Grid.Row="0"
+                                               Grid.Column="0"
+                                               Text="Description"
+                                               VerticalAlignment="Top"/>
+
+                                    <TextBox Grid.Row="0"
+                                             Grid.Column="1"
+                                             MinHeight="96"
+                                             IsReadOnly="{Binding IsNotEditing}"
+                                             TextWrapping="Wrap"
+                                             AcceptsReturn="True"
+                                             Text="{Binding SelectedPayment.Description, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"/>
+                                </Grid>
+                            </GroupBox>
+
+                            <GroupBox Header="Audit Details">
+                                <Grid Margin="8">
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="140"/>
+                                        <ColumnDefinition Width="*"/>
+                                    </Grid.ColumnDefinitions>
+
+                                    <Grid.RowDefinitions>
+                                        <RowDefinition Height="Auto"/>
+                                        <RowDefinition Height="8"/>
+                                        <RowDefinition Height="Auto"/>
+                                    </Grid.RowDefinitions>
+
+                                    <TextBlock Grid.Row="0"
+                                               Grid.Column="0"
+                                               Text="Date Created"
+                                               VerticalAlignment="Center"/>
+
+                                    <TextBlock Grid.Row="0"
+                                               Grid.Column="1"
+                                               Text="{Binding SelectedPayment.DateCreated, StringFormat={}{0:yyyy-MM-dd HH:mm}}"/>
+
+                                    <TextBlock Grid.Row="2"
+                                               Grid.Column="0"
+                                               Text="Date Updated"
+                                               VerticalAlignment="Center"/>
+
+                                    <TextBlock Grid.Row="2"
+                                               Grid.Column="1"
+                                               Text="{Binding SelectedPayment.DateUpdated, StringFormat={}{0:yyyy-MM-dd HH:mm}}"/>
+                                </Grid>
+                            </GroupBox>
+                        </StackPanel>
+                    </ScrollViewer>
+                </TabItem>
+            </TabControl>
         </Grid>
-
-        <StackPanel HorizontalAlignment="Left" Width="240" Margin="12,12,0,12">
-            <ListView Height="425" d:ItemsSource="{d:SampleData ItemCount=5}" >
-                <ListView.View>
-                    <GridView>
-                        <GridViewColumn/>
-                    </GridView>
-                </ListView.View>
-            </ListView>
-        </StackPanel>
     </Grid>
 </Page>
-

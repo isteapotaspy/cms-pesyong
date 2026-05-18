@@ -1,26 +1,29 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Text;
-using System.Windows;
-using System.Windows.Controls;
-using System.Windows.Data;
-using System.Windows.Documents;
-using System.Windows.Input;
-using System.Windows.Media;
-using System.Windows.Media.Imaging;
-using System.Windows.Navigation;
-using System.Windows.Shapes;
+﻿using System.Windows.Controls;
+using CommunityToolkit.Mvvm.Input;
+using PESYONG.Presentation.Admin.ViewModel;
 
-namespace PESYONG.Presentation.Admin.Views
+namespace PESYONG.Presentation.Admin.Views;
+
+public partial class PackagesPage : Page
 {
-    /// <summary>
-    /// Interaction logic for PackagesPage.xaml
-    /// </summary>
-    public partial class PackagesPage : Page
+    private readonly PackagesPageVM _viewModel;
+
+    public PackagesPage(PackagesPageVM viewModel)
     {
-        public PackagesPage()
+        InitializeComponent();
+
+        _viewModel = viewModel;
+        DataContext = _viewModel;
+
+        Loaded += PackagesPage_Loaded;
+    }
+
+    private async void PackagesPage_Loaded(object sender, System.Windows.RoutedEventArgs e)
+    {
+        if (_viewModel.LoadCommand is IAsyncRelayCommand loadCommand &&
+            loadCommand.CanExecute(null))
         {
-            InitializeComponent();
+            await loadCommand.ExecuteAsync(null);
         }
     }
 }

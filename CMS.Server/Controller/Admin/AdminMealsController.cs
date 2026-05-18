@@ -9,11 +9,11 @@ namespace CMS.Server.Controllers.Admin;
 
 [ApiController]
 [Route("api/admin/meals")]
-public sealed class MealsController : ControllerBase
+public sealed class AdminMealsController : ControllerBase
 {
     private readonly CmsDbContext _db;
 
-    public MealsController(CmsDbContext db)
+    public AdminMealsController(CmsDbContext db)
     {
         _db = db;
     }
