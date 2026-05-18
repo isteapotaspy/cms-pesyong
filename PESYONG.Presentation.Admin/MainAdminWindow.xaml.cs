@@ -64,7 +64,8 @@ public partial class MainAdminWindow : Window
                     break;
 
                 case "Promos":
-                    MainAdminFrame.Navigate(new PromosPage());
+                    MainAdminFrame.Navigate(
+                        _serviceProvider.GetRequiredService<PromosPage>());
                     break;
 
                 case "Orders":
