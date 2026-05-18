@@ -93,4 +93,13 @@ public class CustomerApiClient : ICustomerCatalogService, ICustomerOrderService
         var dto = await _http.GetFromJsonAsync<CustomerMealDto>($"api/customer/meals/{mealId}", cancellationToken);
         return dto?.ToUiModel();
     }
+
+    public async Task<IReadOnlyList<CustomerOrderListItemDto>> GetMyOrdersAsync(CancellationToken cancellationToken = default)
+    {
+        var response = await _http.GetFromJsonAsync<List<CustomerOrderListItemDto>>(
+            "api/customer/orders/my",
+            cancellationToken);
+
+        return response ?? new List<CustomerOrderListItemDto>();
+    }
 }

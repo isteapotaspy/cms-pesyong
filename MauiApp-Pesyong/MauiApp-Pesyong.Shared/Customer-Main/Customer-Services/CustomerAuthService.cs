@@ -2,6 +2,7 @@
 using System.Net.Http.Json;
 using System.Text.Json;
 using CMS.Contracts.Customer.Auth;
+using CMS.Contracts.Customer.Profile;
 
 namespace MauiApp_Pesyong.Shared.Customer_Main.Customer_Services;
 
@@ -131,6 +132,103 @@ public class CustomerAuthService : ICustomerAuthService
             return null;
 
         return await response.Content.ReadFromJsonAsync<CustomerMeResponse>(cancellationToken: cancellationToken);
+    }
+
+    public async Task<CustomerMeResponse> UpdateProfileAsync(
+        UpdateCustomerProfileRequest request,
+        CancellationToken cancellationToken = default)
+    {
+        var response = await _http.PutAsJsonAsync(
+            "api/customer/profile",
+            request,
+            cancellationToken);
+
+        if (!response.IsSuccessStatusCode)
+        {
+            throw new InvalidOperationException(await ReadErrorMessageAsync(response));
+        }
+
+        var result = await response.Content.ReadFromJsonAsync<CustomerMeResponse>(cancellationToken: cancellationToken)
+                     ?? throw new InvalidOperationException("Update profile returned an empty response.");
+
+        _session.SetProfile(result);
+
+        return result;
+    }
+
+    public async Task<IReadOnlyList<CustomerAddressDto>> GetSavedAddressesAsync(CancellationToken cancellationToken = default)
+    {
+        var response = await _http.GetAsync("api/customer/profile/addresses", cancellationToken);
+
+        if (!response.IsSuccessStatusCode)
+        {
+            throw new InvalidOperationException(await ReadErrorMessageAsync(response));
+        }
+
+        var result = await response.Content.ReadFromJsonAsync<List<CustomerAddressDto>>(cancellationToken: cancellationToken);
+        return result ?? new List<CustomerAddressDto>();
+    }
+
+    public async Task<CustomerAddressDto> CreateAddressAsync(
+        SaveCustomerAddressRequest request,
+        CancellationToken cancellationToken = default)
+    {
+        var response = await _http.PostAsJsonAsync(
+            "api/customer/profile/addresses",
+            request,
+            cancellationToken);
+
+        if (!response.IsSuccessStatusCode)
+        {
+            throw new InvalidOperationException(await ReadErrorMessageAsync(response));
+        }
+
+        return await response.Content.ReadFromJsonAsync<CustomerAddressDto>(cancellationToken: cancellationToken)
+               ?? throw new InvalidOperationException("Create address returned an empty response.");
+    }
+
+    public async Task<CustomerAddressDto> UpdateAddressAsync(
+        int addressId,
+        SaveCustomerAddressRequest request,
+        CancellationToken cancellationToken = default)
+    {
+        var response = await _http.PutAsJsonAsync(
+            $"api/customer/profile/addresses/{addressId}",
+            request,
+            cancellationToken);
+
+        if (!response.IsSuccessStatusCode)
+        {
+            throw new InvalidOperationException(await ReadErrorMessageAsync(response));
+        }
+
+        return await response.Content.ReadFromJsonAsync<CustomerAddressDto>(cancellationToken: cancellationToken)
+               ?? throw new InvalidOperationException("Update address returned an empty response.");
+    }
+
+    public async Task SetDefaultAddressAsync(int addressId, CancellationToken cancellationToken = default)
+    {
+        var response = await _http.PutAsync(
+            $"api/customer/profile/addresses/{addressId}/default",
+            null,
+            cancellationToken);
+
+        if (!response.IsSuccessStatusCode)
+        {
+            throw new InvalidOperationException(await ReadErrorMessageAsync(response));
+        }
+    }
+
+    public async Task DeleteAddressAsync(int addressId, CancellationToken cancellationToken = default)
+    {
+        var response = await _http.DeleteAsync(
+            $"api/customer/profile/addresses/{addressId}",
+            cancellationToken);
+
+        if (!response.IsSuccessStatusCode)
+        {
+            throw new InvalidOperationException(await ReadErrorMessageAsync(response));
+        }
     }
 
     public async Task<bool> TryRestoreSessionAsync(CancellationToken cancellationToken = default)

@@ -1,0 +1,96 @@
+﻿@page "/customer-orders"
+@layout CustomerLayout
+@using MauiApp_Pesyong.Shared.Customer_Main.Customer_Vms
+@inject ICustomerAuthService AuthService
+@inject ICustomerOrderService OrderService
+@inject CustomerSession Session
+@inject NavigationManager NavManager
+
+<MudContainer MaxWidth="MaxWidth.Large" Class="py-6">
+    <MudText Typo="Typo.h4" Class="mb-2">My Orders</MudText>
+    <MudText Typo="Typo.body2" Class="mb-4">Track your recent and previous orders here.</MudText>
+
+    @if (!string.IsNullOrWhiteSpace(_errorMessage))
+    {
+        <MudAlert Severity="Severity.Error" Variant="Variant.Filled" Class="mb-4">@_errorMessage</MudAlert>
+    }
+
+    @if (_isLoading)
+    {
+        <MudProgressCircular Indeterminate="true" Color="Color.Primary" />
+    }
+    else if (Orders.Count == 0)
+    {
+        <MudPaper Class="pa-4" Elevation="0">
+            <MudText Typo="Typo.body1">You do not have any orders yet.</MudText>
+        </MudPaper>
+    }
+    else
+    {
+        <MudGrid Spacing="3">
+            @foreach (var order in Orders)
+            {
+                <MudItem xs="12" md="6">
+                    <MudPaper Class="pa-4" Elevation="0" Style="border-radius:18px;">
+                        <div class="d-flex justify-space-between align-start mb-2">
+                            <div>
+                                <MudText Typo="Typo.h6">#@order.OrderNumber</MudText>
+                                <MudText Typo="Typo.caption">@order.OrderedAtUtc.ToLocalTime():MMM dd, yyyy hh:mm tt</MudText>
+                            </div>
+
+                            <MudChip T="string" Color="Color.Primary" Variant="Variant.Outlined">
+                                @order.Status
+                            </MudChip>
+                        </div>
+
+                        <MudText Typo="Typo.body2">Delivery: @order.DeliveryDate:MMMM dd, yyyy • @order.DeliveryTimeSlot</MudText>
+                        <MudText Typo="Typo.body2">Items: @order.ItemCount</MudText>
+                        <MudText Typo="Typo.body2">Payment: @order.PaymentStatus</MudText>
+
+                        <MudDivider Class="my-3" />
+
+                        <div class="d-flex justify-space-between align-center">
+                            <MudText Typo="Typo.h6">₱@order.GrandTotal:N0</MudText>
+
+                            <MudButton Variant="Variant.Text"
+                                       OnClick="@(() => NavManager.NavigateTo($"/tracking?orderId={order.Id}"))">
+                                View Tracking
+                            </MudButton>
+                        </div>
+                    </MudPaper>
+                </MudItem>
+            }
+        </MudGrid>
+    }
+</MudContainer>
+
+@code {
+    private List<CustomerOrderListItemVm> Orders { get; set; } = new();
+    private bool _isLoading = true;
+    private string? _errorMessage;
+
+    protected override async Task OnInitializedAsync()
+    {
+        var restored = await AuthService.TryRestoreSessionAsync();
+
+        if (!restored || !Session.IsAuthenticated)
+        {
+            NavManager.NavigateTo("/customer-login?returnUrl=%2Fcustomer-orders", true);
+            return;
+        }
+
+        try
+        {
+            var items = await OrderService.GetMyOrdersAsync();
+            Orders = items.Select(CustomerOrderListItemVm.FromDto).ToList();
+        }
+        catch (Exception ex)
+        {
+            _errorMessage = ex.Message;
+        }
+        finally
+        {
+            _isLoading = false;
+        }
+    }
+}

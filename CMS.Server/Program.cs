@@ -2,6 +2,7 @@ using CMS.Contracts.Customer.Menu;
 using CMS.Contracts.Customer.Orders;
 using CMS.Contracts.Customer.Meals;
 using CMS.Contracts.Customer.Auth;
+using CMS.Contracts.Customer.Profile;
 using CMS.Domain.Entities;
 using CMS.Domain.Entities.Orders;
 using CMS.Domain.Entities.Packages;
@@ -1092,6 +1093,363 @@ namespace CMS.Server
                     : Results.NotFound(new { message = "Customer profile was not found." });
             }).RequireAuthorization();
 
+
+            //PUT update current authenticated customer profile details
+            app.MapPut("/api/customer/profile", async (
+                ClaimsPrincipal claims,
+                UpdateCustomerProfileRequest request,
+                CmsDbContext db) =>
+            {
+                var appUserIdClaim = claims.FindFirstValue(ClaimTypes.NameIdentifier);
+
+                if (!int.TryParse(appUserIdClaim, out var appUserId))
+                    return Results.Unauthorized();
+
+                if (string.IsNullOrWhiteSpace(request.FirstName))
+                    return Results.BadRequest(new { message = "First name is required." });
+
+                if (string.IsNullOrWhiteSpace(request.LastName))
+                    return Results.BadRequest(new { message = "Last name is required." });
+
+                var user = await db.AppUsers
+                    .Include(x => x.CustomerProfile)
+                    .FirstOrDefaultAsync(x => x.Id == appUserId && x.Role == UserRole.Customer);
+
+                if (user is null || user.CustomerProfile is null)
+                    return Results.NotFound(new { message = "Customer profile was not found." });
+
+                user.FirstName = request.FirstName.Trim();
+                user.LastName = request.LastName.Trim();
+                user.CustomerProfile.MobileNumber = request.MobileNumber?.Trim() ?? string.Empty;
+                user.UpdatedAtUtc = DateTime.UtcNow;
+                user.CustomerProfile.UpdatedAtUtc = DateTime.UtcNow;
+
+                await db.SaveChangesAsync();
+
+                var response = new CustomerMeResponse
+                {
+                    AppUserId = user.Id,
+                    CustomerProfileId = user.CustomerProfile.Id,
+                    UserName = user.UserName,
+                    Email = user.Email,
+                    FirstName = user.FirstName,
+                    LastName = user.LastName,
+                    FullName = $"{user.FirstName} {user.LastName}".Trim(),
+                    MobileNumber = user.CustomerProfile.MobileNumber
+                };
+
+                return Results.Ok(response);
+            }).RequireAuthorization();
+
+
+            //GET list of customer addresses for current authenticated customer
+            app.MapGet("/api/customer/profile/addresses", async (
+                ClaimsPrincipal claims,
+                CmsDbContext db) =>
+            {
+                var appUserIdClaim = claims.FindFirstValue(ClaimTypes.NameIdentifier);
+
+                if (!int.TryParse(appUserIdClaim, out var appUserId))
+                    return Results.Unauthorized();
+
+                var customerProfileId = await db.CustomerProfiles
+                    .Where(x => x.AppUserId == appUserId)
+                    .Select(x => (int?)x.Id)
+                    .FirstOrDefaultAsync();
+
+                if (!customerProfileId.HasValue)
+                    return Results.NotFound(new { message = "Customer profile was not found." });
+
+                var addresses = await db.Addresses
+                    .AsNoTracking()
+                    .Where(x => x.CustomerProfileId == customerProfileId.Value)
+                    .OrderByDescending(x => x.IsDefault)
+                    .ThenByDescending(x => x.Id)
+                    .Select(x => new CustomerAddressDto
+                    {
+                        Id = x.Id,
+                        StreetAddress = x.StreetAddress,
+                        City = x.City,
+                        Barangay = x.Barangay,
+                        Landmark = x.Landmark,
+                        Latitude = x.Latitude,
+                        Longitude = x.Longitude,
+                        IsDefault = x.IsDefault
+                    })
+                    .ToListAsync();
+
+                return Results.Ok(addresses);
+            }).RequireAuthorization();
+
+
+            //POST add a new customer address for current authenticated customer
+            app.MapPost("/api/customer/profile/addresses", async (
+                ClaimsPrincipal claims,
+                SaveCustomerAddressRequest request,
+                CmsDbContext db) =>
+            {
+                var appUserIdClaim = claims.FindFirstValue(ClaimTypes.NameIdentifier);
+
+                if (!int.TryParse(appUserIdClaim, out var appUserId))
+                    return Results.Unauthorized();
+
+                var customerProfileId = await db.CustomerProfiles
+                    .Where(x => x.AppUserId == appUserId)
+                    .Select(x => (int?)x.Id)
+                    .FirstOrDefaultAsync();
+
+                if (!customerProfileId.HasValue)
+                    return Results.NotFound(new { message = "Customer profile was not found." });
+
+                if (string.IsNullOrWhiteSpace(request.StreetAddress))
+                    return Results.BadRequest(new { message = "Street address is required." });
+
+                if (string.IsNullOrWhiteSpace(request.City))
+                    return Results.BadRequest(new { message = "City is required." });
+
+                if (string.IsNullOrWhiteSpace(request.Barangay))
+                    return Results.BadRequest(new { message = "Barangay is required." });
+
+                if (request.IsDefault)
+                {
+                    var existingDefaults = await db.Addresses
+                        .Where(x => x.CustomerProfileId == customerProfileId.Value && x.IsDefault)
+                        .ToListAsync();
+
+                    foreach (var item in existingDefaults)
+                    {
+                        item.IsDefault = false;
+                    }
+                }
+
+                var address = new Address
+                {
+                    CustomerProfileId = customerProfileId.Value,
+                    StreetAddress = request.StreetAddress.Trim(),
+                    City = request.City.Trim(),
+                    Barangay = request.Barangay.Trim(),
+                    Landmark = request.Landmark?.Trim() ?? string.Empty,
+                    Latitude = request.Latitude,
+                    Longitude = request.Longitude,
+                    IsDefault = request.IsDefault
+                };
+
+                db.Addresses.Add(address);
+                await db.SaveChangesAsync();
+
+                return Results.Ok(new CustomerAddressDto
+                {
+                    Id = address.Id,
+                    StreetAddress = address.StreetAddress,
+                    City = address.City,
+                    Barangay = address.Barangay,
+                    Landmark = address.Landmark,
+                    Latitude = address.Latitude,
+                    Longitude = address.Longitude,
+                    IsDefault = address.IsDefault
+                });
+            }).RequireAuthorization();
+
+
+            //PUT update an existing customer address by id for current authenticated customer
+            app.MapPut("/api/customer/profile/addresses/{id:int}", async (
+                int id,
+                ClaimsPrincipal claims,
+                SaveCustomerAddressRequest request,
+                CmsDbContext db) =>
+            {
+                var appUserIdClaim = claims.FindFirstValue(ClaimTypes.NameIdentifier);
+
+                if (!int.TryParse(appUserIdClaim, out var appUserId))
+                    return Results.Unauthorized();
+
+                var customerProfileId = await db.CustomerProfiles
+                    .Where(x => x.AppUserId == appUserId)
+                    .Select(x => (int?)x.Id)
+                    .FirstOrDefaultAsync();
+
+                if (!customerProfileId.HasValue)
+                    return Results.NotFound(new { message = "Customer profile was not found." });
+
+                var address = await db.Addresses
+                    .FirstOrDefaultAsync(x => x.Id == id && x.CustomerProfileId == customerProfileId.Value);
+
+                if (address is null)
+                    return Results.NotFound(new { message = $"Address with id {id} was not found." });
+
+                if (string.IsNullOrWhiteSpace(request.StreetAddress))
+                    return Results.BadRequest(new { message = "Street address is required." });
+
+                if (string.IsNullOrWhiteSpace(request.City))
+                    return Results.BadRequest(new { message = "City is required." });
+
+                if (string.IsNullOrWhiteSpace(request.Barangay))
+                    return Results.BadRequest(new { message = "Barangay is required." });
+
+                if (request.IsDefault)
+                {
+                    var existingDefaults = await db.Addresses
+                        .Where(x => x.CustomerProfileId == customerProfileId.Value && x.IsDefault && x.Id != id)
+                        .ToListAsync();
+
+                    foreach (var item in existingDefaults)
+                    {
+                        item.IsDefault = false;
+                    }
+                }
+
+                address.StreetAddress = request.StreetAddress.Trim();
+                address.City = request.City.Trim();
+                address.Barangay = request.Barangay.Trim();
+                address.Landmark = request.Landmark?.Trim() ?? string.Empty;
+                address.Latitude = request.Latitude;
+                address.Longitude = request.Longitude;
+                address.IsDefault = request.IsDefault;
+                address.UpdatedAtUtc = DateTime.UtcNow;
+
+                await db.SaveChangesAsync();
+
+                return Results.Ok(new CustomerAddressDto
+                {
+                    Id = address.Id,
+                    StreetAddress = address.StreetAddress,
+                    City = address.City,
+                    Barangay = address.Barangay,
+                    Landmark = address.Landmark,
+                    Latitude = address.Latitude,
+                    Longitude = address.Longitude,
+                    IsDefault = address.IsDefault
+                });
+            }).RequireAuthorization();
+
+
+            //PUT set an existing customer address as default by id for current authenticated customer
+            app.MapPut("/api/customer/profile/addresses/{id:int}/default", async (
+                int id,
+                ClaimsPrincipal claims,
+                CmsDbContext db) =>
+            {
+                var appUserIdClaim = claims.FindFirstValue(ClaimTypes.NameIdentifier);
+
+                if (!int.TryParse(appUserIdClaim, out var appUserId))
+                    return Results.Unauthorized();
+
+                var customerProfileId = await db.CustomerProfiles
+                    .Where(x => x.AppUserId == appUserId)
+                    .Select(x => (int?)x.Id)
+                    .FirstOrDefaultAsync();
+
+                if (!customerProfileId.HasValue)
+                    return Results.NotFound(new { message = "Customer profile was not found." });
+
+                var addresses = await db.Addresses
+                    .Where(x => x.CustomerProfileId == customerProfileId.Value)
+                    .ToListAsync();
+
+                var target = addresses.FirstOrDefault(x => x.Id == id);
+                if (target is null)
+                    return Results.NotFound(new { message = $"Address with id {id} was not found." });
+
+                foreach (var address in addresses)
+                {
+                    address.IsDefault = address.Id == id;
+                    address.UpdatedAtUtc = DateTime.UtcNow;
+                }
+
+                await db.SaveChangesAsync();
+
+                return Results.Ok(new { message = "Default address updated." });
+            }).RequireAuthorization();
+
+
+            //DELETE remove an existing customer address by id for current authenticated customer
+            app.MapDelete("/api/customer/profile/addresses/{id:int}", async (
+                int id,
+                ClaimsPrincipal claims,
+                CmsDbContext db) =>
+            {
+                var appUserIdClaim = claims.FindFirstValue(ClaimTypes.NameIdentifier);
+
+                if (!int.TryParse(appUserIdClaim, out var appUserId))
+                    return Results.Unauthorized();
+
+                var customerProfileId = await db.CustomerProfiles
+                    .Where(x => x.AppUserId == appUserId)
+                    .Select(x => (int?)x.Id)
+                    .FirstOrDefaultAsync();
+
+                if (!customerProfileId.HasValue)
+                    return Results.NotFound(new { message = "Customer profile was not found." });
+
+                var address = await db.Addresses
+                    .FirstOrDefaultAsync(x => x.Id == id && x.CustomerProfileId == customerProfileId.Value);
+
+                if (address is null)
+                    return Results.NotFound(new { message = $"Address with id {id} was not found." });
+
+                var wasDefault = address.IsDefault;
+
+                db.Addresses.Remove(address);
+                await db.SaveChangesAsync();
+
+                if (wasDefault)
+                {
+                    var replacement = await db.Addresses
+                        .Where(x => x.CustomerProfileId == customerProfileId.Value)
+                        .OrderByDescending(x => x.Id)
+                        .FirstOrDefaultAsync();
+
+                    if (replacement is not null)
+                    {
+                        replacement.IsDefault = true;
+                        replacement.UpdatedAtUtc = DateTime.UtcNow;
+                        await db.SaveChangesAsync();
+                    }
+                }
+
+                return Results.Ok(new { message = "Address deleted." });
+            }).RequireAuthorization();
+
+
+            //GET list of orders for current authenticated customer
+            app.MapGet("/api/customer/orders/my", async (
+                ClaimsPrincipal claims,
+                CmsDbContext db) =>
+            {
+                var appUserIdClaim = claims.FindFirstValue(ClaimTypes.NameIdentifier);
+
+                if (!int.TryParse(appUserIdClaim, out var appUserId))
+                    return Results.Unauthorized();
+
+                var customerProfileId = await db.CustomerProfiles
+                    .Where(x => x.AppUserId == appUserId)
+                    .Select(x => (int?)x.Id)
+                    .FirstOrDefaultAsync();
+
+                if (!customerProfileId.HasValue)
+                    return Results.NotFound(new { message = "Customer profile was not found." });
+
+                var orders = await db.Orders
+                    .AsNoTracking()
+                    .Where(x => x.CustomerProfileId == customerProfileId.Value)
+                    .Include(x => x.Items)
+                    .OrderByDescending(x => x.OrderedAtUtc)
+                    .Select(x => new CustomerOrderListItemDto
+                    {
+                        Id = x.Id,
+                        OrderNumber = x.OrderNumber,
+                        OrderedAtUtc = x.OrderedAtUtc,
+                        DeliveryDate = x.DeliveryDate,
+                        DeliveryTimeSlot = x.DeliveryTimeSlot,
+                        Status = x.Status.ToString(),
+                        PaymentStatus = x.PaymentStatus.ToString(),
+                        GrandTotal = x.GrandTotal,
+                        ItemCount = x.Items.Count
+                    })
+                    .ToListAsync();
+
+                return Results.Ok(orders);
+            }).RequireAuthorization();
 
 
             //================================= ADMIN ENDPOINTS ================================= //

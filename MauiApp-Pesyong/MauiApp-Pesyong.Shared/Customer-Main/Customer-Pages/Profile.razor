@@ -1,60 +1,451 @@
 ﻿@page "/customer-profile"
 @layout CustomerLayout
+@using MauiApp_Pesyong.Shared.Customer_Main.Customer_Vms
 @inject ICustomerAuthService AuthService
 @inject CustomerSession Session
 @inject NavigationManager NavManager
+@inject ICustomerOrderService OrderService
 
-<MudContainer MaxWidth="MaxWidth.Small" Class="py-8">
-    <MudPaper Class="pa-6" Elevation="0">
-        <MudText Typo="Typo.h4" Class="mb-4">My Profile</MudText>
+<MudContainer MaxWidth="MaxWidth.False" Class="profile-page-shell">
+    <div class="profile-page-bg"></div>
 
-        @if (_isLoading)
-        {
-            <MudProgressCircular Indeterminate="true" Color="Color.Primary" />
-        }
-        else if (Session.Profile is null)
-        {
-            <MudAlert Severity="Severity.Warning" Variant="Variant.Outlined" Class="mb-4">
-                You are not logged in.
-            </MudAlert>
+    <MudContainer MaxWidth="MaxWidth.Large" Class="profile-content-wrap">
+        <MudGrid Spacing="4" AlignItems="AlignItems.Start" Justify="Justify.Center">
+            <MudItem xs="12" md="4">
+                <MudPaper Class="profile-side-card" Elevation="0"> 
+                    <div class="profile-avatar-wrap">
+                        <MudAvatar Class="profile-avatar-lg">@AvatarLetter</MudAvatar>
+                    </div>
 
-            <MudButton Variant="Variant.Filled"
-                       Color="Color.Primary"
-                       OnClick="@(() => NavManager.NavigateTo("/login"))">
-                Go to Login
-            </MudButton>
-        }
-        else
-        {
-            <MudList Dense="true" T="string">
-                <MudListItem>Full Name: @Session.Profile.FullName</MudListItem>
-                <MudListItem>Username: @Session.Profile.UserName</MudListItem>
-                <MudListItem>Email: @Session.Profile.Email</MudListItem>
-                <MudListItem>Mobile: @Session.Profile.MobileNumber</MudListItem>
-            </MudList>
+                    <MudText Typo="Typo.h5" Class="profile-side-title">@Vm.FullName</MudText>
+                    <MudText Typo="Typo.body2" Class="profile-side-subtitle">@Vm.Email</MudText>
 
-            <MudButton Variant="Variant.Outlined"
-                       Color="Color.Error"
-                       Class="mt-4"
-                       OnClick="LogoutAsync">
-                Logout
-            </MudButton>
-        }
-    </MudPaper>
+                    <MudDivider Class="my-4" />
+
+                    <div class="profile-side-meta">
+                        <div class="profile-side-item">
+                            <MudIcon Icon="@Icons.Material.Filled.Person" />
+                            <span>@Vm.UserName</span>
+                        </div>
+
+                        <div class="profile-side-item">
+                            <MudIcon Icon="@Icons.Material.Filled.Phone" />
+                            <span>@(string.IsNullOrWhiteSpace(Vm.MobileNumber) ? "No mobile number yet" : Vm.MobileNumber)</span>
+                        </div>
+                    </div>
+                </MudPaper>
+            </MudItem>
+
+            <MudItem xs="12" md="8">
+                <div class="profile-right-column">
+                    <MudPaper Class="profile-main-card" Elevation="0">
+                        <div class="profile-card-top">
+                            <MudText Typo="Typo.h4" Class="profile-card-title">My Profile</MudText>
+                            <MudText Typo="Typo.body2" Class="profile-card-copy">
+                                Keep your personal details up to date for a smoother checkout experience.
+                            </MudText>
+                        </div>
+
+                        @if (_isLoading)
+                        {
+                            <MudProgressCircular Indeterminate="true" Color="Color.Primary" />
+                        }
+                        else
+                        {
+                            @if (!string.IsNullOrWhiteSpace(_successMessage))
+                            {
+                                <MudAlert Severity="Severity.Success" Variant="Variant.Filled" Class="mb-4">
+                                    @_successMessage
+                                </MudAlert>
+                            }
+
+                            @if (!string.IsNullOrWhiteSpace(_errorMessage))
+                            {
+                                <MudAlert Severity="Severity.Error" Variant="Variant.Filled" Class="mb-4">
+                                    @_errorMessage
+                                </MudAlert>
+                            }
+
+                            <MudGrid Spacing="2">
+                                <MudItem xs="12" sm="6">
+                                    <MudTextField T="string"
+                                                  Label="First Name"
+                                                  Variant="Variant.Outlined"
+                                                  Adornment="Adornment.Start"
+                                                  AdornmentIcon="@Icons.Material.Filled.Badge"
+                                                  Class="profile-input"
+                                                  @bind-Value="Vm.FirstName" />
+                                </MudItem>
+
+                                <MudItem xs="12" sm="6">
+                                    <MudTextField T="string"
+                                                  Label="Last Name"
+                                                  Variant="Variant.Outlined"
+                                                  Adornment="Adornment.Start"
+                                                  AdornmentIcon="@Icons.Material.Filled.Badge"
+                                                  Class="profile-input"
+                                                  @bind-Value="Vm.LastName" />
+                                </MudItem>
+
+                                <MudItem xs="12">
+                                    <MudTextField T="string"
+                                                  Label="Username"
+                                                  Variant="Variant.Outlined"
+                                                  Disabled="true"
+                                                  Adornment="Adornment.Start"
+                                                  AdornmentIcon="@Icons.Material.Filled.Person"
+                                                  Class="profile-input"
+                                                  @bind-Value="Vm.UserName" />
+                                </MudItem>
+
+                                <MudItem xs="12">
+                                    <MudTextField T="string"
+                                                  Label="Email Address"
+                                                  Variant="Variant.Outlined"
+                                                  Disabled="true"
+                                                  Adornment="Adornment.Start"
+                                                  AdornmentIcon="@Icons.Material.Filled.Email"
+                                                  Class="profile-input"
+                                                  @bind-Value="Vm.Email" />
+                                </MudItem>
+
+                                <MudItem xs="12">
+                                    <MudTextField T="string"
+                                                  Label="Mobile Number"
+                                                  Variant="Variant.Outlined"
+                                                  Adornment="Adornment.Start"
+                                                  AdornmentIcon="@Icons.Material.Filled.Phone"
+                                                  Class="profile-input"
+                                                  @bind-Value="Vm.MobileNumber" />
+                                </MudItem>
+
+                                <MudItem xs="12">
+                                    <div class="profile-actions">
+                                        <MudButton Variant="Variant.Outlined"
+                                                   Class="profile-back-btn"
+                                                   OnClick="@(() => NavManager.NavigateTo("/customer-home"))">
+                                            Back
+                                        </MudButton>
+
+                                        <MudButton Variant="Variant.Outlined"
+                                                   OnClick="@(() => NavManager.NavigateTo("/saved-addresses"))">
+                                            Saved Addresses
+                                        </MudButton>
+
+                                        <MudButton Variant="Variant.Outlined"
+                                                   OnClick="@(() => NavManager.NavigateTo("/customer-orders"))">
+                                            My Orders
+                                        </MudButton>
+
+                                        <MudButton Variant="Variant.Filled"
+                                                   Disabled="_isSaving"
+                                                   Class="profile-save-btn"
+                                                   OnClick="SaveAsync">
+                                            @(_isSaving ? "Saving..." : "Save Changes")
+                                        </MudButton>
+                                    </div>
+                                </MudItem>
+                            </MudGrid>
+                        }
+                    </MudPaper>
+
+                    <MudPaper Class="profile-main-card" Elevation="0">
+                        <div class="profile-card-top">
+                            <MudText Typo="Typo.h5" Class="profile-card-title">Recent Orders</MudText>
+                            <MudText Typo="Typo.body2" Class="profile-card-copy">
+                                Quickly check your latest orders and jump to tracking.
+                            </MudText>
+                        </div>
+
+                        @if (_isOrdersLoading)
+                        {
+                            <MudProgressCircular Indeterminate="true" Color="Color.Primary" />
+                        }
+                        else if (RecentOrders.Count == 0)
+                        {
+                            <MudText Typo="Typo.body2">You do not have any orders yet.</MudText>
+
+                            <MudButton Variant="Variant.Outlined"
+                                       Class="mt-3"
+                                       OnClick="@(() => NavManager.NavigateTo("/customer-home"))">
+                                Start Ordering
+                            </MudButton>
+                        }
+                        else
+                        {
+                            @foreach (var order in RecentOrders)
+                            {
+                                <MudPaper Class="pa-3 mb-3" Elevation="0" Style="border:1px solid rgba(0,0,0,0.08); border-radius:16px;">
+                                    <div class="d-flex justify-space-between align-start mb-2">
+                                        <div>
+                                            <MudText Typo="Typo.subtitle1">#@order.OrderNumber</MudText>
+                                            <MudText Typo="Typo.caption">
+                                                @order.OrderedAtUtc.ToLocalTime():MMM dd, yyyy hh:mm tt
+                                            </MudText>
+                                        </div>
+
+                                        <MudChip T="string" Color="Color.Primary" Variant="Variant.Outlined" Size="Size.Small">
+                                            @order.Status
+                                        </MudChip>
+                                    </div>
+
+                                    <MudText Typo="Typo.body2">
+                                        Delivery: @order.DeliveryDate:MMMM dd, yyyy • @order.DeliveryTimeSlot
+                                    </MudText>
+                                    <MudText Typo="Typo.body2">
+                                        Items: @order.ItemCount
+                                    </MudText>
+                                    <MudText Typo="Typo.body2">
+                                        Total: ₱@order.GrandTotal:N0
+                                    </MudText>
+
+                                    <div class="d-flex justify-end mt-3">
+                                        <MudButton Variant="Variant.Text"
+                                                   OnClick="@(() => NavManager.NavigateTo($"/tracking?orderId={order.Id}"))">
+                                            Track Order
+                                        </MudButton>
+                                    </div>
+                                </MudPaper>
+                            }
+
+                            <MudButton Variant="Variant.Outlined"
+                                       OnClick="@(() => NavManager.NavigateTo("/customer-orders"))">
+                                View All Orders
+                            </MudButton>
+                        }
+                    </MudPaper>
+                </div>
+            </MudItem>
+        </MudGrid>
+    </MudContainer>
 </MudContainer>
 
+<style>
+    .profile-page-shell {
+        position: relative;
+        min-height: calc(100vh - 64px);
+        overflow: hidden;
+        padding: 2rem 1rem;
+    }
+
+    .profile-right-column {
+        display: flex;
+        flex-direction: column;
+        gap: 1rem;
+        width: 100%;
+    }
+
+    .profile-page-bg {
+        position: absolute;
+        inset: 0;
+        background:
+            radial-gradient(circle at top left, rgba(255, 188, 122, 0.22), transparent 32%),
+            radial-gradient(circle at bottom right, rgba(255, 134, 61, 0.16), transparent 28%),
+            linear-gradient(135deg, #fff8f2 0%, #fff3e7 40%, #fffaf6 100%);
+        z-index: 0;
+    }
+
+    .profile-content-wrap {
+        position: relative;
+        z-index: 1;
+    }
+
+    .profile-side-card,
+    .profile-main-card {
+        border-radius: 28px;
+        background: rgba(255, 255, 255, 0.94);
+        border: 1px solid rgba(240, 162, 104, 0.25);
+        box-shadow: 0 20px 50px rgba(118, 63, 24, 0.10);
+        backdrop-filter: blur(12px);
+    }
+
+    .profile-side-card {
+        padding: 2rem 1.5rem;
+        text-align: center;
+    }
+
+    .profile-main-card {
+        padding: 2rem;
+    }
+
+    .profile-avatar-wrap {
+        display: flex;
+        justify-content: center;
+        margin-bottom: 1rem;
+    }
+
+    .profile-avatar-lg {
+        width: 88px !important;
+        height: 88px !important;
+        font-size: 2rem !important;
+        background: linear-gradient(90deg, #f08a3d 0%, #dd6b1d 100%) !important;
+        color: white !important;
+    }
+
+    .profile-side-title {
+        font-weight: 800;
+        color: #2f1a0f;
+        margin-bottom: 0.25rem;
+    }
+
+    .profile-side-subtitle {
+        color: #7a5237;
+    }
+
+    .profile-side-meta {
+        display: flex;
+        flex-direction: column;
+        gap: 0.9rem;
+        text-align: left;
+    }
+
+    .profile-side-item {
+        display: flex;
+        align-items: center;
+        gap: 0.75rem;
+        color: #5f3822;
+        font-weight: 500;
+    }
+
+    .profile-side-item .mud-icon-root {
+        color: #dc6f27;
+        background: rgba(255, 170, 102, 0.18);
+        border-radius: 999px;
+        padding: 0.45rem;
+        font-size: 1.1rem;
+    }
+
+    .profile-card-top {
+        margin-bottom: 1.25rem;
+    }
+
+    .profile-card-title {
+        color: #2e1b10;
+        font-weight: 800;
+        margin-bottom: 0.35rem;
+    }
+
+    .profile-card-copy {
+        color: #7a5237;
+    }
+
+    .profile-input .mud-input-control {
+        background: rgba(255, 248, 242, 0.75);
+        border-radius: 16px;
+    }
+
+    .profile-actions {
+        display: flex;
+        justify-content: flex-end;
+        gap: 0.75rem;
+        margin-top: 0.5rem;
+    }
+
+    .profile-save-btn {
+        height: 48px;
+        border-radius: 14px !important;
+        background: linear-gradient(90deg, #f08a3d 0%, #dd6b1d 100%) !important;
+        color: white !important;
+        font-weight: 700 !important;
+        text-transform: none !important;
+    }
+
+    .profile-back-btn {
+        height: 48px;
+        border-radius: 14px !important;
+        font-weight: 700 !important;
+        text-transform: none !important;
+    }
+
+    @@media (max-width: 960px) {
+        .profile-page-shell {
+            padding: 1.25rem 0.75rem 2rem;
+        }
+
+        .profile-main-card,
+        .profile-side-card {
+            padding: 1.35rem;
+        }
+
+        .profile-actions {
+            flex-direction: column;
+        }
+    }
+</style>
+
 @code {
+    private CustomerProfileEditVm Vm { get; set; } = new();
     private bool _isLoading = true;
+    private bool _isSaving;
+    private string? _errorMessage;
+    private string? _successMessage;
+    private List<CustomerOrderListItemVm> RecentOrders { get; set; } = new();
+    private bool _isOrdersLoading = true;
 
     protected override async Task OnInitializedAsync()
     {
-        await AuthService.TryRestoreSessionAsync();
+        var restored = await AuthService.TryRestoreSessionAsync();
+
+        if (!restored || !Session.IsAuthenticated)
+        {
+            NavManager.NavigateTo("/customer-login?returnUrl=%2Fcustomer-profile", true);
+            return;
+        }
+
+        var me = Session.Profile ?? await AuthService.GetMeAsync();
+
+        if (me is null)
+        {
+            NavManager.NavigateTo("/customer-login?returnUrl=%2Fcustomer-profile", true);
+            return;
+        }
+
+        Vm = CustomerProfileEditVm.FromResponse(me);
         _isLoading = false;
+
+        try
+        {
+            var orders = await OrderService.GetMyOrdersAsync();
+            RecentOrders = orders
+                .Select(CustomerOrderListItemVm.FromDto)
+                .Take(3)
+                .ToList();
+        }
+        catch
+        {
+            RecentOrders = new List<CustomerOrderListItemVm>();
+        }
+        finally
+        {
+            _isOrdersLoading = false;
+        }
     }
 
-    private async Task LogoutAsync()
+    private async Task SaveAsync()
     {
-        await AuthService.LogoutAsync();
-        NavManager.NavigateTo("/customer-login", true);
+        try
+        {
+            _isSaving = true;
+            _errorMessage = null;
+            _successMessage = null;
+
+            var updated = await AuthService.UpdateProfileAsync(Vm.ToRequest());
+            Vm = CustomerProfileEditVm.FromResponse(updated);
+
+            _successMessage = "Profile updated successfully.";
+        }
+        catch (Exception ex)
+        {
+            _errorMessage = ex.Message;
+        }
+        finally
+        {
+            _isSaving = false;
+        }
     }
+
+    private string AvatarLetter =>
+        !string.IsNullOrWhiteSpace(Vm.FirstName)
+            ? Vm.FirstName[0].ToString().ToUpperInvariant()
+            : "P";
 }
