@@ -1,5 +1,5 @@
 ﻿using System.Windows.Controls;
-using PESYONG.Presentation.Admin.ViewModels.Meals;
+using PESYONG.Presentation.Admin.ViewModel;
 
 namespace PESYONG.Presentation.Admin.Views;
 

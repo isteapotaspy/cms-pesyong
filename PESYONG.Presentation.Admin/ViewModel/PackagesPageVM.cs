@@ -5,7 +5,7 @@ using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using PESYONG.Presentation.Admin.Interfaces;
 
-namespace PESYONG.Presentation.Admin.ViewModels.Packages;
+namespace PESYONG.Presentation.Admin.ViewModel;
 
 public partial class PackagesPageVM : ObservableObject
 {

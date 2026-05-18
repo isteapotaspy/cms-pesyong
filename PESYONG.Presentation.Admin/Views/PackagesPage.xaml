@@ -3,10 +3,15 @@
       xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
       xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
       xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+      xmlns:converters="clr-namespace:PESYONG.Presentation.Admin.Converters"
       mc:Ignorable="d"
       d:DesignHeight="450"
       d:DesignWidth="800"
       Title="PackagesPage">
+
+    <Page.Resources>
+        <converters:ZeroToVisibleConverter x:Key="ZeroToVisibleConverter"/>
+    </Page.Resources>
 
     <Grid Margin="12">
         <Grid.ColumnDefinitions>
@@ -16,33 +21,52 @@
         </Grid.ColumnDefinitions>
 
         <!-- LEFT: Package list -->
-        <Grid Grid.Column="0">
-            <Grid.RowDefinitions>
-                <RowDefinition Height="Auto"/>
-                <RowDefinition Height="8"/>
-                <RowDefinition Height="*"/>
-            </Grid.RowDefinitions>
+        <ListView Grid.Column="0"
+                  MinHeight="100"
+                  ItemsSource="{Binding Packages}"
+                  SelectedItem="{Binding SelectedPackage, Mode=TwoWay}"
+                  SelectionMode="Single">
+            <ListView.ItemTemplate>
+                <DataTemplate>
+                    <Grid Margin="8,0">
+                        <Grid.RowDefinitions>
+                            <RowDefinition Height="*"/>
+                            <RowDefinition Height="*"/>
+                        </Grid.RowDefinitions>
 
-            <TextBlock Grid.Row="0"
-                       Text="Packages"
-                       FontSize="20"
-                       FontWeight="SemiBold"/>
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="Auto"/>
+                            <ColumnDefinition Width="*"/>
+                        </Grid.ColumnDefinitions>
 
-            <ListView Grid.Row="2"
-                      ItemsSource="{Binding Packages}"
-                      SelectedItem="{Binding SelectedPackage, Mode=TwoWay}">
-                <ListView.View>
-                    <GridView>
-                        <GridViewColumn Header="Title"
-                                        Width="135"
-                                        DisplayMemberBinding="{Binding Title}"/>
-                        <GridViewColumn Header="Available"
-                                        Width="70"
-                                        DisplayMemberBinding="{Binding IsAvailable}"/>
-                    </GridView>
-                </ListView.View>
-            </ListView>
-        </Grid>
+                        <Ellipse Grid.RowSpan="2"
+                                 Width="32"
+                                 Height="32"
+                                 Margin="6"
+                                 HorizontalAlignment="Center"
+                                 VerticalAlignment="Center"/>
+
+                        <TextBlock Grid.Row="0"
+                                   Grid.Column="1"
+                                   Margin="12,6,0,0"
+                                   FontWeight="Bold"
+                                   Text="{Binding Title, Mode=OneWay}"/>
+
+                        <TextBlock Grid.Row="1"
+                                   Grid.Column="1"
+                                   Margin="12,0,0,6"
+                                   Text="{Binding IsAvailable, StringFormat=Available: {0}, Mode=OneWay}"/>
+                    </Grid>
+                </DataTemplate>
+            </ListView.ItemTemplate>
+        </ListView>
+
+        <TextBlock Grid.Column="0"
+                   Text="No packages found."
+                   HorizontalAlignment="Center"
+                   VerticalAlignment="Center"
+                   Foreground="White"
+                   Visibility="{Binding Packages.Count, Converter={StaticResource ZeroToVisibleConverter}}"/>
 
         <!-- RIGHT: Package details -->
         <Grid Grid.Column="2">
@@ -85,174 +109,277 @@
 
                 <!-- GENERAL TAB -->
                 <TabItem Header="General">
-                    <ScrollViewer VerticalScrollBarVisibility="Auto"
-                                  Padding="0,8,8,8">
-                        <StackPanel>
+                    <ScrollViewer VerticalScrollBarVisibility="Auto">
+                        <StackPanel Margin="0,8,8,8">
 
                             <TextBlock Text="{Binding ErrorMessage}"
-                                       Margin="0,0,0,8"/>
+                                       Margin="0,0,0,8"
+                                       TextWrapping="Wrap"/>
 
                             <!-- Metadata -->
-                            <Grid Margin="0,0,0,8">
-                                <Grid.ColumnDefinitions>
-                                    <ColumnDefinition Width="80"/>
-                                    <ColumnDefinition Width="80"/>
-                                    <ColumnDefinition Width="80"/>
-                                    <ColumnDefinition Width="*"/>
-                                </Grid.ColumnDefinitions>
+                            <StackPanel>
+                                <Grid Margin="8">
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="80"/>
+                                        <ColumnDefinition Width="80"/>
+                                        <ColumnDefinition Width="80"/>
+                                        <ColumnDefinition Width="*"/>
+                                    </Grid.ColumnDefinitions>
 
-                                <TextBlock Grid.Column="0"
-                                           Text="ID:"/>
-                                <TextBlock Grid.Column="1"
-                                           Text="{Binding SelectedPackage.Id}"/>
+                                    <TextBlock Grid.Column="0"
+                                               Text="ID:"/>
 
-                                <TextBlock Grid.Column="2"
-                                           Text="Rating:"/>
-                                <TextBlock Grid.Column="3"
-                                           Text="{Binding SelectedPackage.Rating}"/>
-                            </Grid>
+                                    <TextBlock Grid.Column="1"
+                                               Text="{Binding SelectedPackage.Id}"/>
 
-                            <Grid IsEnabled="{Binding IsEditing}">
-                                <Grid.ColumnDefinitions>
-                                    <ColumnDefinition Width="120"/>
-                                    <ColumnDefinition Width="*"/>
-                                </Grid.ColumnDefinitions>
+                                    <TextBlock Grid.Column="2"
+                                               Text="Rating:"/>
 
-                                <Grid.RowDefinitions>
-                                    <RowDefinition Height="Auto"/>
-                                    <RowDefinition Height="8"/>
-                                    <RowDefinition Height="Auto"/>
-                                    <RowDefinition Height="8"/>
-                                    <RowDefinition Height="Auto"/>
-                                    <RowDefinition Height="8"/>
-                                    <RowDefinition Height="Auto"/>
-                                    <RowDefinition Height="8"/>
-                                    <RowDefinition Height="Auto"/>
-                                    <RowDefinition Height="8"/>
-                                    <RowDefinition Height="Auto"/>
-                                    <RowDefinition Height="8"/>
-                                    <RowDefinition Height="Auto"/>
-                                    <RowDefinition Height="8"/>
-                                    <RowDefinition Height="Auto"/>
-                                    <RowDefinition Height="8"/>
-                                    <RowDefinition Height="Auto"/>
-                                    <RowDefinition Height="8"/>
-                                    <RowDefinition Height="Auto"/>
-                                    <RowDefinition Height="8"/>
-                                    <RowDefinition Height="Auto"/>
-                                </Grid.RowDefinitions>
+                                    <TextBlock Grid.Column="3"
+                                               Text="{Binding SelectedPackage.Rating}"/>
+                                </Grid>
+                            </StackPanel>
 
-                                <TextBlock Grid.Row="0"
-                                           Grid.Column="0"
-                                           Text="Category"
-                                           VerticalAlignment="Center"/>
-                                <ComboBox Grid.Row="0"
-                                          Grid.Column="1"
-                                          ItemsSource="{Binding MenuCategories}"
-                                          DisplayMemberPath="Name"
-                                          SelectedValuePath="Id"
-                                          SelectedValue="{Binding SelectedPackage.MenuCategoryId, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"/>
+                            <!-- Package Information -->
+                            <GroupBox Header="Package Information"
+                                      Margin="0,0,0,8">
+                                <Grid Margin="8">
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="120"/>
+                                        <ColumnDefinition Width="*"/>
+                                    </Grid.ColumnDefinitions>
 
-                                <TextBlock Grid.Row="2"
-                                           Grid.Column="0"
-                                           Text="Title"
-                                           VerticalAlignment="Center"/>
-                                <TextBox Grid.Row="2"
-                                         Grid.Column="1"
-                                         Text="{Binding SelectedPackage.Title, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"/>
+                                    <Grid.RowDefinitions>
+                                        <RowDefinition Height="Auto"/>
+                                        <RowDefinition Height="8"/>
+                                        <RowDefinition Height="Auto"/>
+                                        <RowDefinition Height="8"/>
+                                        <RowDefinition Height="Auto"/>
+                                        <RowDefinition Height="8"/>
+                                        <RowDefinition Height="Auto"/>
+                                    </Grid.RowDefinitions>
 
-                                <TextBlock Grid.Row="4"
-                                           Grid.Column="0"
-                                           Text="Description"
-                                           VerticalAlignment="Top"/>
-                                <TextBox Grid.Row="4"
-                                         Grid.Column="1"
-                                         MinHeight="56"
-                                         TextWrapping="Wrap"
-                                         AcceptsReturn="True"
-                                         Text="{Binding SelectedPackage.Description, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"/>
+                                    <TextBlock Grid.Row="0"
+                                               Grid.Column="0"
+                                               Text="Category"
+                                               VerticalAlignment="Center"/>
 
-                                <TextBlock Grid.Row="6"
-                                           Grid.Column="0"
-                                           Text="Summary"
-                                           VerticalAlignment="Top"/>
-                                <TextBox Grid.Row="6"
-                                         Grid.Column="1"
-                                         MinHeight="48"
-                                         TextWrapping="Wrap"
-                                         AcceptsReturn="True"
-                                         Text="{Binding SelectedPackage.CardSummary, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"/>
+                                    <ComboBox Grid.Row="0"
+                                              Grid.Column="1"
+                                              IsHitTestVisible="{Binding IsEditing}"
+                                              Focusable="{Binding IsEditing}"
+                                              ItemsSource="{Binding MenuCategories}"
+                                              DisplayMemberPath="Name"
+                                              SelectedValuePath="Id"
+                                              SelectedValue="{Binding SelectedPackage.MenuCategoryId, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"/>
 
-                                <TextBlock Grid.Row="8"
-                                           Grid.Column="0"
-                                           Text="Serves"
-                                           VerticalAlignment="Center"/>
-                                <TextBox Grid.Row="8"
-                                         Grid.Column="1"
-                                         Text="{Binding SelectedPackage.ServesLabel, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"/>
+                                    <TextBlock Grid.Row="2"
+                                               Grid.Column="0"
+                                               Text="Title"
+                                               VerticalAlignment="Center"/>
 
-                                <TextBlock Grid.Row="10"
-                                           Grid.Column="0"
-                                           Text="Inclusions"
-                                           VerticalAlignment="Top"/>
-                                <TextBox Grid.Row="10"
-                                         Grid.Column="1"
-                                         MinHeight="48"
-                                         TextWrapping="Wrap"
-                                         AcceptsReturn="True"
-                                         Text="{Binding SelectedPackage.InclusionText, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"/>
+                                    <TextBox Grid.Row="2"
+                                             Grid.Column="1"
+                                             IsReadOnly="{Binding IsNotEditing}"
+                                             Text="{Binding SelectedPackage.Title, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"/>
 
-                                <TextBlock Grid.Row="12"
-                                           Grid.Column="0"
-                                           Text="Badge"
-                                           VerticalAlignment="Center"/>
-                                <TextBox Grid.Row="12"
-                                         Grid.Column="1"
-                                         Text="{Binding SelectedPackage.Badge, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"/>
+                                    <TextBlock Grid.Row="4"
+                                               Grid.Column="0"
+                                               Text="Description"
+                                               VerticalAlignment="Top"/>
 
-                                <TextBlock Grid.Row="14"
-                                           Grid.Column="0"
-                                           Text="Notice"
-                                           VerticalAlignment="Center"/>
-                                <TextBox Grid.Row="14"
-                                         Grid.Column="1"
-                                         Text="{Binding SelectedPackage.Notice, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"/>
+                                    <TextBox Grid.Row="4"
+                                             Grid.Column="1"
+                                             MinHeight="56"
+                                             IsReadOnly="{Binding IsNotEditing}"
+                                             TextWrapping="Wrap"
+                                             AcceptsReturn="True"
+                                             Text="{Binding SelectedPackage.Description, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"/>
 
-                                <TextBlock Grid.Row="16"
-                                           Grid.Column="0"
-                                           Text="Image URL"
-                                           VerticalAlignment="Center"/>
-                                <TextBox Grid.Row="16"
-                                         Grid.Column="1"
-                                         Text="{Binding SelectedPackage.ImageUrl, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"/>
+                                    <TextBlock Grid.Row="6"
+                                               Grid.Column="0"
+                                               Text="Summary"
+                                               VerticalAlignment="Top"/>
 
-                                <TextBlock Grid.Row="18"
-                                           Grid.Column="0"
-                                           Text="Review Count"
-                                           VerticalAlignment="Center"/>
-                                <TextBox Grid.Row="18"
-                                         Grid.Column="1"
-                                         Text="{Binding SelectedPackage.ReviewCount, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"/>
+                                    <TextBox Grid.Row="6"
+                                             Grid.Column="1"
+                                             MinHeight="48"
+                                             IsReadOnly="{Binding IsNotEditing}"
+                                             TextWrapping="Wrap"
+                                             AcceptsReturn="True"
+                                             Text="{Binding SelectedPackage.CardSummary, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"/>
+                                </Grid>
+                            </GroupBox>
 
-                                <StackPanel Grid.Row="20"
-                                            Grid.Column="1"
-                                            Orientation="Horizontal">
-                                    <CheckBox Content="Available"
-                                              IsChecked="{Binding SelectedPackage.IsAvailable, Mode=TwoWay}"
-                                              Margin="0,0,16,0"/>
+                            <!-- Display Details -->
+                            <GroupBox Header="Display Details"
+                                      Margin="0,0,0,8">
+                                <Grid Margin="8">
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="120"/>
+                                        <ColumnDefinition Width="*"/>
+                                    </Grid.ColumnDefinitions>
 
-                                    <CheckBox Content="Customizable"
-                                              IsChecked="{Binding SelectedPackage.IsCustomizable, Mode=TwoWay}"/>
-                                </StackPanel>
-                            </Grid>
+                                    <Grid.RowDefinitions>
+                                        <RowDefinition Height="Auto"/>
+                                        <RowDefinition Height="8"/>
+                                        <RowDefinition Height="Auto"/>
+                                        <RowDefinition Height="8"/>
+                                        <RowDefinition Height="Auto"/>
+                                        <RowDefinition Height="8"/>
+                                        <RowDefinition Height="Auto"/>
+                                    </Grid.RowDefinitions>
+
+                                    <TextBlock Grid.Row="0"
+                                               Grid.Column="0"
+                                               Text="Serves"
+                                               VerticalAlignment="Center"/>
+
+                                    <TextBox Grid.Row="0"
+                                             Grid.Column="1"
+                                             IsReadOnly="{Binding IsNotEditing}"
+                                             Text="{Binding SelectedPackage.ServesLabel, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"/>
+
+                                    <TextBlock Grid.Row="2"
+                                               Grid.Column="0"
+                                               Text="Inclusions"
+                                               VerticalAlignment="Top"/>
+
+                                    <TextBox Grid.Row="2"
+                                             Grid.Column="1"
+                                             MinHeight="48"
+                                             IsReadOnly="{Binding IsNotEditing}"
+                                             TextWrapping="Wrap"
+                                             AcceptsReturn="True"
+                                             Text="{Binding SelectedPackage.InclusionText, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"/>
+
+                                    <TextBlock Grid.Row="4"
+                                               Grid.Column="0"
+                                               Text="Badge"
+                                               VerticalAlignment="Center"/>
+
+                                    <TextBox Grid.Row="4"
+                                             Grid.Column="1"
+                                             IsReadOnly="{Binding IsNotEditing}"
+                                             Text="{Binding SelectedPackage.Badge, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"/>
+
+                                    <TextBlock Grid.Row="6"
+                                               Grid.Column="0"
+                                               Text="Notice"
+                                               VerticalAlignment="Center"/>
+
+                                    <TextBox Grid.Row="6"
+                                             Grid.Column="1"
+                                             IsReadOnly="{Binding IsNotEditing}"
+                                             Text="{Binding SelectedPackage.Notice, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"/>
+                                </Grid>
+                            </GroupBox>
+
+                            <!-- Status -->
+                            <GroupBox Header="Status">
+                                <Grid Margin="8">
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="120"/>
+                                        <ColumnDefinition Width="*"/>
+                                    </Grid.ColumnDefinitions>
+
+                                    <Grid.RowDefinitions>
+                                        <RowDefinition Height="Auto"/>
+                                        <RowDefinition Height="8"/>
+                                        <RowDefinition Height="Auto"/>
+                                    </Grid.RowDefinitions>
+
+                                    <TextBlock Grid.Row="0"
+                                               Grid.Column="0"
+                                               Text="Review Count"
+                                               VerticalAlignment="Center"/>
+
+                                    <TextBox Grid.Row="0"
+                                             Grid.Column="1"
+                                             IsReadOnly="{Binding IsNotEditing}"
+                                             Text="{Binding SelectedPackage.ReviewCount, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"/>
+
+                                    <StackPanel Grid.Row="2"
+                                                Grid.Column="1"
+                                                Orientation="Horizontal">
+                                        <CheckBox Content="Available"
+                                                  IsHitTestVisible="{Binding IsEditing}"
+                                                  Focusable="{Binding IsEditing}"
+                                                  IsChecked="{Binding SelectedPackage.IsAvailable, Mode=TwoWay}"
+                                                  Margin="0,0,16,0"/>
+
+                                        <CheckBox Content="Customizable"
+                                                  IsHitTestVisible="{Binding IsEditing}"
+                                                  Focusable="{Binding IsEditing}"
+                                                  IsChecked="{Binding SelectedPackage.IsCustomizable, Mode=TwoWay}"/>
+                                    </StackPanel>
+                                </Grid>
+                            </GroupBox>
                         </StackPanel>
                     </ScrollViewer>
                 </TabItem>
 
+                <!-- IMAGE TAB -->
+                <TabItem Header="Image">
+                    <Grid Margin="0,8,0,0">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="260"/>
+                            <ColumnDefinition Width="12"/>
+                            <ColumnDefinition Width="*"/>
+                        </Grid.ColumnDefinitions>
+
+                        <Border Grid.Column="0"
+                                MinHeight="240"
+                                BorderThickness="1"
+                                CornerRadius="4">
+                            <Grid Margin="8">
+                                <Image Source="{Binding SelectedPackage.ImagePreviewSource}"
+                                       Stretch="Uniform"
+                                       HorizontalAlignment="Center"
+                                       VerticalAlignment="Center"/>
+
+                                <TextBlock Text="{Binding SelectedPackage.ImagePlaceholderText}"
+                                           TextAlignment="Center"
+                                           TextWrapping="Wrap"
+                                           HorizontalAlignment="Center"
+                                           VerticalAlignment="Center"/>
+                            </Grid>
+                        </Border>
+
+                        <StackPanel Grid.Column="2"
+                                    VerticalAlignment="Top">
+
+                            <TextBlock Text="Image URL"
+                                       Margin="0,0,0,4"/>
+
+                            <TextBox IsReadOnly="{Binding IsNotEditing}"
+                                     Text="{Binding SelectedPackage.ImageUrl, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"/>
+
+                            <StackPanel Orientation="Horizontal"
+                                        Margin="0,8,0,8">
+                                <Button Content="Upload Image"
+                                        IsEnabled="{Binding IsEditing}"
+                                        Command="{Binding SelectedPackage.PickImageCommand}"
+                                        Margin="0,0,8,0"/>
+
+                                <Button Content="Clear Upload"
+                                        IsEnabled="{Binding IsEditing}"
+                                        Command="{Binding SelectedPackage.ClearUploadedImageCommand}"/>
+                            </StackPanel>
+
+                            <TextBlock Text="{Binding SelectedPackage.ImageStatusText}"
+                                       TextWrapping="Wrap"
+                                       Margin="0,0,0,8"/>
+
+                            <TextBlock Text="The uploaded file is stored in SelectedPackage.UploadedImageBytes for now. Once the image service is ready, upload that byte array first, then assign the returned URL to SelectedPackage.ImageUrl before saving."
+                                       TextWrapping="Wrap"/>
+                        </StackPanel>
+                    </Grid>
+                </TabItem>
+
                 <!-- SIZES TAB -->
                 <TabItem Header="Sizes">
-                    <Grid Margin="0,8,0,0"
-                          IsEnabled="{Binding IsEditing}">
+                    <Grid Margin="0,8,0,0">
                         <Grid.RowDefinitions>
                             <RowDefinition Height="Auto"/>
                             <RowDefinition Height="8"/>
@@ -261,13 +388,15 @@
 
                         <Button Grid.Row="0"
                                 Content="Add Size"
+                                IsEnabled="{Binding IsEditing}"
                                 HorizontalAlignment="Left"
                                 Command="{Binding AddSizeCommand}"/>
 
                         <DataGrid Grid.Row="2"
                                   ItemsSource="{Binding SelectedPackage.Sizes}"
                                   AutoGenerateColumns="False"
-                                  CanUserAddRows="False">
+                                  CanUserAddRows="False"
+                                  IsReadOnly="{Binding IsNotEditing}">
                             <DataGrid.Columns>
                                 <DataGridTextColumn Header="Label"
                                                     Width="*"
@@ -289,6 +418,7 @@
                                     <DataGridTemplateColumn.CellTemplate>
                                         <DataTemplate>
                                             <Button Content="Remove"
+                                                    IsEnabled="{Binding DataContext.IsEditing, RelativeSource={RelativeSource AncestorType=Page}}"
                                                     Command="{Binding DataContext.RemoveSizeCommand, RelativeSource={RelativeSource AncestorType=Page}}"
                                                     CommandParameter="{Binding}"/>
                                         </DataTemplate>
@@ -301,8 +431,7 @@
 
                 <!-- ADDONS TAB -->
                 <TabItem Header="Addons">
-                    <Grid Margin="0,8,0,0"
-                          IsEnabled="{Binding IsEditing}">
+                    <Grid Margin="0,8,0,0">
                         <Grid.RowDefinitions>
                             <RowDefinition Height="Auto"/>
                             <RowDefinition Height="8"/>
@@ -311,13 +440,15 @@
 
                         <Button Grid.Row="0"
                                 Content="Add Addon"
+                                IsEnabled="{Binding IsEditing}"
                                 HorizontalAlignment="Left"
                                 Command="{Binding AddAddonCommand}"/>
 
                         <DataGrid Grid.Row="2"
                                   ItemsSource="{Binding SelectedPackage.Addons}"
                                   AutoGenerateColumns="False"
-                                  CanUserAddRows="False">
+                                  CanUserAddRows="False"
+                                  IsReadOnly="{Binding IsNotEditing}">
                             <DataGrid.Columns>
                                 <DataGridTextColumn Header="Name"
                                                     Width="*"
@@ -339,6 +470,7 @@
                                     <DataGridTemplateColumn.CellTemplate>
                                         <DataTemplate>
                                             <Button Content="Remove"
+                                                    IsEnabled="{Binding DataContext.IsEditing, RelativeSource={RelativeSource AncestorType=Page}}"
                                                     Command="{Binding DataContext.RemoveAddonCommand, RelativeSource={RelativeSource AncestorType=Page}}"
                                                     CommandParameter="{Binding}"/>
                                         </DataTemplate>
@@ -351,8 +483,7 @@
 
                 <!-- RULES TAB -->
                 <TabItem Header="Rules">
-                    <Grid Margin="0,8,0,0"
-                          IsEnabled="{Binding IsEditing}">
+                    <Grid Margin="0,8,0,0">
                         <Grid.RowDefinitions>
                             <RowDefinition Height="Auto"/>
                             <RowDefinition Height="8"/>
@@ -361,6 +492,7 @@
 
                         <Button Grid.Row="0"
                                 Content="Add Rule"
+                                IsEnabled="{Binding IsEditing}"
                                 HorizontalAlignment="Left"
                                 Command="{Binding AddSelectionRuleCommand}"/>
 
@@ -368,6 +500,7 @@
                                   ItemsSource="{Binding SelectedPackage.SelectionRules}"
                                   AutoGenerateColumns="False"
                                   CanUserAddRows="False"
+                                  IsReadOnly="{Binding IsNotEditing}"
                                   RowDetailsVisibilityMode="VisibleWhenSelected">
                             <DataGrid.Columns>
                                 <DataGridTextColumn Header="Title"
@@ -378,7 +511,9 @@
                                                         Width="110">
                                     <DataGridTemplateColumn.CellTemplate>
                                         <DataTemplate>
-                                            <ComboBox ItemsSource="{Binding DataContext.SelectionTypeOptions, RelativeSource={RelativeSource AncestorType=Page}}"
+                                            <ComboBox IsHitTestVisible="{Binding DataContext.IsEditing, RelativeSource={RelativeSource AncestorType=Page}}"
+                                                      Focusable="{Binding DataContext.IsEditing, RelativeSource={RelativeSource AncestorType=Page}}"
+                                                      ItemsSource="{Binding DataContext.SelectionTypeOptions, RelativeSource={RelativeSource AncestorType=Page}}"
                                                       SelectedItem="{Binding SelectionType, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"/>
                                         </DataTemplate>
                                     </DataGridTemplateColumn.CellTemplate>
@@ -388,7 +523,9 @@
                                                         Width="110">
                                     <DataGridTemplateColumn.CellTemplate>
                                         <DataTemplate>
-                                            <ComboBox ItemsSource="{Binding DataContext.MealTypeOptions, RelativeSource={RelativeSource AncestorType=Page}}"
+                                            <ComboBox IsHitTestVisible="{Binding DataContext.IsEditing, RelativeSource={RelativeSource AncestorType=Page}}"
+                                                      Focusable="{Binding DataContext.IsEditing, RelativeSource={RelativeSource AncestorType=Page}}"
+                                                      ItemsSource="{Binding DataContext.MealTypeOptions, RelativeSource={RelativeSource AncestorType=Page}}"
                                                       SelectedItem="{Binding AllowedMealType, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"/>
                                         </DataTemplate>
                                     </DataGridTemplateColumn.CellTemplate>
@@ -410,6 +547,7 @@
                                     <DataGridTemplateColumn.CellTemplate>
                                         <DataTemplate>
                                             <Button Content="Remove"
+                                                    IsEnabled="{Binding DataContext.IsEditing, RelativeSource={RelativeSource AncestorType=Page}}"
                                                     Command="{Binding DataContext.RemoveSelectionRuleCommand, RelativeSource={RelativeSource AncestorType=Page}}"
                                                     CommandParameter="{Binding}"/>
                                         </DataTemplate>
@@ -428,6 +566,7 @@
 
                                         <Button Grid.Row="0"
                                                 Content="Add Option"
+                                                IsEnabled="{Binding DataContext.IsEditing, RelativeSource={RelativeSource AncestorType=Page}}"
                                                 HorizontalAlignment="Left"
                                                 Command="{Binding DataContext.AddOptionCommand, RelativeSource={RelativeSource AncestorType=Page}}"
                                                 CommandParameter="{Binding}"/>
@@ -436,13 +575,16 @@
                                                   ItemsSource="{Binding Options}"
                                                   AutoGenerateColumns="False"
                                                   CanUserAddRows="False"
+                                                  IsReadOnly="{Binding DataContext.IsNotEditing, RelativeSource={RelativeSource AncestorType=Page}}"
                                                   MaxHeight="140">
                                             <DataGrid.Columns>
                                                 <DataGridTemplateColumn Header="Meal"
                                                                         Width="*">
                                                     <DataGridTemplateColumn.CellTemplate>
                                                         <DataTemplate>
-                                                            <ComboBox ItemsSource="{Binding DataContext.Meals, RelativeSource={RelativeSource AncestorType=Page}}"
+                                                            <ComboBox IsHitTestVisible="{Binding DataContext.IsEditing, RelativeSource={RelativeSource AncestorType=Page}}"
+                                                                      Focusable="{Binding DataContext.IsEditing, RelativeSource={RelativeSource AncestorType=Page}}"
+                                                                      ItemsSource="{Binding DataContext.Meals, RelativeSource={RelativeSource AncestorType=Page}}"
                                                                       DisplayMemberPath="Name"
                                                                       SelectedValuePath="Id"
                                                                       SelectedValue="{Binding MealId, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"/>
@@ -462,6 +604,7 @@
                                                     <DataGridTemplateColumn.CellTemplate>
                                                         <DataTemplate>
                                                             <Button Content="Remove"
+                                                                    IsEnabled="{Binding DataContext.IsEditing, RelativeSource={RelativeSource AncestorType=Page}}"
                                                                     Command="{Binding DataContext.RemoveOptionCommand, RelativeSource={RelativeSource AncestorType=Page}}"
                                                                     CommandParameter="{Binding}"/>
                                                         </DataTemplate>

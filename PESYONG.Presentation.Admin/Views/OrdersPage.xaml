@@ -3,10 +3,15 @@
       xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
       xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
       xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+      xmlns:converters="clr-namespace:PESYONG.Presentation.Admin.Converters"
       mc:Ignorable="d"
       d:DesignHeight="450"
       d:DesignWidth="800"
       Title="OrdersPage">
+
+    <Page.Resources>
+        <converters:ZeroToVisibleConverter x:Key="ZeroToVisibleConverter"/>
+    </Page.Resources>
 
     <Grid Margin="12">
         <Grid.ColumnDefinitions>
@@ -16,38 +21,52 @@
         </Grid.ColumnDefinitions>
 
         <!-- LEFT: Order list -->
-        <Grid Grid.Column="0">
-            <Grid.RowDefinitions>
-                <RowDefinition Height="Auto"/>
-                <RowDefinition Height="8"/>
-                <RowDefinition Height="*"/>
-            </Grid.RowDefinitions>
+        <ListView Grid.Column="0"
+                  MinHeight="100"
+                  ItemsSource="{Binding Orders}"
+                  SelectedItem="{Binding SelectedOrder, Mode=TwoWay}"
+                  SelectionMode="Single">
+            <ListView.ItemTemplate>
+                <DataTemplate>
+                    <Grid Margin="8,0">
+                        <Grid.RowDefinitions>
+                            <RowDefinition Height="*"/>
+                            <RowDefinition Height="*"/>
+                        </Grid.RowDefinitions>
 
-            <TextBlock Grid.Row="0"
-                       Text="Orders"
-                       FontSize="20"
-                       FontWeight="SemiBold"/>
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="Auto"/>
+                            <ColumnDefinition Width="*"/>
+                        </Grid.ColumnDefinitions>
 
-            <ListView Grid.Row="2"
-                      ItemsSource="{Binding Orders}"
-                      SelectedItem="{Binding SelectedOrder, Mode=TwoWay}">
-                <ListView.View>
-                    <GridView>
-                        <GridViewColumn Header="Order No."
-                                        Width="95"
-                                        DisplayMemberBinding="{Binding OrderNumber}"/>
+                        <Ellipse Grid.RowSpan="2"
+                                 Width="32"
+                                 Height="32"
+                                 Margin="6"
+                                 HorizontalAlignment="Center"
+                                 VerticalAlignment="Center"/>
 
-                        <GridViewColumn Header="Status"
-                                        Width="75"
-                                        DisplayMemberBinding="{Binding Status}"/>
+                        <TextBlock Grid.Row="0"
+                                   Grid.Column="1"
+                                   Margin="12,6,0,0"
+                                   FontWeight="Bold"
+                                   Text="{Binding OrderListTitle, Mode=OneWay}"/>
 
-                        <GridViewColumn Header="Total"
-                                        Width="60"
-                                        DisplayMemberBinding="{Binding GrandTotal}"/>
-                    </GridView>
-                </ListView.View>
-            </ListView>
-        </Grid>
+                        <TextBlock Grid.Row="1"
+                                   Grid.Column="1"
+                                   Margin="12,0,0,6"
+                                   Text="{Binding OrderListSummary, Mode=OneWay}"/>
+                    </Grid>
+                </DataTemplate>
+            </ListView.ItemTemplate>
+        </ListView>
+
+        <TextBlock Grid.Column="0"
+                   Text="No orders found."
+                   HorizontalAlignment="Center"
+                   VerticalAlignment="Center"
+                   Foreground="White"
+                   Visibility="{Binding Orders.Count, Converter={StaticResource ZeroToVisibleConverter}}"/>
 
         <!-- RIGHT: Order details -->
         <Grid Grid.Column="2">
@@ -90,537 +109,574 @@
 
                 <!-- GENERAL TAB -->
                 <TabItem Header="General">
-                    <ScrollViewer VerticalScrollBarVisibility="Auto"
-                                  Padding="0,8,8,8">
-                        <StackPanel>
+                    <ScrollViewer VerticalScrollBarVisibility="Auto">
+                        <StackPanel Margin="0,8,8,8">
 
                             <TextBlock Text="{Binding ErrorMessage}"
-                                       Margin="0,0,0,8"/>
+                                       Margin="0,0,0,8"
+                                       TextWrapping="Wrap"/>
 
                             <!-- Metadata -->
-                            <Grid Margin="0,0,0,8">
-                                <Grid.ColumnDefinitions>
-                                    <ColumnDefinition Width="80"/>
-                                    <ColumnDefinition Width="80"/>
-                                    <ColumnDefinition Width="90"/>
-                                    <ColumnDefinition Width="120"/>
-                                    <ColumnDefinition Width="90"/>
-                                    <ColumnDefinition Width="*"/>
-                                </Grid.ColumnDefinitions>
+                            <StackPanel>
+                                <Grid Margin="8">
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="80"/>
+                                        <ColumnDefinition Width="80"/>
+                                        <ColumnDefinition Width="80"/>
+                                        <ColumnDefinition Width="120"/>
+                                        <ColumnDefinition Width="80"/>
+                                        <ColumnDefinition Width="*"/>
+                                    </Grid.ColumnDefinitions>
 
-                                <TextBlock Grid.Column="0"
-                                           Text="ID:"/>
-                                <TextBlock Grid.Column="1"
-                                           Text="{Binding SelectedOrder.Id}"/>
+                                    <TextBlock Grid.Column="0"
+                                               Text="ID:"/>
 
-                                <TextBlock Grid.Column="2"
-                                           Text="Created:"/>
-                                <TextBlock Grid.Column="3"
-                                           Text="{Binding SelectedOrder.DateCreated, StringFormat={}{0:g}}"/>
+                                    <TextBlock Grid.Column="1"
+                                               Text="{Binding SelectedOrder.Id}"/>
 
-                                <TextBlock Grid.Column="4"
-                                           Text="Updated:"/>
-                                <TextBlock Grid.Column="5"
-                                           Text="{Binding SelectedOrder.DateUpdated, StringFormat={}{0:g}}"/>
-                            </Grid>
+                                    <TextBlock Grid.Column="2"
+                                               Text="Created:"/>
 
-                            <Grid IsEnabled="{Binding IsEditing}">
-                                <Grid.ColumnDefinitions>
-                                    <ColumnDefinition Width="130"/>
-                                    <ColumnDefinition Width="*"/>
-                                </Grid.ColumnDefinitions>
+                                    <TextBlock Grid.Column="3"
+                                               Text="{Binding SelectedOrder.DateCreated, StringFormat={}{0:g}}"/>
 
-                                <Grid.RowDefinitions>
-                                    <RowDefinition Height="Auto"/>
-                                    <RowDefinition Height="8"/>
+                                    <TextBlock Grid.Column="4"
+                                               Text="Updated:"/>
 
-                                    <RowDefinition Height="Auto"/>
-                                    <RowDefinition Height="8"/>
+                                    <TextBlock Grid.Column="5"
+                                               Text="{Binding SelectedOrder.DateUpdated, StringFormat={}{0:g}}"/>
+                                </Grid>
+                            </StackPanel>
 
-                                    <RowDefinition Height="Auto"/>
-                                    <RowDefinition Height="8"/>
+                            <!-- Order Information -->
+                            <GroupBox Header="Order Information"
+                                      Margin="0,0,0,8">
+                                <Grid Margin="8">
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="120"/>
+                                        <ColumnDefinition Width="*"/>
+                                    </Grid.ColumnDefinitions>
 
-                                    <RowDefinition Height="Auto"/>
-                                    <RowDefinition Height="8"/>
+                                    <Grid.RowDefinitions>
+                                        <RowDefinition Height="Auto"/>
+                                        <RowDefinition Height="8"/>
+                                        <RowDefinition Height="Auto"/>
+                                        <RowDefinition Height="8"/>
+                                        <RowDefinition Height="Auto"/>
+                                        <RowDefinition Height="8"/>
+                                        <RowDefinition Height="Auto"/>
+                                        <RowDefinition Height="8"/>
+                                        <RowDefinition Height="Auto"/>
+                                        <RowDefinition Height="8"/>
+                                        <RowDefinition Height="Auto"/>
+                                    </Grid.RowDefinitions>
 
-                                    <RowDefinition Height="Auto"/>
-                                    <RowDefinition Height="8"/>
+                                    <TextBlock Grid.Row="0"
+                                               Grid.Column="0"
+                                               Text="Order Number"
+                                               VerticalAlignment="Center"/>
 
-                                    <RowDefinition Height="Auto"/>
-                                    <RowDefinition Height="8"/>
+                                    <TextBox Grid.Row="0"
+                                             Grid.Column="1"
+                                             IsReadOnly="{Binding IsNotEditing}"
+                                             Text="{Binding SelectedOrder.OrderNumber, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"/>
 
-                                    <RowDefinition Height="Auto"/>
-                                    <RowDefinition Height="8"/>
+                                    <TextBlock Grid.Row="2"
+                                               Grid.Column="0"
+                                               Text="Customer ID"
+                                               VerticalAlignment="Center"/>
 
-                                    <RowDefinition Height="Auto"/>
-                                    <RowDefinition Height="8"/>
+                                    <TextBox Grid.Row="2"
+                                             Grid.Column="1"
+                                             IsReadOnly="{Binding IsNotEditing}"
+                                             Text="{Binding SelectedOrder.CustomerProfileId, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"/>
 
-                                    <RowDefinition Height="Auto"/>
-                                    <RowDefinition Height="8"/>
+                                    <TextBlock Grid.Row="4"
+                                               Grid.Column="0"
+                                               Text="Address ID"
+                                               VerticalAlignment="Center"/>
 
-                                    <RowDefinition Height="Auto"/>
-                                    <RowDefinition Height="8"/>
+                                    <TextBox Grid.Row="4"
+                                             Grid.Column="1"
+                                             IsReadOnly="{Binding IsNotEditing}"
+                                             Text="{Binding SelectedOrder.AddressId, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged, TargetNullValue=''}"/>
 
-                                    <RowDefinition Height="Auto"/>
-                                    <RowDefinition Height="8"/>
+                                    <TextBlock Grid.Row="6"
+                                               Grid.Column="0"
+                                               Text="Ordered At"
+                                               VerticalAlignment="Center"/>
 
-                                    <RowDefinition Height="Auto"/>
-                                    <RowDefinition Height="8"/>
+                                    <DatePicker Grid.Row="6"
+                                                Grid.Column="1"
+                                                IsHitTestVisible="{Binding IsEditing}"
+                                                Focusable="{Binding IsEditing}"
+                                                SelectedDate="{Binding SelectedOrder.OrderedAtUtc, Mode=TwoWay}"/>
 
-                                    <RowDefinition Height="Auto"/>
-                                    <RowDefinition Height="8"/>
+                                    <TextBlock Grid.Row="8"
+                                               Grid.Column="0"
+                                               Text="Delivery Date"
+                                               VerticalAlignment="Center"/>
 
-                                    <RowDefinition Height="Auto"/>
-                                    <RowDefinition Height="8"/>
+                                    <DatePicker Grid.Row="8"
+                                                Grid.Column="1"
+                                                IsHitTestVisible="{Binding IsEditing}"
+                                                Focusable="{Binding IsEditing}"
+                                                SelectedDate="{Binding SelectedOrder.DeliveryDate, Mode=TwoWay}"/>
 
-                                    <RowDefinition Height="Auto"/>
-                                </Grid.RowDefinitions>
+                                    <TextBlock Grid.Row="10"
+                                               Grid.Column="0"
+                                               Text="Time Slot"
+                                               VerticalAlignment="Center"/>
 
-                                <TextBlock Grid.Row="0"
-                                           Grid.Column="0"
-                                           Text="Order Number"
-                                           VerticalAlignment="Center"/>
-                                <TextBox Grid.Row="0"
-                                         Grid.Column="1"
-                                         Text="{Binding SelectedOrder.OrderNumber, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"/>
+                                    <TextBox Grid.Row="10"
+                                             Grid.Column="1"
+                                             IsReadOnly="{Binding IsNotEditing}"
+                                             Text="{Binding SelectedOrder.DeliveryTimeSlot, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"/>
+                                </Grid>
+                            </GroupBox>
 
-                                <TextBlock Grid.Row="2"
-                                           Grid.Column="0"
-                                           Text="Customer ID"
-                                           VerticalAlignment="Center"/>
-                                <TextBox Grid.Row="2"
-                                         Grid.Column="1"
-                                         Text="{Binding SelectedOrder.CustomerProfileId, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"/>
+                            <!-- Status and Payment -->
+                            <GroupBox Header="Status and Payment"
+                                      Margin="0,0,0,8">
+                                <Grid Margin="8">
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="120"/>
+                                        <ColumnDefinition Width="*"/>
+                                    </Grid.ColumnDefinitions>
 
-                                <TextBlock Grid.Row="4"
-                                           Grid.Column="0"
-                                           Text="Address ID"
-                                           VerticalAlignment="Center"/>
-                                <TextBox Grid.Row="4"
-                                         Grid.Column="1"
-                                         Text="{Binding SelectedOrder.AddressId, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged, TargetNullValue=''}"/>
+                                    <Grid.RowDefinitions>
+                                        <RowDefinition Height="Auto"/>
+                                        <RowDefinition Height="8"/>
+                                        <RowDefinition Height="Auto"/>
+                                        <RowDefinition Height="8"/>
+                                        <RowDefinition Height="Auto"/>
+                                    </Grid.RowDefinitions>
 
-                                <TextBlock Grid.Row="6"
-                                           Grid.Column="0"
-                                           Text="Ordered At"
-                                           VerticalAlignment="Center"/>
-                                <DatePicker Grid.Row="6"
-                                            Grid.Column="1"
-                                            SelectedDate="{Binding SelectedOrder.OrderedAtUtc, Mode=TwoWay}"/>
+                                    <TextBlock Grid.Row="0"
+                                               Grid.Column="0"
+                                               Text="Order Status"
+                                               VerticalAlignment="Center"/>
 
-                                <TextBlock Grid.Row="8"
-                                           Grid.Column="0"
-                                           Text="Delivery Date"
-                                           VerticalAlignment="Center"/>
-                                <DatePicker Grid.Row="8"
-                                            Grid.Column="1"
-                                            SelectedDate="{Binding SelectedOrder.DeliveryDate, Mode=TwoWay}"/>
+                                    <ComboBox Grid.Row="0"
+                                              Grid.Column="1"
+                                              IsHitTestVisible="{Binding IsEditing}"
+                                              Focusable="{Binding IsEditing}"
+                                              ItemsSource="{Binding OrderStatuses}"
+                                              SelectedItem="{Binding SelectedOrder.Status, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"/>
 
-                                <TextBlock Grid.Row="10"
-                                           Grid.Column="0"
-                                           Text="Time Slot"
-                                           VerticalAlignment="Center"/>
-                                <TextBox Grid.Row="10"
-                                         Grid.Column="1"
-                                         Text="{Binding SelectedOrder.DeliveryTimeSlot, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"/>
+                                    <TextBlock Grid.Row="2"
+                                               Grid.Column="0"
+                                               Text="Payment Method"
+                                               VerticalAlignment="Center"/>
 
-                                <TextBlock Grid.Row="12"
-                                           Grid.Column="0"
-                                           Text="Order Status"
-                                           VerticalAlignment="Center"/>
-                                <ComboBox Grid.Row="12"
-                                          Grid.Column="1"
-                                          ItemsSource="{Binding OrderStatuses}"
-                                          SelectedItem="{Binding SelectedOrder.Status, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
-                                          IsEditable="True"/>
+                                    <ComboBox Grid.Row="2"
+                                              Grid.Column="1"
+                                              IsHitTestVisible="{Binding IsEditing}"
+                                              Focusable="{Binding IsEditing}"
+                                              ItemsSource="{Binding PaymentMethods}"
+                                              SelectedItem="{Binding SelectedOrder.PaymentMethod, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"/>
 
-                                <TextBlock Grid.Row="14"
-                                           Grid.Column="0"
-                                           Text="Payment Method"
-                                           VerticalAlignment="Center"/>
-                                <ComboBox Grid.Row="14"
-                                          Grid.Column="1"
-                                          ItemsSource="{Binding PaymentMethods}"
-                                          SelectedItem="{Binding SelectedOrder.PaymentMethod, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
-                                          IsEditable="True"/>
+                                    <TextBlock Grid.Row="4"
+                                               Grid.Column="0"
+                                               Text="Payment Status"
+                                               VerticalAlignment="Center"/>
 
-                                <TextBlock Grid.Row="16"
-                                           Grid.Column="0"
-                                           Text="Payment Status"
-                                           VerticalAlignment="Center"/>
-                                <ComboBox Grid.Row="16"
-                                          Grid.Column="1"
-                                          ItemsSource="{Binding PaymentStatuses}"
-                                          SelectedItem="{Binding SelectedOrder.PaymentStatus, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
-                                          IsEditable="True"/>
+                                    <ComboBox Grid.Row="4"
+                                              Grid.Column="1"
+                                              IsHitTestVisible="{Binding IsEditing}"
+                                              Focusable="{Binding IsEditing}"
+                                              ItemsSource="{Binding PaymentStatuses}"
+                                              SelectedItem="{Binding SelectedOrder.PaymentStatus, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"/>
+                                </Grid>
+                            </GroupBox>
 
-                                <TextBlock Grid.Row="18"
-                                           Grid.Column="0"
-                                           Text="Contact Name"
-                                           VerticalAlignment="Center"/>
-                                <TextBox Grid.Row="18"
-                                         Grid.Column="1"
-                                         Text="{Binding SelectedOrder.ContactNameSnapshot, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"/>
+                            <!-- Contact Information -->
+                            <GroupBox Header="Contact Information"
+                                      Margin="0,0,0,8">
+                                <Grid Margin="8">
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="120"/>
+                                        <ColumnDefinition Width="*"/>
+                                    </Grid.ColumnDefinitions>
 
-                                <TextBlock Grid.Row="20"
-                                           Grid.Column="0"
-                                           Text="Contact Email"
-                                           VerticalAlignment="Center"/>
-                                <TextBox Grid.Row="20"
-                                         Grid.Column="1"
-                                         Text="{Binding SelectedOrder.ContactEmailSnapshot, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"/>
+                                    <Grid.RowDefinitions>
+                                        <RowDefinition Height="Auto"/>
+                                        <RowDefinition Height="8"/>
+                                        <RowDefinition Height="Auto"/>
+                                        <RowDefinition Height="8"/>
+                                        <RowDefinition Height="Auto"/>
+                                    </Grid.RowDefinitions>
 
-                                <TextBlock Grid.Row="22"
-                                           Grid.Column="0"
-                                           Text="Contact Mobile"
-                                           VerticalAlignment="Center"/>
-                                <TextBox Grid.Row="22"
-                                         Grid.Column="1"
-                                         Text="{Binding SelectedOrder.ContactMobileSnapshot, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"/>
+                                    <TextBlock Grid.Row="0"
+                                               Grid.Column="0"
+                                               Text="Contact Name"
+                                               VerticalAlignment="Center"/>
 
-                                <TextBlock Grid.Row="24"
-                                           Grid.Column="0"
-                                           Text="Customer Notes"
-                                           VerticalAlignment="Top"/>
-                                <TextBox Grid.Row="24"
-                                         Grid.Column="1"
-                                         MinHeight="48"
-                                         TextWrapping="Wrap"
-                                         AcceptsReturn="True"
-                                         Text="{Binding SelectedOrder.CustomerNotes, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"/>
+                                    <TextBox Grid.Row="0"
+                                             Grid.Column="1"
+                                             IsReadOnly="{Binding IsNotEditing}"
+                                             Text="{Binding SelectedOrder.ContactNameSnapshot, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"/>
 
-                                <TextBlock Grid.Row="26"
-                                           Grid.Column="0"
-                                           Text="Instructions"
-                                           VerticalAlignment="Top"/>
-                                <TextBox Grid.Row="26"
-                                         Grid.Column="1"
-                                         MinHeight="48"
-                                         TextWrapping="Wrap"
-                                         AcceptsReturn="True"
-                                         Text="{Binding SelectedOrder.SpecialInstructions, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"/>
+                                    <TextBlock Grid.Row="2"
+                                               Grid.Column="0"
+                                               Text="Contact Email"
+                                               VerticalAlignment="Center"/>
 
-                                <TextBlock Grid.Row="28"
-                                           Grid.Column="0"
-                                           Text="Promo Code"
-                                           VerticalAlignment="Center"/>
-                                <TextBox Grid.Row="28"
-                                         Grid.Column="1"
-                                         Text="{Binding SelectedOrder.PromoCodeApplied, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"/>
-                            </Grid>
+                                    <TextBox Grid.Row="2"
+                                             Grid.Column="1"
+                                             IsReadOnly="{Binding IsNotEditing}"
+                                             Text="{Binding SelectedOrder.ContactEmailSnapshot, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"/>
+
+                                    <TextBlock Grid.Row="4"
+                                               Grid.Column="0"
+                                               Text="Contact Mobile"
+                                               VerticalAlignment="Center"/>
+
+                                    <TextBox Grid.Row="4"
+                                             Grid.Column="1"
+                                             IsReadOnly="{Binding IsNotEditing}"
+                                             Text="{Binding SelectedOrder.ContactMobileSnapshot, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"/>
+                                </Grid>
+                            </GroupBox>
+
+                            <!-- Notes -->
+                            <GroupBox Header="Notes">
+                                <Grid Margin="8">
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="120"/>
+                                        <ColumnDefinition Width="*"/>
+                                    </Grid.ColumnDefinitions>
+
+                                    <Grid.RowDefinitions>
+                                        <RowDefinition Height="Auto"/>
+                                        <RowDefinition Height="8"/>
+                                        <RowDefinition Height="Auto"/>
+                                        <RowDefinition Height="8"/>
+                                        <RowDefinition Height="Auto"/>
+                                    </Grid.RowDefinitions>
+
+                                    <TextBlock Grid.Row="0"
+                                               Grid.Column="0"
+                                               Text="Customer Notes"
+                                               VerticalAlignment="Top"/>
+
+                                    <TextBox Grid.Row="0"
+                                             Grid.Column="1"
+                                             MinHeight="48"
+                                             IsReadOnly="{Binding IsNotEditing}"
+                                             TextWrapping="Wrap"
+                                             AcceptsReturn="True"
+                                             Text="{Binding SelectedOrder.CustomerNotes, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"/>
+
+                                    <TextBlock Grid.Row="2"
+                                               Grid.Column="0"
+                                               Text="Instructions"
+                                               VerticalAlignment="Top"/>
+
+                                    <TextBox Grid.Row="2"
+                                             Grid.Column="1"
+                                             MinHeight="48"
+                                             IsReadOnly="{Binding IsNotEditing}"
+                                             TextWrapping="Wrap"
+                                             AcceptsReturn="True"
+                                             Text="{Binding SelectedOrder.SpecialInstructions, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"/>
+
+                                    <TextBlock Grid.Row="4"
+                                               Grid.Column="0"
+                                               Text="Promo Code"
+                                               VerticalAlignment="Center"/>
+
+                                    <TextBox Grid.Row="4"
+                                             Grid.Column="1"
+                                             IsReadOnly="{Binding IsNotEditing}"
+                                             Text="{Binding SelectedOrder.PromoCodeApplied, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"/>
+                                </Grid>
+                            </GroupBox>
                         </StackPanel>
                     </ScrollViewer>
                 </TabItem>
 
                 <!-- TOTALS TAB -->
                 <TabItem Header="Totals">
-                    <ScrollViewer VerticalScrollBarVisibility="Auto"
-                                  Padding="0,8,8,8">
-                        <Grid IsEnabled="{Binding IsEditing}">
-                            <Grid.ColumnDefinitions>
-                                <ColumnDefinition Width="130"/>
-                                <ColumnDefinition Width="*"/>
-                            </Grid.ColumnDefinitions>
+                    <ScrollViewer VerticalScrollBarVisibility="Auto">
+                        <StackPanel Margin="0,8,8,8">
+                            <GroupBox Header="Order Totals">
+                                <Grid Margin="8">
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="120"/>
+                                        <ColumnDefinition Width="*"/>
+                                    </Grid.ColumnDefinitions>
 
-                            <Grid.RowDefinitions>
-                                <RowDefinition Height="Auto"/>
-                                <RowDefinition Height="8"/>
+                                    <Grid.RowDefinitions>
+                                        <RowDefinition Height="Auto"/>
+                                        <RowDefinition Height="8"/>
+                                        <RowDefinition Height="Auto"/>
+                                        <RowDefinition Height="8"/>
+                                        <RowDefinition Height="Auto"/>
+                                        <RowDefinition Height="8"/>
+                                        <RowDefinition Height="Auto"/>
+                                        <RowDefinition Height="8"/>
+                                        <RowDefinition Height="Auto"/>
+                                    </Grid.RowDefinitions>
 
-                                <RowDefinition Height="Auto"/>
-                                <RowDefinition Height="8"/>
+                                    <TextBlock Grid.Row="0"
+                                               Grid.Column="0"
+                                               Text="Subtotal"
+                                               VerticalAlignment="Center"/>
 
-                                <RowDefinition Height="Auto"/>
-                                <RowDefinition Height="8"/>
+                                    <TextBox Grid.Row="0"
+                                             Grid.Column="1"
+                                             IsReadOnly="{Binding IsNotEditing}"
+                                             Text="{Binding SelectedOrder.SubTotal, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"/>
 
-                                <RowDefinition Height="Auto"/>
-                                <RowDefinition Height="8"/>
+                                    <TextBlock Grid.Row="2"
+                                               Grid.Column="0"
+                                               Text="Delivery Fee"
+                                               VerticalAlignment="Center"/>
 
-                                <RowDefinition Height="Auto"/>
-                            </Grid.RowDefinitions>
+                                    <TextBox Grid.Row="2"
+                                             Grid.Column="1"
+                                             IsReadOnly="{Binding IsNotEditing}"
+                                             Text="{Binding SelectedOrder.DeliveryFee, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"/>
 
-                            <TextBlock Grid.Row="0"
-                                       Grid.Column="0"
-                                       Text="Subtotal"
-                                       VerticalAlignment="Center"/>
-                            <TextBox Grid.Row="0"
-                                     Grid.Column="1"
-                                     Text="{Binding SelectedOrder.SubTotal, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"/>
+                                    <TextBlock Grid.Row="4"
+                                               Grid.Column="0"
+                                               Text="Tax"
+                                               VerticalAlignment="Center"/>
 
-                            <TextBlock Grid.Row="2"
-                                       Grid.Column="0"
-                                       Text="Delivery Fee"
-                                       VerticalAlignment="Center"/>
-                            <TextBox Grid.Row="2"
-                                     Grid.Column="1"
-                                     Text="{Binding SelectedOrder.DeliveryFee, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"/>
+                                    <TextBox Grid.Row="4"
+                                             Grid.Column="1"
+                                             IsReadOnly="{Binding IsNotEditing}"
+                                             Text="{Binding SelectedOrder.TaxAmount, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"/>
 
-                            <TextBlock Grid.Row="4"
-                                       Grid.Column="0"
-                                       Text="Tax"
-                                       VerticalAlignment="Center"/>
-                            <TextBox Grid.Row="4"
-                                     Grid.Column="1"
-                                     Text="{Binding SelectedOrder.TaxAmount, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"/>
+                                    <TextBlock Grid.Row="6"
+                                               Grid.Column="0"
+                                               Text="Discount"
+                                               VerticalAlignment="Center"/>
 
-                            <TextBlock Grid.Row="6"
-                                       Grid.Column="0"
-                                       Text="Discount"
-                                       VerticalAlignment="Center"/>
-                            <TextBox Grid.Row="6"
-                                     Grid.Column="1"
-                                     Text="{Binding SelectedOrder.DiscountAmount, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"/>
+                                    <TextBox Grid.Row="6"
+                                             Grid.Column="1"
+                                             IsReadOnly="{Binding IsNotEditing}"
+                                             Text="{Binding SelectedOrder.DiscountAmount, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"/>
 
-                            <TextBlock Grid.Row="8"
-                                       Grid.Column="0"
-                                       Text="Grand Total"
-                                       VerticalAlignment="Center"/>
-                            <TextBox Grid.Row="8"
-                                     Grid.Column="1"
-                                     Text="{Binding SelectedOrder.GrandTotal, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"/>
-                        </Grid>
+                                    <TextBlock Grid.Row="8"
+                                               Grid.Column="0"
+                                               Text="Grand Total"
+                                               VerticalAlignment="Center"/>
+
+                                    <TextBox Grid.Row="8"
+                                             Grid.Column="1"
+                                             IsReadOnly="{Binding IsNotEditing}"
+                                             Text="{Binding SelectedOrder.GrandTotal, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"/>
+                                </Grid>
+                            </GroupBox>
+                        </StackPanel>
                     </ScrollViewer>
                 </TabItem>
 
                 <!-- ITEMS TAB -->
                 <TabItem Header="Items">
-                    <Grid Margin="0,8,8,8"
-                          IsEnabled="{Binding IsEditing}">
+                    <Grid Margin="0,8,0,0">
                         <Grid.RowDefinitions>
+                            <RowDefinition Height="Auto"/>
+                            <RowDefinition Height="8"/>
                             <RowDefinition Height="*"/>
                         </Grid.RowDefinitions>
 
-                        <ListView ItemsSource="{Binding SelectedOrder.Items}"
-                                  SelectedItem="{Binding SelectedOrderLineItem, Mode=TwoWay}">
-                            <ListView.View>
-                                <GridView>
-                                    <GridViewColumn Header="ID"
-                                                    Width="40"
-                                                    DisplayMemberBinding="{Binding Id}"/>
+                        <Button Grid.Row="0"
+                                Content="Add Item"
+                                IsEnabled="{Binding IsEditing}"
+                                HorizontalAlignment="Left"
+                                Command="{Binding AddOrderLineItemCommand}"/>
 
-                                    <GridViewColumn Header="Type"
-                                                    Width="90">
-                                        <GridViewColumn.CellTemplate>
-                                            <DataTemplate>
-                                                <ComboBox ItemsSource="{Binding DataContext.OrderItemTypes, RelativeSource={RelativeSource AncestorType=Page}}"
-                                                          SelectedItem="{Binding ItemType, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
-                                                          IsEditable="True"
-                                                          Width="80"/>
-                                            </DataTemplate>
-                                        </GridViewColumn.CellTemplate>
-                                    </GridViewColumn>
+                        <DataGrid Grid.Row="2"
+                                  ItemsSource="{Binding SelectedOrder.Items}"
+                                  SelectedItem="{Binding SelectedOrderLineItem, Mode=TwoWay}"
+                                  AutoGenerateColumns="False"
+                                  CanUserAddRows="False"
+                                  IsReadOnly="{Binding IsNotEditing}">
+                            <DataGrid.Columns>
+                                <DataGridTextColumn Header="ID"
+                                                    Width="45"
+                                                    IsReadOnly="True"
+                                                    Binding="{Binding Id, Mode=OneWay}"/>
 
-                                    <GridViewColumn Header="Package"
-                                                    Width="70">
-                                        <GridViewColumn.CellTemplate>
-                                            <DataTemplate>
-                                                <TextBox Text="{Binding PackageId, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged, TargetNullValue=''}"
-                                                         Width="55"/>
-                                            </DataTemplate>
-                                        </GridViewColumn.CellTemplate>
-                                    </GridViewColumn>
+                                <DataGridTemplateColumn Header="Type"
+                                                        Width="100">
+                                    <DataGridTemplateColumn.CellTemplate>
+                                        <DataTemplate>
+                                            <ComboBox IsHitTestVisible="{Binding DataContext.IsEditing, RelativeSource={RelativeSource AncestorType=Page}}"
+                                                      Focusable="{Binding DataContext.IsEditing, RelativeSource={RelativeSource AncestorType=Page}}"
+                                                      ItemsSource="{Binding DataContext.OrderItemTypes, RelativeSource={RelativeSource AncestorType=Page}}"
+                                                      SelectedItem="{Binding ItemType, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"/>
+                                        </DataTemplate>
+                                    </DataGridTemplateColumn.CellTemplate>
+                                </DataGridTemplateColumn>
 
-                                    <GridViewColumn Header="Size"
-                                                    Width="60">
-                                        <GridViewColumn.CellTemplate>
-                                            <DataTemplate>
-                                                <TextBox Text="{Binding PackageSizeId, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged, TargetNullValue=''}"
-                                                         Width="45"/>
-                                            </DataTemplate>
-                                        </GridViewColumn.CellTemplate>
-                                    </GridViewColumn>
+                                <DataGridTextColumn Header="Package"
+                                                    Width="75"
+                                                    Binding="{Binding PackageId, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged, TargetNullValue=''}"/>
 
-                                    <GridViewColumn Header="Meal"
-                                                    Width="60">
-                                        <GridViewColumn.CellTemplate>
-                                            <DataTemplate>
-                                                <TextBox Text="{Binding MealId, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged, TargetNullValue=''}"
-                                                         Width="45"/>
-                                            </DataTemplate>
-                                        </GridViewColumn.CellTemplate>
-                                    </GridViewColumn>
-
-                                    <GridViewColumn Header="Title"
-                                                    Width="140">
-                                        <GridViewColumn.CellTemplate>
-                                            <DataTemplate>
-                                                <TextBox Text="{Binding PackageTitleSnapshot, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
-                                                         Width="125"/>
-                                            </DataTemplate>
-                                        </GridViewColumn.CellTemplate>
-                                    </GridViewColumn>
-
-                                    <GridViewColumn Header="Size Label"
-                                                    Width="90">
-                                        <GridViewColumn.CellTemplate>
-                                            <DataTemplate>
-                                                <TextBox Text="{Binding SizeLabelSnapshot, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
-                                                         Width="75"/>
-                                            </DataTemplate>
-                                        </GridViewColumn.CellTemplate>
-                                    </GridViewColumn>
-
-                                    <GridViewColumn Header="Price"
-                                                    Width="70">
-                                        <GridViewColumn.CellTemplate>
-                                            <DataTemplate>
-                                                <TextBox Text="{Binding BaseUnitPrice, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
-                                                         Width="55"/>
-                                            </DataTemplate>
-                                        </GridViewColumn.CellTemplate>
-                                    </GridViewColumn>
-
-                                    <GridViewColumn Header="Qty"
-                                                    Width="55">
-                                        <GridViewColumn.CellTemplate>
-                                            <DataTemplate>
-                                                <TextBox Text="{Binding Quantity, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
-                                                         Width="40"/>
-                                            </DataTemplate>
-                                        </GridViewColumn.CellTemplate>
-                                    </GridViewColumn>
-
-                                    <GridViewColumn Header="Unit"
+                                <DataGridTextColumn Header="Size"
                                                     Width="65"
-                                                    DisplayMemberBinding="{Binding UnitPrice}"/>
+                                                    Binding="{Binding PackageSizeId, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged, TargetNullValue=''}"/>
 
-                                    <GridViewColumn Header="Total"
+                                <DataGridTextColumn Header="Meal"
                                                     Width="65"
-                                                    DisplayMemberBinding="{Binding LineTotal}"/>
-                                </GridView>
-                            </ListView.View>
-                        </ListView>
+                                                    Binding="{Binding MealId, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged, TargetNullValue=''}"/>
+
+                                <DataGridTextColumn Header="Title"
+                                                    Width="*"
+                                                    Binding="{Binding PackageTitleSnapshot, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"/>
+
+                                <DataGridTextColumn Header="Size Label"
+                                                    Width="90"
+                                                    Binding="{Binding SizeLabelSnapshot, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"/>
+
+                                <DataGridTextColumn Header="Base"
+                                                    Width="80"
+                                                    Binding="{Binding BaseUnitPrice, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"/>
+
+                                <DataGridTextColumn Header="Qty"
+                                                    Width="60"
+                                                    Binding="{Binding Quantity, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"/>
+
+                                <DataGridTextColumn Header="Unit"
+                                                    Width="80"
+                                                    IsReadOnly="True"
+                                                    Binding="{Binding UnitPrice, Mode=OneWay, StringFormat={}{0:N2}}"/>
+
+                                <DataGridTextColumn Header="Total"
+                                                    Width="80"
+                                                    IsReadOnly="True"
+                                                    Binding="{Binding LineTotal, Mode=OneWay, StringFormat={}{0:N2}}"/>
+
+                                <DataGridTemplateColumn Width="80">
+                                    <DataGridTemplateColumn.CellTemplate>
+                                        <DataTemplate>
+                                            <Button Content="Remove"
+                                                    IsEnabled="{Binding DataContext.IsEditing, RelativeSource={RelativeSource AncestorType=Page}}"
+                                                    Command="{Binding DataContext.RemoveOrderLineItemCommand, RelativeSource={RelativeSource AncestorType=Page}}"
+                                                    CommandParameter="{Binding}"/>
+                                        </DataTemplate>
+                                    </DataGridTemplateColumn.CellTemplate>
+                                </DataGridTemplateColumn>
+                            </DataGrid.Columns>
+                        </DataGrid>
                     </Grid>
                 </TabItem>
 
                 <!-- MEAL SELECTIONS TAB -->
                 <TabItem Header="Meal Selections">
-                    <Grid Margin="0,8,8,8"
-                          IsEnabled="{Binding IsEditing}">
+                    <Grid Margin="0,8,0,0">
                         <Grid.RowDefinitions>
                             <RowDefinition Height="Auto"/>
                             <RowDefinition Height="8"/>
                             <RowDefinition Height="*"/>
                         </Grid.RowDefinitions>
 
-                        <TextBlock Grid.Row="0"
-                                   Text="Select an item from the Items tab to view or edit its meal selections."/>
+                        <Button Grid.Row="0"
+                                Content="Add Meal Selection"
+                                IsEnabled="{Binding IsEditing}"
+                                HorizontalAlignment="Left"
+                                Command="{Binding AddMealSelectionCommand}"/>
 
-                        <ListView Grid.Row="2"
-                                  ItemsSource="{Binding SelectedOrderLineItem.MealSelections}">
-                            <ListView.View>
-                                <GridView>
-                                    <GridViewColumn Header="ID"
-                                                    Width="40"
-                                                    DisplayMemberBinding="{Binding Id}"/>
+                        <DataGrid Grid.Row="2"
+                                  ItemsSource="{Binding SelectedOrderLineItem.MealSelections}"
+                                  AutoGenerateColumns="False"
+                                  CanUserAddRows="False"
+                                  IsReadOnly="{Binding IsNotEditing}">
+                            <DataGrid.Columns>
+                                <DataGridTextColumn Header="ID"
+                                                    Width="45"
+                                                    IsReadOnly="True"
+                                                    Binding="{Binding Id, Mode=OneWay}"/>
 
-                                    <GridViewColumn Header="Rule ID"
-                                                    Width="70">
-                                        <GridViewColumn.CellTemplate>
-                                            <DataTemplate>
-                                                <TextBox Text="{Binding PackageSelectionRuleId, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
-                                                         Width="55"/>
-                                            </DataTemplate>
-                                        </GridViewColumn.CellTemplate>
-                                    </GridViewColumn>
+                                <DataGridTextColumn Header="Rule ID"
+                                                    Width="80"
+                                                    Binding="{Binding PackageSelectionRuleId, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"/>
 
-                                    <GridViewColumn Header="Meal ID"
-                                                    Width="70">
-                                        <GridViewColumn.CellTemplate>
-                                            <DataTemplate>
-                                                <TextBox Text="{Binding MealId, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
-                                                         Width="55"/>
-                                            </DataTemplate>
-                                        </GridViewColumn.CellTemplate>
-                                    </GridViewColumn>
+                                <DataGridTextColumn Header="Meal ID"
+                                                    Width="80"
+                                                    Binding="{Binding MealId, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"/>
 
-                                    <GridViewColumn Header="Rule"
-                                                    Width="150">
-                                        <GridViewColumn.CellTemplate>
-                                            <DataTemplate>
-                                                <TextBox Text="{Binding RuleTitleSnapshot, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
-                                                         Width="135"/>
-                                            </DataTemplate>
-                                        </GridViewColumn.CellTemplate>
-                                    </GridViewColumn>
+                                <DataGridTextColumn Header="Rule"
+                                                    Width="*"
+                                                    Binding="{Binding RuleTitleSnapshot, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"/>
 
-                                    <GridViewColumn Header="Meal"
-                                                    Width="150">
-                                        <GridViewColumn.CellTemplate>
-                                            <DataTemplate>
-                                                <TextBox Text="{Binding MealNameSnapshot, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
-                                                         Width="135"/>
-                                            </DataTemplate>
-                                        </GridViewColumn.CellTemplate>
-                                    </GridViewColumn>
+                                <DataGridTextColumn Header="Meal"
+                                                    Width="*"
+                                                    Binding="{Binding MealNameSnapshot, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"/>
 
-                                    <GridViewColumn Header="Add Price"
-                                                    Width="80">
-                                        <GridViewColumn.CellTemplate>
-                                            <DataTemplate>
-                                                <TextBox Text="{Binding AdditionalPrice, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
-                                                         Width="65"/>
-                                            </DataTemplate>
-                                        </GridViewColumn.CellTemplate>
-                                    </GridViewColumn>
-                                </GridView>
-                            </ListView.View>
-                        </ListView>
+                                <DataGridTextColumn Header="Add Price"
+                                                    Width="90"
+                                                    Binding="{Binding AdditionalPrice, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"/>
+
+                                <DataGridTemplateColumn Width="80">
+                                    <DataGridTemplateColumn.CellTemplate>
+                                        <DataTemplate>
+                                            <Button Content="Remove"
+                                                    IsEnabled="{Binding DataContext.IsEditing, RelativeSource={RelativeSource AncestorType=Page}}"
+                                                    Command="{Binding DataContext.RemoveMealSelectionCommand, RelativeSource={RelativeSource AncestorType=Page}}"
+                                                    CommandParameter="{Binding}"/>
+                                        </DataTemplate>
+                                    </DataGridTemplateColumn.CellTemplate>
+                                </DataGridTemplateColumn>
+                            </DataGrid.Columns>
+                        </DataGrid>
                     </Grid>
                 </TabItem>
 
                 <!-- ADDON SELECTIONS TAB -->
                 <TabItem Header="Addon Selections">
-                    <Grid Margin="0,8,8,8"
-                          IsEnabled="{Binding IsEditing}">
+                    <Grid Margin="0,8,0,0">
                         <Grid.RowDefinitions>
                             <RowDefinition Height="Auto"/>
                             <RowDefinition Height="8"/>
                             <RowDefinition Height="*"/>
                         </Grid.RowDefinitions>
 
-                        <TextBlock Grid.Row="0"
-                                   Text="Select an item from the Items tab to view or edit its addon selections."/>
+                        <Button Grid.Row="0"
+                                Content="Add Addon Selection"
+                                IsEnabled="{Binding IsEditing}"
+                                HorizontalAlignment="Left"
+                                Command="{Binding AddAddonSelectionCommand}"/>
 
-                        <ListView Grid.Row="2"
-                                  ItemsSource="{Binding SelectedOrderLineItem.AddonSelections}">
-                            <ListView.View>
-                                <GridView>
-                                    <GridViewColumn Header="ID"
-                                                    Width="40"
-                                                    DisplayMemberBinding="{Binding Id}"/>
+                        <DataGrid Grid.Row="2"
+                                  ItemsSource="{Binding SelectedOrderLineItem.AddonSelections}"
+                                  AutoGenerateColumns="False"
+                                  CanUserAddRows="False"
+                                  IsReadOnly="{Binding IsNotEditing}">
+                            <DataGrid.Columns>
+                                <DataGridTextColumn Header="ID"
+                                                    Width="45"
+                                                    IsReadOnly="True"
+                                                    Binding="{Binding Id, Mode=OneWay}"/>
 
-                                    <GridViewColumn Header="Addon ID"
-                                                    Width="80">
-                                        <GridViewColumn.CellTemplate>
-                                            <DataTemplate>
-                                                <TextBox Text="{Binding PackageAddonId, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
-                                                         Width="65"/>
-                                            </DataTemplate>
-                                        </GridViewColumn.CellTemplate>
-                                    </GridViewColumn>
+                                <DataGridTextColumn Header="Addon ID"
+                                                    Width="85"
+                                                    Binding="{Binding PackageAddonId, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"/>
 
-                                    <GridViewColumn Header="Addon"
-                                                    Width="180">
-                                        <GridViewColumn.CellTemplate>
-                                            <DataTemplate>
-                                                <TextBox Text="{Binding AddonNameSnapshot, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
-                                                         Width="165"/>
-                                            </DataTemplate>
-                                        </GridViewColumn.CellTemplate>
-                                    </GridViewColumn>
+                                <DataGridTextColumn Header="Addon"
+                                                    Width="*"
+                                                    Binding="{Binding AddonNameSnapshot, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"/>
 
-                                    <GridViewColumn Header="Add Price"
-                                                    Width="80">
-                                        <GridViewColumn.CellTemplate>
-                                            <DataTemplate>
-                                                <TextBox Text="{Binding AdditionalPrice, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
-                                                         Width="65"/>
-                                            </DataTemplate>
-                                        </GridViewColumn.CellTemplate>
-                                    </GridViewColumn>
-                                </GridView>
-                            </ListView.View>
-                        </ListView>
+                                <DataGridTextColumn Header="Add Price"
+                                                    Width="90"
+                                                    Binding="{Binding AdditionalPrice, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"/>
+
+                                <DataGridTemplateColumn Width="80">
+                                    <DataGridTemplateColumn.CellTemplate>
+                                        <DataTemplate>
+                                            <Button Content="Remove"
+                                                    IsEnabled="{Binding DataContext.IsEditing, RelativeSource={RelativeSource AncestorType=Page}}"
+                                                    Command="{Binding DataContext.RemoveAddonSelectionCommand, RelativeSource={RelativeSource AncestorType=Page}}"
+                                                    CommandParameter="{Binding}"/>
+                                        </DataTemplate>
+                                    </DataGridTemplateColumn.CellTemplate>
+                                </DataGridTemplateColumn>
+                            </DataGrid.Columns>
+                        </DataGrid>
                     </Grid>
                 </TabItem>
 

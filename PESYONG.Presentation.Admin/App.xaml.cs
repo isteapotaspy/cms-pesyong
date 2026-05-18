@@ -12,8 +12,6 @@ using PESYONG.Presentation.Admin.Services;
 using PESYONG.Presentation.Admin.ViewModel;
 using PESYONG.Presentation.Admin.ViewModels;
 using PESYONG.Presentation.Admin.ViewModels.Deliveries;
-using PESYONG.Presentation.Admin.ViewModels.Meals;
-using PESYONG.Presentation.Admin.ViewModels.Packages;
 using PESYONG.Presentation.Admin.Views;
 
 namespace PESYONG.Presentation.Admin;
@@ -38,7 +36,7 @@ public partial class App : Application
 
                 if (string.IsNullOrWhiteSpace(apiBaseUrl))
                 {
-                    throw new InvalidOperationException("ApiBaseUrl is missing in appsettings.json.");
+                    throw new InvalidOperationException("\n\nApiBaseUrl is missing in appsettings.json.\n\n");
                 }
 
                 services.AddHttpClient("CMSApi", client =>
@@ -77,6 +75,8 @@ public partial class App : Application
             .Build();
 
         await _host.StartAsync();
+        await Task.Delay(10000);
+        await CheckApiConnectionAsync();
 
         var mainWindow = _host.Services.GetRequiredService<MainWindow>();
         mainWindow.Show();
@@ -91,5 +91,35 @@ public partial class App : Application
         }
 
         base.OnExit(e);
+    }
+
+    private async Task CheckApiConnectionAsync()
+    {
+        using var scope = _host.Services.CreateScope();
+
+        var httpClientFactory = scope.ServiceProvider.GetRequiredService<IHttpClientFactory>();
+        var client = httpClientFactory.CreateClient("CMSApi");
+
+        if (client.BaseAddress is null)
+        {
+            throw new InvalidOperationException("CMSApi HttpClient BaseAddress was not set.");
+        }
+
+        try
+        {
+            var response = await client.GetAsync("api/ping");
+
+            if (!response.IsSuccessStatusCode)
+            {
+                throw new InvalidOperationException(
+                    $"API was reached, but returned {(int)response.StatusCode} {response.ReasonPhrase}.");
+            }
+        }
+        catch (HttpRequestException ex)
+        {
+            throw new InvalidOperationException(
+                $"Cannot connect to API at {client.BaseAddress}. Make sure the ASP.NET API is running.",
+                ex);
+        }
     }
 }

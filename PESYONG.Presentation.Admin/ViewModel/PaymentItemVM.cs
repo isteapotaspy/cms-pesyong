@@ -1,34 +1,39 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.Text;
 using CMS.Contracts.Admin.Payment;
-using CMS.Domain.Entities.Orders;
-using CMS.Domain.Enums;
 using CommunityToolkit.Mvvm.ComponentModel;
 
-namespace PESYONG.Presentation.Admin.ViewModels;
+namespace PESYONG.Presentation.Admin.ViewModel;
 
 public partial class PaymentItemVM : ObservableObject
 {
     [ObservableProperty]
+    [NotifyPropertyChangedFor(nameof(ListTitle))]
     private int id;
 
     [ObservableProperty]
+    [NotifyPropertyChangedFor(nameof(ListTitle))]
     private int orderId;
 
     [ObservableProperty]
+    [NotifyPropertyChangedFor(nameof(ListTitle))]
     private string externalReference = string.Empty;
 
     [ObservableProperty]
+    [NotifyPropertyChangedFor(nameof(ListSubtitle))]
+    [NotifyPropertyChangedFor(nameof(PaymentMethodDisplay))]
     private string paymentMethod = string.Empty;
 
     [ObservableProperty]
+    [NotifyPropertyChangedFor(nameof(ListSubtitle))]
+    [NotifyPropertyChangedFor(nameof(PaymentStatusDisplay))]
     private string paymentStatus = string.Empty;
 
     [ObservableProperty]
+    [NotifyPropertyChangedFor(nameof(ListSubtitle))]
     private DateTime timestampUtc = DateTime.UtcNow;
 
     [ObservableProperty]
+    [NotifyPropertyChangedFor(nameof(ListSubtitle))]
     private decimal amount;
 
     [ObservableProperty]
@@ -41,7 +46,41 @@ public partial class PaymentItemVM : ObservableObject
     private DateTime? dateUpdated;
 
     [ObservableProperty]
+    [NotifyPropertyChangedFor(nameof(ListTitle))]
     private string orderDisplay = string.Empty;
+
+    public string ListTitle
+    {
+        get
+        {
+            if (!string.IsNullOrWhiteSpace(OrderDisplay))
+                return OrderDisplay;
+
+            if (!string.IsNullOrWhiteSpace(ExternalReference))
+                return ExternalReference;
+
+            if (OrderId > 0)
+                return $"Order #{OrderId}";
+
+            if (Id > 0)
+                return $"Payment #{Id}";
+
+            return "New payment";
+        }
+    }
+
+    public string ListSubtitle =>
+        $"{PaymentMethodDisplay} • {PaymentStatusDisplay} • {Amount:N2}";
+
+    public string PaymentMethodDisplay =>
+        string.IsNullOrWhiteSpace(PaymentMethod)
+            ? "No method"
+            : PaymentMethod;
+
+    public string PaymentStatusDisplay =>
+        string.IsNullOrWhiteSpace(PaymentStatus)
+            ? "No status"
+            : PaymentStatus;
 
     public static PaymentItemVM FromDto(PaymentDto dto)
     {

@@ -5,7 +5,7 @@ using CMS.Contracts.Admin.Package;
 using CMS.Contracts.Customer.Menu;
 using CommunityToolkit.Mvvm.ComponentModel;
 
-namespace PESYONG.Presentation.Admin.ViewModels.Packages;
+namespace PESYONG.Presentation.Admin.ViewModel;
 
 public partial class PackageSizeItemVM : ObservableObject
 {

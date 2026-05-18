@@ -1,9 +1,16 @@
-﻿using System.Collections.ObjectModel;
+﻿using System;
+using System.Collections.ObjectModel;
+using System.IO;
+using System.Linq;
 using System.Windows.Media;
+using System.Windows.Media.Imaging;
 using CMS.Contracts.Admin.Package;
+using CMS.Domain.Entities.Menu;
 using CommunityToolkit.Mvvm.ComponentModel;
+using CommunityToolkit.Mvvm.Input;
+using Microsoft.Win32;
 
-namespace PESYONG.Presentation.Admin.ViewModels.Packages;
+namespace PESYONG.Presentation.Admin.ViewModel;
 
 public partial class PackageItemVM : ObservableObject
 {
@@ -21,16 +28,81 @@ public partial class PackageItemVM : ObservableObject
     [ObservableProperty] private string notice = string.Empty;
     [ObservableProperty] private string servesLabel = string.Empty;
     [ObservableProperty] private string inclusionText = string.Empty;
-    [ObservableProperty] private string imageUrl = string.Empty;
+
+    [ObservableProperty]
+    [NotifyPropertyChangedFor(nameof(ImageStatusText))]
+    private string imageUrl = string.Empty;
 
     [ObservableProperty] private decimal rating;
     [ObservableProperty] private int reviewCount;
     [ObservableProperty] private bool isAvailable = true;
     [ObservableProperty] private bool isCustomizable;
 
+    // Temporary local image storage.
+    // Later, your image service can upload this byte array and return a URL.
+    [ObservableProperty]
+    [NotifyPropertyChangedFor(nameof(HasUploadedImage))]
+    [NotifyPropertyChangedFor(nameof(ImageStatusText))]
+    private byte[]? uploadedImageBytes;
+
+    [ObservableProperty]
+    [NotifyPropertyChangedFor(nameof(ImageStatusText))]
+    private string uploadedImageFileName = string.Empty;
+
+    [ObservableProperty]
+    [NotifyPropertyChangedFor(nameof(ImageStatusText))]
+    private string uploadedImageLocalPath = string.Empty;
+
+    [ObservableProperty]
+    [NotifyPropertyChangedFor(nameof(HasImagePreview))]
+    [NotifyPropertyChangedFor(nameof(ImagePlaceholderText))]
+    [NotifyPropertyChangedFor(nameof(ImageStatusText))]
+    private ImageSource? imagePreviewSource;
+
+    [ObservableProperty]
+    [NotifyPropertyChangedFor(nameof(ImageStatusText))]
+    private string imageErrorMessage = string.Empty;
+
     public ObservableCollection<PackageSizeItemVM> Sizes { get; } = new();
     public ObservableCollection<PackageAddonItemVM> Addons { get; } = new();
     public ObservableCollection<PackageSelectionRuleItemVM> SelectionRules { get; } = new();
+
+    public bool HasUploadedImage => UploadedImageBytes is { Length: > 0 };
+
+    public bool HasImagePreview => ImagePreviewSource is not null;
+
+    public string ImagePlaceholderText => HasImagePreview
+        ? string.Empty
+        : "No image available.";
+
+    public string ImageStatusText
+    {
+        get
+        {
+            if (!string.IsNullOrWhiteSpace(ImageErrorMessage))
+                return ImageErrorMessage;
+
+            if (HasUploadedImage)
+                return $"Selected local image: {UploadedImageFileName}";
+
+            if (!string.IsNullOrWhiteSpace(ImageUrl))
+            {
+                return ImagePreviewSource is null
+                    ? "Image URL is saved, but the preview cannot be loaded yet."
+                    : $"Using image URL: {ImageUrl}";
+            }
+
+            return "No image selected.";
+        }
+    }
+
+    partial void OnImageUrlChanged(string value)
+    {
+        if (HasUploadedImage)
+            return;
+
+        RefreshImagePreviewFromImageUrl();
+    }
 
     public static PackageItemVM FromDto(PackageDto dto)
     {
@@ -55,6 +127,11 @@ public partial class PackageItemVM : ObservableObject
         Notice = dto.Notice;
         ServesLabel = dto.ServesLabel;
         InclusionText = dto.InclusionText;
+
+        ClearUploadedImageState();
+
+        // This automatically triggers OnImageUrlChanged(),
+        // which loads the preview immediately.
         ImageUrl = dto.ImageUrl;
 
         Rating = dto.Rating;
@@ -126,5 +203,114 @@ public partial class PackageItemVM : ObservableObject
             Addons = Addons.Select(addon => addon.ToRequest()).ToList(),
             SelectionRules = SelectionRules.Select(rule => rule.ToRequest()).ToList()
         };
+    }
+
+    [RelayCommand]
+    private void PickImage()
+    {
+        var dialog = new OpenFileDialog
+        {
+            Title = "Select package image",
+            CheckFileExists = true,
+            Multiselect = false,
+            Filter = "Image files (*.png;*.jpg;*.jpeg;*.bmp;*.gif)|*.png;*.jpg;*.jpeg;*.bmp;*.gif|All files (*.*)|*.*"
+        };
+
+        if (dialog.ShowDialog() != true)
+            return;
+
+        try
+        {
+            SetUploadedImage(dialog.FileName);
+        }
+        catch (Exception ex)
+        {
+            ClearUploadedImageState();
+            ImagePreviewSource = null;
+            ImageErrorMessage = $"Unable to load selected image: {ex.Message}";
+        }
+    }
+
+    [RelayCommand]
+    private void ClearUploadedImage()
+    {
+        ClearUploadedImageState();
+        RefreshImagePreviewFromImageUrl();
+    }
+
+    private void SetUploadedImage(string filePath)
+    {
+        if (string.IsNullOrWhiteSpace(filePath))
+            return;
+
+        UploadedImageBytes = File.ReadAllBytes(filePath);
+        UploadedImageLocalPath = filePath;
+        UploadedImageFileName = Path.GetFileName(filePath);
+        ImagePreviewSource = CreateImageSourceFromFile(filePath);
+        ImageErrorMessage = string.Empty;
+    }
+
+    private void ClearUploadedImageState()
+    {
+        UploadedImageBytes = null;
+        UploadedImageLocalPath = string.Empty;
+        UploadedImageFileName = string.Empty;
+        ImageErrorMessage = string.Empty;
+    }
+
+    private void RefreshImagePreviewFromImageUrl()
+    {
+        ImageErrorMessage = string.Empty;
+
+        if (string.IsNullOrWhiteSpace(ImageUrl))
+        {
+            ImagePreviewSource = null;
+            return;
+        }
+
+        ImagePreviewSource = TryCreateImageSource(ImageUrl);
+
+        if (ImagePreviewSource is null)
+            ImageErrorMessage = "Image URL is saved, but the preview cannot be loaded yet.";
+    }
+
+    private static ImageSource? TryCreateImageSource(string source)
+    {
+        var trimmedSource = source.Trim();
+
+        try
+        {
+            if (File.Exists(trimmedSource))
+                return CreateImageSourceFromFile(trimmedSource);
+
+            if (Uri.TryCreate(trimmedSource, UriKind.Absolute, out var absoluteUri))
+                return CreateImageSourceFromUri(absoluteUri);
+
+            return null;
+        }
+        catch
+        {
+            return null;
+        }
+    }
+
+    private static ImageSource CreateImageSourceFromFile(string filePath)
+    {
+        return CreateImageSourceFromUri(new Uri(filePath, UriKind.Absolute));
+    }
+
+    private static ImageSource CreateImageSourceFromUri(Uri uri)
+    {
+        var bitmap = new BitmapImage();
+
+        bitmap.BeginInit();
+        bitmap.CacheOption = BitmapCacheOption.OnLoad;
+        bitmap.UriSource = uri;
+        bitmap.EndInit();
+
+        if (bitmap.CanFreeze)
+            bitmap.Freeze();
+
+        return bitmap;
     }
 }

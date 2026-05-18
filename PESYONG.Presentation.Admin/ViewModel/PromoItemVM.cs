@@ -1,6 +1,4 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.Text;
 using CMS.Contracts.Admin.Promos;
 using CommunityToolkit.Mvvm.ComponentModel;
 
@@ -28,21 +26,27 @@ public partial class PromoItemVM : ObservableObject
     private string description = string.Empty;
 
     [ObservableProperty]
+    [NotifyPropertyChangedFor(nameof(DiscountText))]
     private decimal discountPercentageValue;
 
     [ObservableProperty]
+    [NotifyPropertyChangedFor(nameof(MinimumOrderText))]
     private decimal? minimumOrderAmount;
 
     [ObservableProperty]
+    [NotifyPropertyChangedFor(nameof(UsageText))]
     private int? usageLimit;
 
     [ObservableProperty]
+    [NotifyPropertyChangedFor(nameof(UsageText))]
     private int usedCount;
 
     [ObservableProperty]
+    [NotifyPropertyChangedFor(nameof(ValidityText))]
     private DateTime? validFromUtc = DateTime.UtcNow.Date;
 
     [ObservableProperty]
+    [NotifyPropertyChangedFor(nameof(ValidityText))]
     private DateTime? validUntilUtc = DateTime.UtcNow.Date.AddDays(30);
 
     [ObservableProperty]
@@ -60,8 +64,37 @@ public partial class PromoItemVM : ObservableObject
     public string DateUpdatedText =>
         DateUpdated.HasValue ? DateUpdated.Value.ToString("g") : "-";
 
+    public string DiscountText =>
+        $"{DiscountPercentageValue:0.##}%";
+
+    public string MinimumOrderText =>
+        MinimumOrderAmount.HasValue
+            ? $"₱{MinimumOrderAmount.Value:N2}"
+            : "No minimum";
+
+    public string UsageText =>
+        UsageLimit.HasValue
+            ? $"{UsedCount:N0}/{UsageLimit.Value:N0}"
+            : $"{UsedCount:N0}/No limit";
+
+    public string ValidityText
+    {
+        get
+        {
+            var fromText = ValidFromUtc.HasValue
+                ? ValidFromUtc.Value.ToString("yyyy-MM-dd")
+                : "-";
+
+            var untilText = ValidUntilUtc.HasValue
+                ? ValidUntilUtc.Value.ToString("yyyy-MM-dd")
+                : "-";
+
+            return $"{fromText} to {untilText}";
+        }
+    }
+
     public string ActiveStatusText =>
-        IsActive ? "This promo is still active." : "This promo is not active.";
+        IsActive ? "This promo is active." : "This promo is inactive.";
 
     public static PromoItemVM FromDto(PromoDto dto)
     {

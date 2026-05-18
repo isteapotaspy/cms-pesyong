@@ -2,13 +2,14 @@
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.ComponentModel;
-using System.Text;
+using System.Linq;
+using System.Threading.Tasks;
 using CMS.Domain.Enums;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using PESYONG.Presentation.Admin.Interfaces;
 
-namespace PESYONG.Presentation.Admin.ViewModels;
+namespace PESYONG.Presentation.Admin.ViewModel;
 
 public partial class PaymentPageVM : ObservableObject
 {
@@ -19,7 +20,7 @@ public partial class PaymentPageVM : ObservableObject
         _paymentApiService = paymentApiService;
     }
 
-    public ObservableCollection<PaymentItemVM> Payments { get; } = [];
+    public ObservableCollection<PaymentItemVM> Payments { get; } = new();
 
     public IReadOnlyList<string> PaymentMethods { get; } =
         Enum.GetNames(typeof(PaymentMethod));
@@ -31,6 +32,7 @@ public partial class PaymentPageVM : ObservableObject
     private PaymentItemVM? selectedPayment;
 
     [ObservableProperty]
+    [NotifyPropertyChangedFor(nameof(LoadingDetailsText))]
     [NotifyCanExecuteChangedFor(nameof(LoadCommand))]
     [NotifyCanExecuteChangedFor(nameof(NewPaymentCommand))]
     [NotifyCanExecuteChangedFor(nameof(EditOrSaveCommand))]
@@ -38,6 +40,7 @@ public partial class PaymentPageVM : ObservableObject
     private bool isBusy;
 
     [ObservableProperty]
+    [NotifyPropertyChangedFor(nameof(IsNotEditing))]
     [NotifyPropertyChangedFor(nameof(EditSaveButtonText))]
     [NotifyCanExecuteChangedFor(nameof(NewPaymentCommand))]
     [NotifyCanExecuteChangedFor(nameof(EditOrSaveCommand))]
@@ -50,7 +53,11 @@ public partial class PaymentPageVM : ObservableObject
     [ObservableProperty]
     private string errorMessage = string.Empty;
 
+    public bool IsNotEditing => !IsEditing;
+
     public string EditSaveButtonText => IsEditing ? "Save" : "Edit";
+
+    public string LoadingDetailsText => IsBusy ? "Loading payment details..." : string.Empty;
 
     partial void OnSelectedPaymentChanging(PaymentItemVM? oldValue, PaymentItemVM? newValue)
     {

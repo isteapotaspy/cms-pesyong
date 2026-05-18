@@ -1,6 +1,6 @@
 ﻿using System.Windows.Controls;
 using CommunityToolkit.Mvvm.Input;
-using PESYONG.Presentation.Admin.ViewModels.Packages;
+using PESYONG.Presentation.Admin.ViewModel;
 
 namespace PESYONG.Presentation.Admin.Views;
 

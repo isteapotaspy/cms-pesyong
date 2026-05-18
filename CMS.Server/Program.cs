@@ -23,7 +23,7 @@ namespace CMS.Server
     {
         public static async Task Main(string[] args)
         {
-            var builder = WebApplication.CreateSlimBuilder(args);
+            var builder = WebApplication.CreateBuilder(args);
 
             builder.Services.ConfigureHttpJsonOptions(options =>
             {
@@ -39,7 +39,13 @@ namespace CMS.Server
 
             // Add Swagger/OpenAPI for visual API editing
             builder.Services.AddEndpointsApiExplorer();
-            builder.Services.AddSwaggerGen();
+            builder.Services.AddSwaggerGen(c =>
+            {
+                c.CustomSchemaIds(type =>
+                {
+                    return type.FullName.Replace("+", ".").Replace("[", "_").Replace("]", "_");
+                });
+            });
 
             var app = builder.Build();
 
@@ -47,11 +53,19 @@ namespace CMS.Server
             {
                 app.UseSwagger();
                 app.UseSwaggerUI();
-                app.MapOpenApi();
+                //app.MapOpenApi();
                 await app.Services.SeedDatabaseAsync();
             }
 
-            app.MapControllers();
+            //CHECK if the connection succeeds in ADMIN
+            app.MapGet("/api/ping", () =>
+            {
+                return Results.Ok(new
+                {
+                    message = "CMS API is running",
+                    time = DateTimeOffset.Now
+                });
+            });
 
             //GET all menu data for customer menu page
             app.MapGet("/api/customer/menu", async (CmsDbContext db) =>
@@ -2018,15 +2032,9 @@ namespace CMS.Server
             //});
 
 
-
+            app.MapControllers();
             await app.RunAsync();
         }
-
-
-
-
-
-
 
         private static bool TryResolvePaymentMethod(string rawValue, out PaymentMethod paymentMethod)
         {

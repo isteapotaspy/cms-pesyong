@@ -3,9 +3,8 @@ using System.ComponentModel;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using PESYONG.Presentation.Admin.Interfaces;
-using PESYONG.Presentation.Admin.Services;
 
-namespace PESYONG.Presentation.Admin.ViewModels.Meals;
+namespace PESYONG.Presentation.Admin.ViewModel;
 
 public partial class MealPageVM : ObservableObject
 {
@@ -15,6 +14,15 @@ public partial class MealPageVM : ObservableObject
     private MealItemVM? _previousSelectedMeal;
 
     public ObservableCollection<MealItemVM> Meals { get; } = new();
+
+    public ObservableCollection<string> MealTypeOptions { get; } =
+    [
+        "Breakfast",
+        "Lunch",
+        "Dinner",
+        "Snack",
+        "Beverage"
+    ];
 
     [ObservableProperty]
     private MealItemVM selectedMeal = new();
@@ -31,6 +39,11 @@ public partial class MealPageVM : ObservableObject
     [ObservableProperty]
     private string errorMessage = string.Empty;
 
+    [ObservableProperty]
+    private string statusMessage = "Ready.";
+
+    public bool IsNotEditing => !IsEditing;
+
     public string EditSaveButtonText => IsEditing ? "Save" : "Edit";
 
     public MealPageVM(IMealApiService mealApiService)
@@ -43,6 +56,7 @@ public partial class MealPageVM : ObservableObject
     {
         await RunSafeAsync(async () =>
         {
+            StatusMessage = "Loading meals...";
             Meals.Clear();
 
             var meals = await _mealApiService.GetMealsAsync();
@@ -60,6 +74,10 @@ public partial class MealPageVM : ObservableObject
             IsModified = false;
 
             _isLoadingOrSaving = false;
+
+            StatusMessage = Meals.Count == 0
+                ? "No meals found."
+                : $"{Meals.Count} meal(s) loaded.";
         });
     }
 
@@ -74,6 +92,7 @@ public partial class MealPageVM : ObservableObject
 
         IsEditing = true;
         IsModified = true;
+        StatusMessage = "Creating a new meal.";
 
         NotifyCommands();
     }
@@ -85,6 +104,7 @@ public partial class MealPageVM : ObservableObject
         {
             IsEditing = true;
             IsModified = false;
+            StatusMessage = "Editing meal details.";
 
             NotifyCommands();
             return;
@@ -96,17 +116,21 @@ public partial class MealPageVM : ObservableObject
 
             if (SelectedMeal.Id == 0)
             {
+                StatusMessage = "Creating meal...";
+
                 var request = SelectedMeal.ToCreateRequest();
-
                 var createdMeal = await _mealApiService.CreateMealAsync(request);
-
                 var createdMealVm = MealItemVM.FromDto(createdMeal);
 
                 Meals.Add(createdMealVm);
                 SelectedMeal = createdMealVm;
+
+                StatusMessage = "Meal created.";
             }
             else
             {
+                StatusMessage = "Saving meal...";
+
                 var request = SelectedMeal.ToUpdateRequest();
 
                 var updatedMeal = await _mealApiService.UpdateMealAsync(
@@ -114,6 +138,8 @@ public partial class MealPageVM : ObservableObject
                     request);
 
                 SelectedMeal.CopyFrom(updatedMeal);
+
+                StatusMessage = "Meal saved.";
             }
 
             IsEditing = false;
@@ -128,6 +154,8 @@ public partial class MealPageVM : ObservableObject
     {
         await RunSafeAsync(async () =>
         {
+            StatusMessage = "Deleting meal...";
+
             var id = SelectedMeal.Id;
 
             await _mealApiService.DeleteMealAsync(id);
@@ -143,6 +171,8 @@ public partial class MealPageVM : ObservableObject
 
             IsEditing = false;
             IsModified = false;
+
+            StatusMessage = "Meal deleted.";
         });
     }
 
@@ -196,6 +226,7 @@ public partial class MealPageVM : ObservableObject
         catch (Exception ex)
         {
             ErrorMessage = ex.Message;
+            StatusMessage = "Action failed.";
         }
         finally
         {
@@ -241,6 +272,9 @@ public partial class MealPageVM : ObservableObject
         {
             IsEditing = false;
             IsModified = false;
+            StatusMessage = value.Id > 0
+                ? "Meal selected."
+                : "Ready.";
         }
 
         NotifyCommands();
@@ -253,7 +287,9 @@ public partial class MealPageVM : ObservableObject
 
     partial void OnIsEditingChanged(bool value)
     {
+        OnPropertyChanged(nameof(IsNotEditing));
         OnPropertyChanged(nameof(EditSaveButtonText));
+
         NotifyCommands();
     }
 

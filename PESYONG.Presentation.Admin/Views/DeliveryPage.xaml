@@ -3,149 +3,328 @@
       xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
       xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
       xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+      xmlns:converters="clr-namespace:PESYONG.Presentation.Admin.Converters"
       mc:Ignorable="d"
       d:DesignHeight="450"
       d:DesignWidth="800"
       Title="DeliveryPage">
 
     <Page.Resources>
-        <Style x:Key="DestructiveButtonStyle" TargetType="Button">
-            <Setter Property="Background" Value="DarkRed"/>
-            <Setter Property="Foreground" Value="White"/>
-            <Setter Property="Padding" Value="12,8"/>
-            <Setter Property="Margin" Value="12,0,0,0"/>
-        </Style>
+        <converters:ZeroToVisibleConverter x:Key="ZeroToVisibleConverter"/>
     </Page.Resources>
 
-    <Grid Background="{DynamicResource {x:Static SystemColors.ControlDarkDarkBrushKey}}"
-          Margin="12">
-
+    <Grid Margin="12">
         <Grid.ColumnDefinitions>
-            <ColumnDefinition Width="240"/>
+            <ColumnDefinition Width="220"/>
+            <ColumnDefinition Width="12"/>
             <ColumnDefinition Width="*"/>
         </Grid.ColumnDefinitions>
 
-        <!-- Left List -->
+        <!-- LEFT: Delivery list -->
         <ListView Grid.Column="0"
+                  MinHeight="100"
                   ItemsSource="{Binding Deliveries}"
                   SelectedItem="{Binding SelectedDelivery, Mode=TwoWay}"
-                  DisplayMemberPath="DisplayName"
-                  Margin="0,0,12,0"/>
+                  SelectionMode="Single">
+            <ListView.ItemTemplate>
+                <DataTemplate>
+                    <Grid Margin="8,0">
+                        <Grid.RowDefinitions>
+                            <RowDefinition Height="*"/>
+                            <RowDefinition Height="*"/>
+                        </Grid.RowDefinitions>
 
-        <!-- Right Details -->
-        <Grid Grid.Column="1">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="Auto"/>
+                            <ColumnDefinition Width="*"/>
+                        </Grid.ColumnDefinitions>
+
+                        <Ellipse Grid.RowSpan="2"
+                                 Width="32"
+                                 Height="32"
+                                 Margin="6"
+                                 HorizontalAlignment="Center"
+                                 VerticalAlignment="Center"/>
+
+                        <TextBlock Grid.Row="0"
+                                   Grid.Column="1"
+                                   Margin="12,6,0,0"
+                                   FontWeight="Bold"
+                                   Text="{Binding DeliveryListTitle, Mode=OneWay}"/>
+
+                        <TextBlock Grid.Row="1"
+                                   Grid.Column="1"
+                                   Margin="12,0,0,6"
+                                   Text="{Binding DeliveryListSummary, Mode=OneWay}"/>
+                    </Grid>
+                </DataTemplate>
+            </ListView.ItemTemplate>
+        </ListView>
+
+        <TextBlock Grid.Column="0"
+                   Text="No deliveries found."
+                   HorizontalAlignment="Center"
+                   VerticalAlignment="Center"
+                   Foreground="White"
+                   Visibility="{Binding Deliveries.Count, Converter={StaticResource ZeroToVisibleConverter}}"/>
+
+        <!-- RIGHT: Delivery details -->
+        <Grid Grid.Column="2">
             <Grid.RowDefinitions>
                 <RowDefinition Height="Auto"/>
+                <RowDefinition Height="8"/>
                 <RowDefinition Height="*"/>
             </Grid.RowDefinitions>
 
             <!-- Header -->
-            <Grid Grid.Row="0" Margin="0,0,0,12">
+            <Grid Grid.Row="0">
                 <Grid.ColumnDefinitions>
                     <ColumnDefinition Width="*"/>
                     <ColumnDefinition Width="Auto"/>
                 </Grid.ColumnDefinitions>
 
-                <TextBlock Text="Delivery Details"
-                           FontSize="22"
-                           FontWeight="Bold"
+                <TextBlock Grid.Column="0"
+                           Text="Delivery Details"
+                           FontSize="20"
+                           FontWeight="SemiBold"
                            Foreground="White"
                            VerticalAlignment="Center"/>
 
                 <StackPanel Grid.Column="1"
-                            Orientation="Horizontal"
-                            HorizontalAlignment="Right">
-
+                            Orientation="Horizontal">
                     <Button Content="New"
-                            Padding="12,8"
-                            Command="{Binding NewDeliveryCommand}"/>
+                            Command="{Binding NewDeliveryCommand}"
+                            Margin="0,0,8,0"/>
 
                     <Button Content="{Binding EditSaveButtonText}"
-                            Padding="12,8"
-                            Margin="12,0,0,0"
-                            Command="{Binding EditOrSaveCommand}"/>
+                            Command="{Binding EditOrSaveCommand}"
+                            Margin="0,0,8,0"/>
 
                     <Button Content="Delete"
-                            Command="{Binding DeleteCommand}"
-                            Style="{StaticResource DestructiveButtonStyle}"/>
+                            Command="{Binding DeleteCommand}"/>
                 </StackPanel>
             </Grid>
 
-            <ScrollViewer Grid.Row="1"
-                          VerticalScrollBarVisibility="Auto">
+            <TabControl Grid.Row="2">
 
-                <StackPanel>
+                <!-- GENERAL TAB -->
+                <TabItem Header="General">
+                    <ScrollViewer VerticalScrollBarVisibility="Auto">
+                        <StackPanel Margin="0,8,8,8">
 
-                    <TextBlock Text="{Binding ErrorMessage}"
-                               Foreground="Tomato"
-                               TextWrapping="Wrap"
-                               Margin="0,0,0,8"/>
+                            <TextBlock Text="{Binding ErrorMessage}"
+                                       Margin="0,0,0,8"
+                                       TextWrapping="Wrap"/>
 
-                    <StackPanel IsEnabled="{Binding IsEditing}">
+                            <!-- Metadata -->
+                            <StackPanel>
+                                <Grid Margin="8">
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="80"/>
+                                        <ColumnDefinition Width="80"/>
+                                        <ColumnDefinition Width="80"/>
+                                        <ColumnDefinition Width="120"/>
+                                        <ColumnDefinition Width="80"/>
+                                        <ColumnDefinition Width="*"/>
+                                    </Grid.ColumnDefinitions>
 
-                        <!-- Readonly summary -->
-                        <Grid Margin="0,0,0,12">
-                            <Grid.ColumnDefinitions>
-                                <ColumnDefinition Width="120"/>
-                                <ColumnDefinition Width="*"/>
-                                <ColumnDefinition Width="120"/>
-                                <ColumnDefinition Width="*"/>
-                            </Grid.ColumnDefinitions>
+                                    <TextBlock Grid.Column="0"
+                                               Text="ID:"/>
 
-                            <TextBlock Grid.Column="0" Foreground="White" Text="Delivery ID:"/>
-                            <TextBlock Grid.Column="1"
-                                       Foreground="White"
-                                       Text="{Binding SelectedDelivery.Id}"/>
+                                    <TextBlock Grid.Column="1"
+                                               Text="{Binding SelectedDelivery.Id}"/>
 
-                            <TextBlock Grid.Column="2" Foreground="White" Text="Status:"/>
-                            <TextBlock Grid.Column="3"
-                                       Foreground="White"
-                                       Text="{Binding SelectedDelivery.Status}"/>
-                        </Grid>
+                                    <TextBlock Grid.Column="2"
+                                               Text="Created:"/>
 
-                        <TextBlock Foreground="White" Text="Order ID"/>
-                        <TextBox Text="{Binding SelectedDelivery.OrderId, UpdateSourceTrigger=PropertyChanged}"
-                                 Margin="0,4,0,8"/>
+                                    <TextBlock Grid.Column="3"
+                                               Text="{Binding SelectedDelivery.CreatedAtUtc, StringFormat={}{0:g}}"/>
 
-                        <TextBlock Foreground="White" Text="Rider User ID"/>
-                        <TextBox Text="{Binding SelectedDelivery.RiderUserId, UpdateSourceTrigger=PropertyChanged, TargetNullValue=''}"
-                                 Margin="0,4,0,8"/>
+                                    <TextBlock Grid.Column="4"
+                                               Text="Updated:"/>
 
-                        <TextBlock Foreground="White" Text="Delivery Status"/>
-                        <ComboBox ItemsSource="{Binding DeliveryStatusOptions}"
-                                  SelectedItem="{Binding SelectedDelivery.Status, Mode=TwoWay}"
-                                  Margin="0,4,0,8"/>
+                                    <TextBlock Grid.Column="5"
+                                               Text="{Binding SelectedDelivery.UpdatedAtUtc, StringFormat={}{0:g}}"/>
+                                </Grid>
+                            </StackPanel>
 
-                        <TextBlock Foreground="White" Text="Delivery Address"/>
-                        <TextBox Text="{Binding SelectedDelivery.DeliveryAddressSnapshot, UpdateSourceTrigger=PropertyChanged}"
-                                 AcceptsReturn="True"
-                                 Height="70"
-                                 TextWrapping="Wrap"
-                                 Margin="0,4,0,8"/>
+                            <!-- Delivery Information -->
+                            <GroupBox Header="Delivery Information"
+                                      Margin="0,0,0,8">
+                                <Grid Margin="8">
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="120"/>
+                                        <ColumnDefinition Width="*"/>
+                                    </Grid.ColumnDefinitions>
 
-                        <TextBlock Foreground="White" Text="Shipping Cost"/>
-                        <TextBox Text="{Binding SelectedDelivery.ShippingCost, UpdateSourceTrigger=PropertyChanged}"
-                                 Margin="0,4,0,8"/>
+                                    <Grid.RowDefinitions>
+                                        <RowDefinition Height="Auto"/>
+                                        <RowDefinition Height="8"/>
+                                        <RowDefinition Height="Auto"/>
+                                        <RowDefinition Height="8"/>
+                                        <RowDefinition Height="Auto"/>
+                                        <RowDefinition Height="8"/>
+                                        <RowDefinition Height="Auto"/>
+                                    </Grid.RowDefinitions>
 
-                        <TextBlock Foreground="White" Text="Tracking Number"/>
-                        <TextBox Text="{Binding SelectedDelivery.TrackingNumber, UpdateSourceTrigger=PropertyChanged}"
-                                 Margin="0,4,0,8"/>
+                                    <TextBlock Grid.Row="0"
+                                               Grid.Column="0"
+                                               Text="Order ID"
+                                               VerticalAlignment="Center"/>
 
-                        <TextBlock Foreground="White" Text="Current Location"/>
-                        <TextBox Text="{Binding SelectedDelivery.CurrentLocation, UpdateSourceTrigger=PropertyChanged}"
-                                 Margin="0,4,0,8"/>
+                                    <TextBox Grid.Row="0"
+                                             Grid.Column="1"
+                                             IsReadOnly="{Binding IsNotEditing}"
+                                             Text="{Binding SelectedDelivery.OrderId, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"/>
 
-                        <TextBlock Foreground="White" Text="Estimated Delivery Date UTC"/>
-                        <DatePicker SelectedDate="{Binding SelectedDelivery.EstimatedDeliveryDateUtc, Mode=TwoWay}"
-                                    Margin="0,4,0,8"/>
+                                    <TextBlock Grid.Row="2"
+                                               Grid.Column="0"
+                                               Text="Rider User ID"
+                                               VerticalAlignment="Center"/>
 
-                        <TextBlock Foreground="White" Text="Actual Delivery Date UTC"/>
-                        <DatePicker SelectedDate="{Binding SelectedDelivery.ActualDeliveryDateUtc, Mode=TwoWay}"
-                                    Margin="0,4,0,8"/>
+                                    <TextBox Grid.Row="2"
+                                             Grid.Column="1"
+                                             IsReadOnly="{Binding IsNotEditing}"
+                                             Text="{Binding SelectedDelivery.RiderUserId, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged, TargetNullValue=''}"/>
 
-                    </StackPanel>
-                </StackPanel>
-            </ScrollViewer>
+                                    <TextBlock Grid.Row="4"
+                                               Grid.Column="0"
+                                               Text="Status"
+                                               VerticalAlignment="Center"/>
+
+                                    <ComboBox Grid.Row="4"
+                                              Grid.Column="1"
+                                              IsHitTestVisible="{Binding IsEditing}"
+                                              Focusable="{Binding IsEditing}"
+                                              ItemsSource="{Binding DeliveryStatusOptions}"
+                                              SelectedItem="{Binding SelectedDelivery.Status, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"/>
+
+                                    <TextBlock Grid.Row="6"
+                                               Grid.Column="0"
+                                               Text="Shipping Cost"
+                                               VerticalAlignment="Center"/>
+
+                                    <TextBox Grid.Row="6"
+                                             Grid.Column="1"
+                                             IsReadOnly="{Binding IsNotEditing}"
+                                             Text="{Binding SelectedDelivery.ShippingCost, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"/>
+                                </Grid>
+                            </GroupBox>
+
+                            <!-- Address -->
+                            <GroupBox Header="Address">
+                                <Grid Margin="8">
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="120"/>
+                                        <ColumnDefinition Width="*"/>
+                                    </Grid.ColumnDefinitions>
+
+                                    <Grid.RowDefinitions>
+                                        <RowDefinition Height="Auto"/>
+                                    </Grid.RowDefinitions>
+
+                                    <TextBlock Grid.Row="0"
+                                               Grid.Column="0"
+                                               Text="Delivery Address"
+                                               VerticalAlignment="Top"/>
+
+                                    <TextBox Grid.Row="0"
+                                             Grid.Column="1"
+                                             MinHeight="72"
+                                             IsReadOnly="{Binding IsNotEditing}"
+                                             TextWrapping="Wrap"
+                                             AcceptsReturn="True"
+                                             Text="{Binding SelectedDelivery.DeliveryAddressSnapshot, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"/>
+                                </Grid>
+                            </GroupBox>
+                        </StackPanel>
+                    </ScrollViewer>
+                </TabItem>
+
+                <!-- TRACKING TAB -->
+                <TabItem Header="Tracking">
+                    <ScrollViewer VerticalScrollBarVisibility="Auto">
+                        <StackPanel Margin="0,8,8,8">
+
+                            <!-- Tracking Details -->
+                            <GroupBox Header="Tracking Details"
+                                      Margin="0,0,0,8">
+                                <Grid Margin="8">
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="120"/>
+                                        <ColumnDefinition Width="*"/>
+                                    </Grid.ColumnDefinitions>
+
+                                    <Grid.RowDefinitions>
+                                        <RowDefinition Height="Auto"/>
+                                        <RowDefinition Height="8"/>
+                                        <RowDefinition Height="Auto"/>
+                                    </Grid.RowDefinitions>
+
+                                    <TextBlock Grid.Row="0"
+                                               Grid.Column="0"
+                                               Text="Tracking No."
+                                               VerticalAlignment="Center"/>
+
+                                    <TextBox Grid.Row="0"
+                                             Grid.Column="1"
+                                             IsReadOnly="{Binding IsNotEditing}"
+                                             Text="{Binding SelectedDelivery.TrackingNumber, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"/>
+
+                                    <TextBlock Grid.Row="2"
+                                               Grid.Column="0"
+                                               Text="Current Location"
+                                               VerticalAlignment="Center"/>
+
+                                    <TextBox Grid.Row="2"
+                                             Grid.Column="1"
+                                             IsReadOnly="{Binding IsNotEditing}"
+                                             Text="{Binding SelectedDelivery.CurrentLocation, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"/>
+                                </Grid>
+                            </GroupBox>
+
+                            <!-- Delivery Dates -->
+                            <GroupBox Header="Delivery Dates">
+                                <Grid Margin="8">
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="120"/>
+                                        <ColumnDefinition Width="*"/>
+                                    </Grid.ColumnDefinitions>
+
+                                    <Grid.RowDefinitions>
+                                        <RowDefinition Height="Auto"/>
+                                        <RowDefinition Height="8"/>
+                                        <RowDefinition Height="Auto"/>
+                                    </Grid.RowDefinitions>
+
+                                    <TextBlock Grid.Row="0"
+                                               Grid.Column="0"
+                                               Text="Estimated UTC"
+                                               VerticalAlignment="Center"/>
+
+                                    <DatePicker Grid.Row="0"
+                                                Grid.Column="1"
+                                                IsHitTestVisible="{Binding IsEditing}"
+                                                Focusable="{Binding IsEditing}"
+                                                SelectedDate="{Binding SelectedDelivery.EstimatedDeliveryDateUtc, Mode=TwoWay}"/>
+
+                                    <TextBlock Grid.Row="2"
+                                               Grid.Column="0"
+                                               Text="Actual UTC"
+                                               VerticalAlignment="Center"/>
+
+                                    <DatePicker Grid.Row="2"
+                                                Grid.Column="1"
+                                                IsHitTestVisible="{Binding IsEditing}"
+                                                Focusable="{Binding IsEditing}"
+                                                SelectedDate="{Binding SelectedDelivery.ActualDeliveryDateUtc, Mode=TwoWay}"/>
+                                </Grid>
+                            </GroupBox>
+                        </StackPanel>
+                    </ScrollViewer>
+                </TabItem>
+
+            </TabControl>
         </Grid>
     </Grid>
 </Page>

@@ -1,8 +1,8 @@
 ﻿using System;
-using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.ComponentModel;
-using System.Text;
+using System.Linq;
+using System.Threading.Tasks;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using PESYONG.Presentation.Admin.Interfaces;
@@ -17,14 +17,24 @@ public partial class PromosPageVM : ObservableObject
 
     [ObservableProperty]
     [NotifyPropertyChangedFor(nameof(IsFormEnabled))]
+    [NotifyPropertyChangedFor(nameof(HasSelectedPromo))]
+    [NotifyPropertyChangedFor(nameof(HasNoSelectedPromo))]
+    [NotifyPropertyChangedFor(nameof(SelectedPromoHeaderText))]
+    [NotifyPropertyChangedFor(nameof(EditingStateText))]
     private PromoItemVM? selectedPromo;
 
     [ObservableProperty]
+    [NotifyPropertyChangedFor(nameof(IsFormEnabled))]
+    [NotifyPropertyChangedFor(nameof(HasNoPromos))]
+    [NotifyPropertyChangedFor(nameof(HasNoSelectedPromo))]
+    [NotifyPropertyChangedFor(nameof(ListStatusText))]
+    [NotifyPropertyChangedFor(nameof(EditingStateText))]
     private bool isBusy;
 
     [ObservableProperty]
     [NotifyPropertyChangedFor(nameof(EditSaveButtonText))]
     [NotifyPropertyChangedFor(nameof(IsFormEnabled))]
+    [NotifyPropertyChangedFor(nameof(EditingStateText))]
     private bool isEditing;
 
     [ObservableProperty]
@@ -36,13 +46,57 @@ public partial class PromosPageVM : ObservableObject
 
     public string EditSaveButtonText => IsEditing ? "Save" : "Edit";
 
-    public bool IsFormEnabled => IsEditing && SelectedPromo is not null;
+    public bool IsFormEnabled => IsEditing && SelectedPromo is not null && !IsBusy;
 
     public bool HasError => !string.IsNullOrWhiteSpace(ErrorMessage);
+
+    public bool HasSelectedPromo => SelectedPromo is not null;
+
+    public bool HasNoSelectedPromo => !IsBusy && SelectedPromo is null;
+
+    public bool HasPromos => Promos.Count > 0;
+
+    public bool HasNoPromos => !IsBusy && Promos.Count == 0;
+
+    public string SelectedPromoHeaderText =>
+        SelectedPromo is null ? "Promo Details" : SelectedPromo.DisplayName;
+
+    public string ListStatusText
+    {
+        get
+        {
+            if (IsBusy)
+                return "Loading promos...";
+
+            if (Promos.Count == 0)
+                return "No promos loaded.";
+
+            return $"{Promos.Count} promo(s) loaded.";
+        }
+    }
+
+    public string EditingStateText
+    {
+        get
+        {
+            if (IsBusy)
+                return "Please wait while promo data is being processed.";
+
+            if (SelectedPromo is null)
+                return "Select an existing promo or create a new one.";
+
+            if (IsEditing)
+                return "Editing is enabled. Save to apply the changes.";
+
+            return "Viewing only. Click Edit to modify this promo.";
+        }
+    }
 
     public PromosPageVM(IPromoApiService promoApiService)
     {
         _promoApiService = promoApiService;
+
+        Promos.CollectionChanged += (_, _) => NotifyListState();
     }
 
     [RelayCommand(CanExecute = nameof(CanLoad))]
@@ -207,13 +261,13 @@ public partial class PromosPageVM : ObservableObject
             return false;
         }
 
-        if (SelectedPromo.MinimumOrderAmount.HasValue && SelectedPromo.MinimumOrderAmount < 0)
+        if (SelectedPromo.MinimumOrderAmount.HasValue && SelectedPromo.MinimumOrderAmount.Value < 0)
         {
             ErrorMessage = "Minimum order amount cannot be negative.";
             return false;
         }
 
-        if (SelectedPromo.UsageLimit.HasValue && SelectedPromo.UsageLimit < 0)
+        if (SelectedPromo.UsageLimit.HasValue && SelectedPromo.UsageLimit.Value < 0)
         {
             ErrorMessage = "Usage limit cannot be negative.";
             return false;
@@ -288,11 +342,23 @@ public partial class PromosPageVM : ObservableObject
 
     private void SelectedPromo_PropertyChanged(object? sender, PropertyChangedEventArgs e)
     {
+        if (e.PropertyName is nameof(PromoItemVM.Code) or nameof(PromoItemVM.Id))
+        {
+            OnPropertyChanged(nameof(SelectedPromoHeaderText));
+        }
+
         if (!IsEditing)
             return;
 
         IsModified = true;
         NotifyCommands();
+    }
+
+    private void NotifyListState()
+    {
+        OnPropertyChanged(nameof(HasPromos));
+        OnPropertyChanged(nameof(HasNoPromos));
+        OnPropertyChanged(nameof(ListStatusText));
     }
 
     private void NotifyCommands()
