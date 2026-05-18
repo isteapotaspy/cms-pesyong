@@ -1,8 +1,9 @@
 ﻿using System.Net.Http;
 using System.Net.Http.Json;
 using CMS.Contracts.Admin.Meals;
+using PESYONG.Presentation.Admin.Interfaces;
 
-namespace PESYONG.Presentation.Admin.Services.Meals;
+namespace PESYONG.Presentation.Admin.Services;
 
 public sealed class MealApiService : IMealApiService
 {

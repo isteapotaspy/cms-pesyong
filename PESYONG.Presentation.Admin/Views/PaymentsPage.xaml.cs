@@ -1,26 +1,32 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Text;
-using System.Windows;
-using System.Windows.Controls;
-using System.Windows.Data;
-using System.Windows.Documents;
-using System.Windows.Input;
-using System.Windows.Media;
-using System.Windows.Media.Imaging;
-using System.Windows.Navigation;
-using System.Windows.Shapes;
+﻿using System.Windows.Controls;
+using PESYONG.Presentation.Admin.ViewModel;
+using PESYONG.Presentation.Admin.ViewModels;
 
-namespace PESYONG.Presentation.Admin.Views
+namespace PESYONG.Presentation.Admin.Views;
+
+public partial class PaymentsPage : Page
 {
-    /// <summary>
-    /// Interaction logic for PaymentsPage.xaml
-    /// </summary>
-    public partial class PaymentsPage : Page
+    private readonly PaymentPageVM _viewModel;
+    private bool _hasLoaded;
+
+    public PaymentsPage(PaymentPageVM viewModel)
     {
-        public PaymentsPage()
-        {
-            InitializeComponent();
-        }
+        InitializeComponent();
+
+        _viewModel = viewModel;
+        DataContext = _viewModel;
+
+        Loaded += PaymentsPage_Loaded;
+    }
+
+    private async void PaymentsPage_Loaded(object sender, System.Windows.RoutedEventArgs e)
+    {
+        if (_hasLoaded)
+            return;
+
+        _hasLoaded = true;
+
+        if (_viewModel.LoadCommand.CanExecute(null))
+            await _viewModel.LoadCommand.ExecuteAsync(null);
     }
 }
