@@ -14,7 +14,7 @@ public class AppUserConfiguration : IEntityTypeConfiguration<AppUser>
         builder.HasKey(x => x.Id);
 
         builder.Property(x => x.UserName)
-            .HasMaxLength(100)
+            .HasMaxLength(50)
             .IsRequired();
 
         builder.Property(x => x.Email)
@@ -41,6 +41,9 @@ public class AppUserConfiguration : IEntityTypeConfiguration<AppUser>
 
         builder.HasIndex(x => x.Email)
             .IsUnique();
+
+        builder.Property(x => x.EmailVerificationCode)
+            .HasMaxLength(20);
 
         builder.HasOne(x => x.CustomerProfile)
             .WithOne(x => x.AppUser)

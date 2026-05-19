@@ -1,21 +1,34 @@
 using CMS.Contracts.Customer.Menu;
 using CMS.Contracts.Customer.Orders;
 using CMS.Contracts.Customer.Meals;
+using CMS.Contracts.Customer.Auth;
+using CMS.Contracts.Customer.Profile;
 using CMS.Domain.Entities;
 using CMS.Domain.Entities.Orders;
 using CMS.Domain.Entities.Packages;
 using CMS.Domain.Entities.User;
+using CMS.Domain.Entities.Menu;
+using CMS.Domain.Enums;
 using CMS.Contracts.Admin.Dashboard;
 using CMS.Contracts.Admin.Package;
 using CMS.Contracts.Admin.Orders;
 using CMS.Contracts.Admin.Customers;
 using CMS.Contracts.Admin.Meals;
-using CMS.Domain.Enums;
 using CMS.Infrastructure;
 using CMS.Infrastructure.Persistence;
 using Microsoft.EntityFrameworkCore;
 using System.Text.Json.Serialization;
-using CMS.Domain.Entities.Menu;
+using System.IdentityModel.Tokens.Jwt;
+using System.Security.Claims;
+using System.Text;
+using CMS.Server.Options;
+using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Microsoft.AspNetCore.Identity;
+using Microsoft.Extensions.Options;
+using Microsoft.IdentityModel.Tokens;
+using System.Net.Mail;
+using System.Text.RegularExpressions;
+using CMS.Server.Services;
 
 namespace CMS.Server
 {
@@ -33,7 +46,52 @@ namespace CMS.Server
             // Learn more about configuring OpenAPI at https://aka.ms/aspnet/openapi
             builder.Services.AddOpenApi();
 
+            builder.Services.AddCors(options =>
+            {
+                options.AddPolicy("PesyongWeb", policy =>
+                {
+                    policy.WithOrigins(
+                            "http://localhost:7110",
+                            "https://localhost:7110")
+                          .AllowAnyHeader()
+                          .AllowAnyMethod()
+                          .AllowCredentials();
+                });
+            });
+
             builder.Services.AddInfrastructure(builder.Configuration);
+            builder.Services.Configure<SmtpOptions>(
+            builder.Configuration.GetSection("Smtp"));
+
+            builder.Services.AddScoped<IEmailSender, SmtpEmailSender>();
+
+            builder.Services.Configure<JwtOptions>(
+            builder.Configuration.GetSection("Jwt"));
+
+            builder.Services.AddScoped<IPasswordHasher<AppUser>, PasswordHasher<AppUser>>();
+
+            var jwtSection = builder.Configuration.GetSection("Jwt");
+            var jwtOptions = jwtSection.Get<JwtOptions>() ?? new JwtOptions();
+            var jwtKey = Encoding.UTF8.GetBytes(jwtOptions.Key);
+
+            builder.Services
+                .AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
+                .AddJwtBearer(options =>
+                {
+                    options.TokenValidationParameters = new TokenValidationParameters
+                    {
+                        ValidateIssuer = true,
+                        ValidateAudience = true,
+                        ValidateLifetime = true,
+                        ValidateIssuerSigningKey = true,
+                        ValidIssuer = jwtOptions.Issuer,
+                        ValidAudience = jwtOptions.Audience,
+                        IssuerSigningKey = new SymmetricSecurityKey(jwtKey),
+                        ClockSkew = TimeSpan.Zero
+                    };
+                });
+
+            builder.Services.AddAuthorization();
             
             builder.Services.AddControllers();
 
@@ -47,7 +105,13 @@ namespace CMS.Server
                 });
             });
 
+
             var app = builder.Build();
+
+            app.UseCors("PesyongWeb");
+
+            app.UseAuthentication();
+            app.UseAuthorization();
 
             if (app.Environment.IsDevelopment())
             {
@@ -57,6 +121,8 @@ namespace CMS.Server
                 await app.Services.SeedDatabaseAsync();
             }
 
+
+            // =================== CUSTOMER ENDPOINTS =================== //
             //CHECK if the connection succeeds in ADMIN
             app.MapGet("/api/ping", () =>
             {
@@ -86,11 +152,11 @@ namespace CMS.Server
                     .AsNoTracking()
                     .Where(x => x.IsAvailable)
                     .Include(x => x.MenuCategory)
-                    .Include(x => x.Sizes)
                     .Include(x => x.Addons)
-                    .Include(x => x.SelectionRules)
-                        .ThenInclude(x => x.Options)
-                            .ThenInclude(x => x.Meal)
+                    .Include(x => x.Sizes)
+                        .ThenInclude(s => s.SelectionRules)
+                            .ThenInclude(r => r.Options)
+                                .ThenInclude(o => o.Meal)
                     .OrderBy(x => x.Title)
                     .Select(x => new MenuPackageDto
                     {
@@ -113,6 +179,7 @@ namespace CMS.Server
                         IsCustomizable = x.IsCustomizable,
 
                         Sizes = x.Sizes
+                            .Where(s => s.IsAvailable)
                             .OrderBy(s => s.PaxCount)
                             .Select(s => new PackageSizeDto
                             {
@@ -120,7 +187,45 @@ namespace CMS.Server
                                 Label = s.Label,
                                 Subtitle = s.Subtitle,
                                 PaxCount = s.PaxCount,
-                                Price = s.Price
+                                Price = s.Price,
+                                SelectionRules = s.SelectionRules
+                                    .Where(r => r.IsActive)
+                                    .OrderBy(r => r.DisplayOrder)
+                                    .Select(r => new PackageSelectionRuleDto
+                                    {
+                                        Id = r.Id,
+                                        Title = r.Title,
+                                        Description = r.Description,
+                                        SelectionType = r.SelectionType.ToString(),
+                                        AllowedMealType = r.AllowedMealType.ToString(),
+                                        MinSelections = r.MinSelections,
+                                        MaxSelections = r.MaxSelections,
+                                        IsRequired = r.IsRequired,
+                                        DisplayOrder = r.DisplayOrder,
+                                        Options = r.Options
+                                            .Where(o => o.IsActive && o.Meal.IsAvailable)
+                                            .OrderBy(o => o.Meal.Name)
+                                            .Select(o => new PackageSelectionOptionDto
+                                            {
+                                                Id = o.Id,
+                                                MealId = o.MealId,
+                                                AdditionalPrice = o.AdditionalPrice,
+                                                IsDefault = o.IsDefault,
+                                                Meal = new MealOptionDto
+                                                {
+                                                    Id = o.Meal.Id,
+                                                    Name = o.Meal.Name,
+                                                    Description = o.Meal.Description,
+                                                    MealType = o.Meal.MealType.ToString(),
+                                                    BasePrice = o.Meal.BasePrice,
+                                                    AdditionalPrice = o.AdditionalPrice,
+                                                    ImageUrl = o.Meal.ImageUrl,
+                                                    IsDefault = o.IsDefault
+                                                }
+                                            })
+                                            .ToList()
+                                    })
+                                    .ToList()
                             })
                             .ToList(),
 
@@ -134,44 +239,6 @@ namespace CMS.Server
                                 Description = a.Description,
                                 Price = a.Price,
                                 IsAvailable = a.IsAvailable
-                            })
-                            .ToList(),
-
-                        SelectionRules = x.SelectionRules
-                            .OrderBy(r => r.DisplayOrder)
-                            .Select(r => new PackageSelectionRuleDto
-                            {
-                                Id = r.Id,
-                                Title = r.Title,
-                                Description = r.Description,
-                                SelectionType = r.SelectionType.ToString(),
-                                AllowedMealType = r.AllowedMealType.ToString(),
-                                MinSelections = r.MinSelections,
-                                MaxSelections = r.MaxSelections,
-                                IsRequired = r.IsRequired,
-                                DisplayOrder = r.DisplayOrder,
-
-                                Options = r.Options
-                                    .OrderBy(o => o.Meal.Name)
-                                    .Select(o => new PackageSelectionOptionDto
-                                    {
-                                        Id = o.Id,
-                                        MealId = o.MealId,
-                                        AdditionalPrice = o.AdditionalPrice,
-                                        IsDefault = o.IsDefault,
-                                        Meal = new MealOptionDto
-                                        {
-                                            Id = o.Meal.Id,
-                                            Name = o.Meal.Name,
-                                            Description = o.Meal.Description,
-                                            MealType = o.Meal.MealType.ToString(),
-                                            BasePrice = o.Meal.BasePrice,
-                                            AdditionalPrice = o.AdditionalPrice,
-                                            ImageUrl = o.Meal.ImageUrl,
-                                            IsDefault = o.IsDefault
-                                        }
-                                    })
-                                    .ToList()
                             })
                             .ToList()
                     })
@@ -194,11 +261,11 @@ namespace CMS.Server
                     .AsNoTracking()
                     .Where(x => x.Id == id && x.IsAvailable)
                     .Include(x => x.MenuCategory)
-                    .Include(x => x.Sizes)
                     .Include(x => x.Addons)
-                    .Include(x => x.SelectionRules)
-                        .ThenInclude(x => x.Options)
-                            .ThenInclude(x => x.Meal)
+                    .Include(x => x.Sizes)
+                        .ThenInclude(s => s.SelectionRules)
+                            .ThenInclude(r => r.Options)
+                                .ThenInclude(o => o.Meal)
                     .Select(x => new MenuPackageDto
                     {
                         Id = x.Id,
@@ -221,6 +288,7 @@ namespace CMS.Server
                         IsCustomizable = x.IsCustomizable,
 
                         Sizes = x.Sizes
+                            .Where(s => s.IsAvailable)
                             .OrderBy(s => s.PaxCount)
                             .Select(s => new PackageSizeDto
                             {
@@ -228,7 +296,45 @@ namespace CMS.Server
                                 Label = s.Label,
                                 Subtitle = s.Subtitle,
                                 PaxCount = s.PaxCount,
-                                Price = s.Price
+                                Price = s.Price,
+                                SelectionRules = s.SelectionRules
+                                    .Where(r => r.IsActive)
+                                    .OrderBy(r => r.DisplayOrder)
+                                    .Select(r => new PackageSelectionRuleDto
+                                    {
+                                        Id = r.Id,
+                                        Title = r.Title,
+                                        Description = r.Description,
+                                        SelectionType = r.SelectionType.ToString(),
+                                        AllowedMealType = r.AllowedMealType.ToString(),
+                                        MinSelections = r.MinSelections,
+                                        MaxSelections = r.MaxSelections,
+                                        IsRequired = r.IsRequired,
+                                        DisplayOrder = r.DisplayOrder,
+                                        Options = r.Options
+                                            .Where(o => o.IsActive && o.Meal.IsAvailable)
+                                            .OrderBy(o => o.Meal.Name)
+                                            .Select(o => new PackageSelectionOptionDto
+                                            {
+                                                Id = o.Id,
+                                                MealId = o.MealId,
+                                                AdditionalPrice = o.AdditionalPrice,
+                                                IsDefault = o.IsDefault,
+                                                Meal = new MealOptionDto
+                                                {
+                                                    Id = o.Meal.Id,
+                                                    Name = o.Meal.Name,
+                                                    Description = o.Meal.Description,
+                                                    MealType = o.Meal.MealType.ToString(),
+                                                    BasePrice = o.Meal.BasePrice,
+                                                    AdditionalPrice = o.AdditionalPrice,
+                                                    ImageUrl = o.Meal.ImageUrl,
+                                                    IsDefault = o.IsDefault
+                                                }
+                                            })
+                                            .ToList()
+                                    })
+                                    .ToList()
                             })
                             .ToList(),
 
@@ -242,44 +348,6 @@ namespace CMS.Server
                                 Description = a.Description,
                                 Price = a.Price,
                                 IsAvailable = a.IsAvailable
-                            })
-                            .ToList(),
-
-                        SelectionRules = x.SelectionRules
-                            .OrderBy(r => r.DisplayOrder)
-                            .Select(r => new PackageSelectionRuleDto
-                            {
-                                Id = r.Id,
-                                Title = r.Title,
-                                Description = r.Description,
-                                SelectionType = r.SelectionType.ToString(),
-                                AllowedMealType = r.AllowedMealType.ToString(),
-                                MinSelections = r.MinSelections,
-                                MaxSelections = r.MaxSelections,
-                                IsRequired = r.IsRequired,
-                                DisplayOrder = r.DisplayOrder,
-
-                                Options = r.Options
-                                    .OrderBy(o => o.Meal.Name)
-                                    .Select(o => new PackageSelectionOptionDto
-                                    {
-                                        Id = o.Id,
-                                        MealId = o.MealId,
-                                        AdditionalPrice = o.AdditionalPrice,
-                                        IsDefault = o.IsDefault,
-                                        Meal = new MealOptionDto
-                                        {
-                                            Id = o.Meal.Id,
-                                            Name = o.Meal.Name,
-                                            Description = o.Meal.Description,
-                                            MealType = o.Meal.MealType.ToString(),
-                                            BasePrice = o.Meal.BasePrice,
-                                            AdditionalPrice = o.AdditionalPrice,
-                                            ImageUrl = o.Meal.ImageUrl,
-                                            IsDefault = o.IsDefault
-                                        }
-                                    })
-                                    .ToList()
                             })
                             .ToList()
                     })
@@ -353,6 +421,9 @@ namespace CMS.Server
                         });
                     }
 
+                    // =========================
+                    // MEAL ITEM FLOW
+                    // =========================
                     if (itemType == OrderItemType.Meal)
                     {
                         if (!item.MealId.HasValue)
@@ -407,18 +478,20 @@ namespace CMS.Server
                         continue;
                     }
 
+                    // =========================
                     // PACKAGE ITEM FLOW
+                    // =========================
                     if (!item.PackageId.HasValue)
                     {
                         return Results.BadRequest(new { message = "PackageId is required for package order items." });
                     }
 
                     var package = await db.Packages
-                        .Include(x => x.Sizes)
                         .Include(x => x.Addons)
-                        .Include(x => x.SelectionRules)
-                            .ThenInclude(x => x.Options)
-                                .ThenInclude(x => x.Meal)
+                        .Include(x => x.Sizes)
+                            .ThenInclude(s => s.SelectionRules)
+                                .ThenInclude(r => r.Options)
+                                    .ThenInclude(o => o.Meal)
                         .FirstOrDefaultAsync(x => x.Id == item.PackageId.Value && x.IsAvailable);
 
                     if (package is null)
@@ -430,17 +503,22 @@ namespace CMS.Server
 
                     if (item.PackageSizeId.HasValue)
                     {
-                        selectedSize = package.Sizes.FirstOrDefault(x => x.Id == item.PackageSizeId.Value);
+                        selectedSize = package.Sizes.FirstOrDefault(x => x.Id == item.PackageSizeId.Value && x.IsAvailable);
                     }
                     else if (package.Sizes.Count == 1)
                     {
-                        selectedSize = package.Sizes.First();
+                        selectedSize = package.Sizes.FirstOrDefault(x => x.IsAvailable);
                     }
 
                     if (selectedSize is null)
                     {
                         return Results.BadRequest(new { message = $"A valid package size is required for package '{package.Title}'." });
                     }
+
+                    var activeRules = selectedSize.SelectionRules
+                        .Where(x => x.IsActive)
+                        .OrderBy(x => x.DisplayOrder)
+                        .ToList();
 
                     var orderItemMealSelections = new List<OrderItemMealSelection>();
                     var orderItemAddonSelections = new List<OrderItemAddonSelection>();
@@ -450,7 +528,7 @@ namespace CMS.Server
 
                     var consumedMealSelections = 0;
 
-                    foreach (var rule in package.SelectionRules.OrderBy(x => x.DisplayOrder))
+                    foreach (var rule in activeRules)
                     {
                         var selectedForRule = requestMealSelections
                             .Where(x => x.PackageSelectionRuleId == rule.Id)
@@ -474,13 +552,16 @@ namespace CMS.Server
 
                         foreach (var selected in selectedForRule)
                         {
-                            var option = rule.Options.FirstOrDefault(x => x.MealId == selected.MealId);
+                            var option = rule.Options.FirstOrDefault(x =>
+                                x.MealId == selected.MealId &&
+                                x.IsActive &&
+                                x.Meal.IsAvailable);
 
                             if (option is null)
                             {
                                 return Results.BadRequest(new
                                 {
-                                    message = $"Meal id {selected.MealId} is not allowed for rule '{rule.Title}'."
+                                    message = $"Meal id {selected.MealId} is not allowed for rule '{rule.Title}' in size '{selectedSize.Label}'."
                                 });
                             }
 
@@ -501,7 +582,7 @@ namespace CMS.Server
                     {
                         return Results.BadRequest(new
                         {
-                            message = "One or more meal selections do not match the package rules."
+                            message = "One or more meal selections do not match the selected package size rules."
                         });
                     }
 
@@ -746,10 +827,670 @@ namespace CMS.Server
                     : Results.NotFound(new { message = $"Meal with id {id} was not found." });
             });
 
+            //POST customer registration and login endpoints
+            app.MapPost("/api/customer/auth/register", async (
+                CustomerRegisterRequest request,
+                CmsDbContext db,
+                IPasswordHasher<AppUser> passwordHasher,
+                IEmailSender emailSender) =>
+            {
+                var normalizedUserName = request.UserName?.Trim() ?? string.Empty;
+                var normalizedEmail = request.Email?.Trim() ?? string.Empty;
+
+                if (!IsValidUsername(normalizedUserName))
+                {
+                    return Results.BadRequest(new
+                    {
+                        message = "Username must be 4-20 characters and contain only letters, numbers, underscore, or dot."
+                    });
+                }
+
+                if (!IsValidEmail(normalizedEmail))
+                {
+                    return Results.BadRequest(new
+                    {
+                        message = "Please enter a valid email address."
+                    });
+                }
+
+                if (!IsStrongPassword(request.Password))
+                {
+                    return Results.BadRequest(new
+                    {
+                        message = "Password must be at least 8 characters and include uppercase, lowercase, number, and symbol."
+                    });
+                }
+
+                if (string.IsNullOrWhiteSpace(request.FirstName))
+                {
+                    return Results.BadRequest(new { message = "First name is required." });
+                }
+
+                if (string.IsNullOrWhiteSpace(request.LastName))
+                {
+                    return Results.BadRequest(new { message = "Last name is required." });
+                }
+
+                var userNameExists = await db.AppUsers.AnyAsync(x =>
+                    x.UserName.ToLower() == normalizedUserName.ToLower());
+
+                if (userNameExists)
+                {
+                    return Results.BadRequest(new
+                    {
+                        message = $"Username '{normalizedUserName}' is already taken."
+                    });
+                }
+
+                var emailExists = await db.AppUsers.AnyAsync(x =>
+                    x.Email.ToLower() == normalizedEmail.ToLower());
+
+                if (emailExists)
+                {
+                    return Results.BadRequest(new
+                    {
+                        message = $"Email '{normalizedEmail}' is already registered."
+                    });
+                }
+
+                var verificationCode = GenerateVerificationCode();
+
+                var user = new AppUser
+                {
+                    UserName = normalizedUserName,
+                    Email = normalizedEmail,
+                    FirstName = request.FirstName.Trim(),
+                    LastName = request.LastName.Trim(),
+                    Role = UserRole.Customer,
+                    IsActive = true,
+                    IsEmailVerified = false,
+                    EmailVerificationCode = verificationCode,
+                    EmailVerificationCodeExpiresAtUtc = DateTime.UtcNow.AddMinutes(10)
+                };
+
+                user.PasswordHash = passwordHasher.HashPassword(user, request.Password);
+
+                db.AppUsers.Add(user);
+                await db.SaveChangesAsync();
+
+                var profile = new CustomerProfile
+                {
+                    AppUserId = user.Id,
+                    MobileNumber = request.MobileNumber?.Trim() ?? string.Empty
+                };
+
+                db.CustomerProfiles.Add(profile);
+                await db.SaveChangesAsync();
+
+                await emailSender.SendAsync(
+                    user.Email,
+                    "Verify your Pesyong account",
+                    $"""
+                        <div style="font-family:Arial,sans-serif;line-height:1.5">
+                            <h2>Welcome to Pesyong!</h2>
+                            <p>Your verification code is:</p>
+                            <div style="font-size:32px;font-weight:bold;letter-spacing:6px;color:#d86b23">
+                                {verificationCode}
+                            </div>
+                            <p>This code will expire in 10 minutes.</p>
+                        </div>
+                        """);
+
+                return Results.Ok(new RegisterResponse
+                {
+                    RequiresEmailVerification = true,
+                    Email = user.Email,
+                    Message = "Registration successful. Please check your email for the verification code."
+                });
+            });
+
+            //POST customer login endpoint
+            app.MapPost("/api/customer/auth/login", async (
+                CustomerLoginRequest request,
+                CmsDbContext db,
+                IPasswordHasher<AppUser> passwordHasher,
+                IOptions<JwtOptions> jwtOptionsAccessor) =>
+            {
+                if (string.IsNullOrWhiteSpace(request.UserNameOrEmail))
+                    return Results.BadRequest(new { message = "Username or email is required." });
+
+                if (string.IsNullOrWhiteSpace(request.Password))
+                    return Results.BadRequest(new { message = "Password is required." });
+
+                var input = request.UserNameOrEmail.Trim();
+
+                var user = await db.AppUsers
+                    .FirstOrDefaultAsync(x =>
+                        x.UserName == input || x.Email == input);
+
+                if (user is null || !user.IsActive)
+                    return Results.BadRequest(new { message = "Invalid login credentials." });
+
+                if (user.Role != UserRole.Customer)
+                    return Results.BadRequest(new { message = "This login is not a customer account." });
+
+                if (!user.IsEmailVerified)
+                    return Results.BadRequest(new { message = "Please verify your email before signing in." });
+
+                var verifyResult = passwordHasher.VerifyHashedPassword(user, user.PasswordHash, request.Password);
+                if (verifyResult == PasswordVerificationResult.Failed)
+                    return Results.BadRequest(new { message = "Invalid login credentials." });
+
+                var profile = await db.CustomerProfiles
+                    .FirstOrDefaultAsync(x => x.AppUserId == user.Id);
+
+                if (profile is null)
+                    return Results.BadRequest(new { message = "Customer profile was not found." });
+
+                var tokenResult = CreateCustomerAuthResponse(user, profile, jwtOptionsAccessor.Value);
+
+                return Results.Ok(tokenResult);
+            });
 
 
+            //POST verify email endpoint for customer email verification flow after registration
+            app.MapPost("/api/customer/auth/verify-email", async (
+                VerifyEmailRequest request,
+                CmsDbContext db,
+                IOptions<JwtOptions> jwtOptionsAccessor) =>
+            {
+                var email = request.Email?.Trim() ?? string.Empty;
+                var code = request.Code?.Trim() ?? string.Empty;
 
-            //ADMIN
+                if (string.IsNullOrWhiteSpace(email) || string.IsNullOrWhiteSpace(code))
+                {
+                    return Results.BadRequest(new { message = "Email and code are required." });
+                }
+
+                var user = await db.AppUsers
+                    .FirstOrDefaultAsync(x => x.Email.ToLower() == email.ToLower());
+
+                if (user is null)
+                {
+                    return Results.BadRequest(new { message = "Invalid verification request." });
+                }
+
+                if (user.IsEmailVerified)
+                {
+                    return Results.BadRequest(new { message = "Email is already verified." });
+                }
+
+                if (user.EmailVerificationCode != code)
+                {
+                    return Results.BadRequest(new { message = "Invalid verification code." });
+                }
+
+                if (!user.EmailVerificationCodeExpiresAtUtc.HasValue ||
+                    user.EmailVerificationCodeExpiresAtUtc.Value < DateTime.UtcNow)
+                {
+                    return Results.BadRequest(new { message = "Verification code has expired." });
+                }
+
+                user.IsEmailVerified = true;
+                user.EmailVerificationCode = null;
+                user.EmailVerificationCodeExpiresAtUtc = null;
+
+                await db.SaveChangesAsync();
+
+                var profile = await db.CustomerProfiles
+                    .FirstOrDefaultAsync(x => x.AppUserId == user.Id);
+
+                if (profile is null)
+                {
+                    return Results.BadRequest(new { message = "Customer profile was not found." });
+                }
+
+                var authResponse = CreateCustomerAuthResponse(user, profile, jwtOptionsAccessor.Value);
+                return Results.Ok(authResponse);
+            });
+
+
+            //POST resend verification code endpoint for customer email verification flow
+            app.MapPost("/api/customer/auth/resend-code", async (
+                ResendVerificationCodeRequest request,
+                CmsDbContext db,
+                IEmailSender emailSender) =>
+            {
+                var email = request.Email?.Trim() ?? string.Empty;
+
+                if (string.IsNullOrWhiteSpace(email))
+                {
+                    return Results.BadRequest(new { message = "Email is required." });
+                }
+
+                var user = await db.AppUsers
+                    .FirstOrDefaultAsync(x => x.Email.ToLower() == email.ToLower());
+
+                if (user is null)
+                {
+                    return Results.BadRequest(new { message = "Email was not found." });
+                }
+
+                if (user.IsEmailVerified)
+                {
+                    return Results.BadRequest(new { message = "Email is already verified." });
+                }
+
+                var code = GenerateVerificationCode();
+                user.EmailVerificationCode = code;
+                user.EmailVerificationCodeExpiresAtUtc = DateTime.UtcNow.AddMinutes(10);
+
+                await db.SaveChangesAsync();
+
+                await emailSender.SendAsync(
+                    user.Email,
+                    "Your Pesyong verification code",
+                    $"""
+                        <div style="font-family:Arial,sans-serif;line-height:1.5">
+                            <h2>Verify your Pesyong account</h2>
+                            <p>Your new verification code is:</p>
+                            <div style="font-size:32px;font-weight:bold;letter-spacing:6px;color:#d86b23">
+                                {code}
+                            </div>
+                            <p>This code will expire in 10 minutes.</p>
+                        </div>
+                        """);
+
+                return Results.Ok(new
+                {
+                    message = "A new verification code was sent to your email."
+                });
+            });
+
+            //GET current authenticated customer details
+            app.MapGet("/api/customer/auth/me", async (
+                ClaimsPrincipal claims,
+                CmsDbContext db) =>
+            {
+                var appUserIdClaim = claims.FindFirstValue(ClaimTypes.NameIdentifier);
+
+                if (!int.TryParse(appUserIdClaim, out var appUserId))
+                    return Results.Unauthorized();
+
+                var result = await db.AppUsers
+                    .Where(x => x.Id == appUserId && x.Role == UserRole.Customer)
+                    .Join(
+                        db.CustomerProfiles,
+                        user => user.Id,
+                        profile => profile.AppUserId,
+                        (user, profile) => new CustomerMeResponse
+                        {
+                            AppUserId = user.Id,
+                            CustomerProfileId = profile.Id,
+                            UserName = user.UserName,
+                            Email = user.Email,
+                            FirstName = user.FirstName,
+                            LastName = user.LastName,
+                            FullName = $"{user.FirstName} {user.LastName}".Trim(),
+                            MobileNumber = profile.MobileNumber
+                        })
+                    .FirstOrDefaultAsync();
+
+                return result is not null
+                    ? Results.Ok(result)
+                    : Results.NotFound(new { message = "Customer profile was not found." });
+            }).RequireAuthorization();
+
+
+            //PUT update current authenticated customer profile details
+            app.MapPut("/api/customer/profile", async (
+                ClaimsPrincipal claims,
+                UpdateCustomerProfileRequest request,
+                CmsDbContext db) =>
+            {
+                var appUserIdClaim = claims.FindFirstValue(ClaimTypes.NameIdentifier);
+
+                if (!int.TryParse(appUserIdClaim, out var appUserId))
+                    return Results.Unauthorized();
+
+                if (string.IsNullOrWhiteSpace(request.FirstName))
+                    return Results.BadRequest(new { message = "First name is required." });
+
+                if (string.IsNullOrWhiteSpace(request.LastName))
+                    return Results.BadRequest(new { message = "Last name is required." });
+
+                var user = await db.AppUsers
+                    .Include(x => x.CustomerProfile)
+                    .FirstOrDefaultAsync(x => x.Id == appUserId && x.Role == UserRole.Customer);
+
+                if (user is null || user.CustomerProfile is null)
+                    return Results.NotFound(new { message = "Customer profile was not found." });
+
+                user.FirstName = request.FirstName.Trim();
+                user.LastName = request.LastName.Trim();
+                user.CustomerProfile.MobileNumber = request.MobileNumber?.Trim() ?? string.Empty;
+                user.UpdatedAtUtc = DateTime.UtcNow;
+                user.CustomerProfile.UpdatedAtUtc = DateTime.UtcNow;
+
+                await db.SaveChangesAsync();
+
+                var response = new CustomerMeResponse
+                {
+                    AppUserId = user.Id,
+                    CustomerProfileId = user.CustomerProfile.Id,
+                    UserName = user.UserName,
+                    Email = user.Email,
+                    FirstName = user.FirstName,
+                    LastName = user.LastName,
+                    FullName = $"{user.FirstName} {user.LastName}".Trim(),
+                    MobileNumber = user.CustomerProfile.MobileNumber
+                };
+
+                return Results.Ok(response);
+            }).RequireAuthorization();
+
+
+            //GET list of customer addresses for current authenticated customer
+            app.MapGet("/api/customer/profile/addresses", async (
+                ClaimsPrincipal claims,
+                CmsDbContext db) =>
+            {
+                var appUserIdClaim = claims.FindFirstValue(ClaimTypes.NameIdentifier);
+
+                if (!int.TryParse(appUserIdClaim, out var appUserId))
+                    return Results.Unauthorized();
+
+                var customerProfileId = await db.CustomerProfiles
+                    .Where(x => x.AppUserId == appUserId)
+                    .Select(x => (int?)x.Id)
+                    .FirstOrDefaultAsync();
+
+                if (!customerProfileId.HasValue)
+                    return Results.NotFound(new { message = "Customer profile was not found." });
+
+                var addresses = await db.Addresses
+                    .AsNoTracking()
+                    .Where(x => x.CustomerProfileId == customerProfileId.Value)
+                    .OrderByDescending(x => x.IsDefault)
+                    .ThenByDescending(x => x.Id)
+                    .Select(x => new CustomerAddressDto
+                    {
+                        Id = x.Id,
+                        StreetAddress = x.StreetAddress,
+                        City = x.City,
+                        Barangay = x.Barangay,
+                        Landmark = x.Landmark,
+                        Latitude = x.Latitude,
+                        Longitude = x.Longitude,
+                        IsDefault = x.IsDefault
+                    })
+                    .ToListAsync();
+
+                return Results.Ok(addresses);
+            }).RequireAuthorization();
+
+
+            //POST add a new customer address for current authenticated customer
+            app.MapPost("/api/customer/profile/addresses", async (
+                ClaimsPrincipal claims,
+                SaveCustomerAddressRequest request,
+                CmsDbContext db) =>
+            {
+                var appUserIdClaim = claims.FindFirstValue(ClaimTypes.NameIdentifier);
+
+                if (!int.TryParse(appUserIdClaim, out var appUserId))
+                    return Results.Unauthorized();
+
+                var customerProfileId = await db.CustomerProfiles
+                    .Where(x => x.AppUserId == appUserId)
+                    .Select(x => (int?)x.Id)
+                    .FirstOrDefaultAsync();
+
+                if (!customerProfileId.HasValue)
+                    return Results.NotFound(new { message = "Customer profile was not found." });
+
+                if (string.IsNullOrWhiteSpace(request.StreetAddress))
+                    return Results.BadRequest(new { message = "Street address is required." });
+
+                if (string.IsNullOrWhiteSpace(request.City))
+                    return Results.BadRequest(new { message = "City is required." });
+
+                if (string.IsNullOrWhiteSpace(request.Barangay))
+                    return Results.BadRequest(new { message = "Barangay is required." });
+
+                if (request.IsDefault)
+                {
+                    var existingDefaults = await db.Addresses
+                        .Where(x => x.CustomerProfileId == customerProfileId.Value && x.IsDefault)
+                        .ToListAsync();
+
+                    foreach (var item in existingDefaults)
+                    {
+                        item.IsDefault = false;
+                    }
+                }
+
+                var address = new Address
+                {
+                    CustomerProfileId = customerProfileId.Value,
+                    StreetAddress = request.StreetAddress.Trim(),
+                    City = request.City.Trim(),
+                    Barangay = request.Barangay.Trim(),
+                    Landmark = request.Landmark?.Trim() ?? string.Empty,
+                    Latitude = request.Latitude,
+                    Longitude = request.Longitude,
+                    IsDefault = request.IsDefault
+                };
+
+                db.Addresses.Add(address);
+                await db.SaveChangesAsync();
+
+                return Results.Ok(new CustomerAddressDto
+                {
+                    Id = address.Id,
+                    StreetAddress = address.StreetAddress,
+                    City = address.City,
+                    Barangay = address.Barangay,
+                    Landmark = address.Landmark,
+                    Latitude = address.Latitude,
+                    Longitude = address.Longitude,
+                    IsDefault = address.IsDefault
+                });
+            }).RequireAuthorization();
+
+
+            //PUT update an existing customer address by id for current authenticated customer
+            app.MapPut("/api/customer/profile/addresses/{id:int}", async (
+                int id,
+                ClaimsPrincipal claims,
+                SaveCustomerAddressRequest request,
+                CmsDbContext db) =>
+            {
+                var appUserIdClaim = claims.FindFirstValue(ClaimTypes.NameIdentifier);
+
+                if (!int.TryParse(appUserIdClaim, out var appUserId))
+                    return Results.Unauthorized();
+
+                var customerProfileId = await db.CustomerProfiles
+                    .Where(x => x.AppUserId == appUserId)
+                    .Select(x => (int?)x.Id)
+                    .FirstOrDefaultAsync();
+
+                if (!customerProfileId.HasValue)
+                    return Results.NotFound(new { message = "Customer profile was not found." });
+
+                var address = await db.Addresses
+                    .FirstOrDefaultAsync(x => x.Id == id && x.CustomerProfileId == customerProfileId.Value);
+
+                if (address is null)
+                    return Results.NotFound(new { message = $"Address with id {id} was not found." });
+
+                if (string.IsNullOrWhiteSpace(request.StreetAddress))
+                    return Results.BadRequest(new { message = "Street address is required." });
+
+                if (string.IsNullOrWhiteSpace(request.City))
+                    return Results.BadRequest(new { message = "City is required." });
+
+                if (string.IsNullOrWhiteSpace(request.Barangay))
+                    return Results.BadRequest(new { message = "Barangay is required." });
+
+                if (request.IsDefault)
+                {
+                    var existingDefaults = await db.Addresses
+                        .Where(x => x.CustomerProfileId == customerProfileId.Value && x.IsDefault && x.Id != id)
+                        .ToListAsync();
+
+                    foreach (var item in existingDefaults)
+                    {
+                        item.IsDefault = false;
+                    }
+                }
+
+                address.StreetAddress = request.StreetAddress.Trim();
+                address.City = request.City.Trim();
+                address.Barangay = request.Barangay.Trim();
+                address.Landmark = request.Landmark?.Trim() ?? string.Empty;
+                address.Latitude = request.Latitude;
+                address.Longitude = request.Longitude;
+                address.IsDefault = request.IsDefault;
+                address.UpdatedAtUtc = DateTime.UtcNow;
+
+                await db.SaveChangesAsync();
+
+                return Results.Ok(new CustomerAddressDto
+                {
+                    Id = address.Id,
+                    StreetAddress = address.StreetAddress,
+                    City = address.City,
+                    Barangay = address.Barangay,
+                    Landmark = address.Landmark,
+                    Latitude = address.Latitude,
+                    Longitude = address.Longitude,
+                    IsDefault = address.IsDefault
+                });
+            }).RequireAuthorization();
+
+
+            //PUT set an existing customer address as default by id for current authenticated customer
+            app.MapPut("/api/customer/profile/addresses/{id:int}/default", async (
+                int id,
+                ClaimsPrincipal claims,
+                CmsDbContext db) =>
+            {
+                var appUserIdClaim = claims.FindFirstValue(ClaimTypes.NameIdentifier);
+
+                if (!int.TryParse(appUserIdClaim, out var appUserId))
+                    return Results.Unauthorized();
+
+                var customerProfileId = await db.CustomerProfiles
+                    .Where(x => x.AppUserId == appUserId)
+                    .Select(x => (int?)x.Id)
+                    .FirstOrDefaultAsync();
+
+                if (!customerProfileId.HasValue)
+                    return Results.NotFound(new { message = "Customer profile was not found." });
+
+                var addresses = await db.Addresses
+                    .Where(x => x.CustomerProfileId == customerProfileId.Value)
+                    .ToListAsync();
+
+                var target = addresses.FirstOrDefault(x => x.Id == id);
+                if (target is null)
+                    return Results.NotFound(new { message = $"Address with id {id} was not found." });
+
+                foreach (var address in addresses)
+                {
+                    address.IsDefault = address.Id == id;
+                    address.UpdatedAtUtc = DateTime.UtcNow;
+                }
+
+                await db.SaveChangesAsync();
+
+                return Results.Ok(new { message = "Default address updated." });
+            }).RequireAuthorization();
+
+
+            //DELETE remove an existing customer address by id for current authenticated customer
+            app.MapDelete("/api/customer/profile/addresses/{id:int}", async (
+                int id,
+                ClaimsPrincipal claims,
+                CmsDbContext db) =>
+            {
+                var appUserIdClaim = claims.FindFirstValue(ClaimTypes.NameIdentifier);
+
+                if (!int.TryParse(appUserIdClaim, out var appUserId))
+                    return Results.Unauthorized();
+
+                var customerProfileId = await db.CustomerProfiles
+                    .Where(x => x.AppUserId == appUserId)
+                    .Select(x => (int?)x.Id)
+                    .FirstOrDefaultAsync();
+
+                if (!customerProfileId.HasValue)
+                    return Results.NotFound(new { message = "Customer profile was not found." });
+
+                var address = await db.Addresses
+                    .FirstOrDefaultAsync(x => x.Id == id && x.CustomerProfileId == customerProfileId.Value);
+
+                if (address is null)
+                    return Results.NotFound(new { message = $"Address with id {id} was not found." });
+
+                var wasDefault = address.IsDefault;
+
+                db.Addresses.Remove(address);
+                await db.SaveChangesAsync();
+
+                if (wasDefault)
+                {
+                    var replacement = await db.Addresses
+                        .Where(x => x.CustomerProfileId == customerProfileId.Value)
+                        .OrderByDescending(x => x.Id)
+                        .FirstOrDefaultAsync();
+
+                    if (replacement is not null)
+                    {
+                        replacement.IsDefault = true;
+                        replacement.UpdatedAtUtc = DateTime.UtcNow;
+                        await db.SaveChangesAsync();
+                    }
+                }
+
+                return Results.Ok(new { message = "Address deleted." });
+            }).RequireAuthorization();
+
+
+            //GET list of orders for current authenticated customer
+            app.MapGet("/api/customer/orders/my", async (
+                ClaimsPrincipal claims,
+                CmsDbContext db) =>
+            {
+                var appUserIdClaim = claims.FindFirstValue(ClaimTypes.NameIdentifier);
+
+                if (!int.TryParse(appUserIdClaim, out var appUserId))
+                    return Results.Unauthorized();
+
+                var customerProfileId = await db.CustomerProfiles
+                    .Where(x => x.AppUserId == appUserId)
+                    .Select(x => (int?)x.Id)
+                    .FirstOrDefaultAsync();
+
+                if (!customerProfileId.HasValue)
+                    return Results.NotFound(new { message = "Customer profile was not found." });
+
+                var orders = await db.Orders
+                    .AsNoTracking()
+                    .Where(x => x.CustomerProfileId == customerProfileId.Value)
+                    .Include(x => x.Items)
+                    .OrderByDescending(x => x.OrderedAtUtc)
+                    .Select(x => new CustomerOrderListItemDto
+                    {
+                        Id = x.Id,
+                        OrderNumber = x.OrderNumber,
+                        OrderedAtUtc = x.OrderedAtUtc,
+                        DeliveryDate = x.DeliveryDate,
+                        DeliveryTimeSlot = x.DeliveryTimeSlot,
+                        Status = x.Status.ToString(),
+                        PaymentStatus = x.PaymentStatus.ToString(),
+                        GrandTotal = x.GrandTotal,
+                        ItemCount = x.Items.Count
+                    })
+                    .ToListAsync();
+
+                return Results.Ok(orders);
+            }).RequireAuthorization();
+
+
+            //================================= ADMIN ENDPOINTS ================================= //
 
             //GET dashboard stats
             app.MapGet("/api/admin/dashboard/stats", async (CmsDbContext db) =>
@@ -2239,6 +2980,85 @@ namespace CMS.Server
         {
             itemType = value;
             return true;
+        }
+
+        private static AuthResponse CreateCustomerAuthResponse(
+            AppUser user,
+            CustomerProfile profile,
+            JwtOptions jwtOptions)
+        {
+            var expiresAtUtc = DateTime.UtcNow.AddMinutes(jwtOptions.ExpiryMinutes);
+
+            var claims = new List<Claim>
+        {
+            new(ClaimTypes.NameIdentifier, user.Id.ToString()),
+            new(ClaimTypes.Name, user.UserName),
+            new(ClaimTypes.Email, user.Email),
+            new(ClaimTypes.Role, user.Role.ToString()),
+            new("customer_profile_id", profile.Id.ToString())
+        };
+
+            var key = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(jwtOptions.Key));
+            var credentials = new SigningCredentials(key, SecurityAlgorithms.HmacSha256);
+
+            var token = new JwtSecurityToken(
+                issuer: jwtOptions.Issuer,
+                audience: jwtOptions.Audience,
+                claims: claims,
+                expires: expiresAtUtc,
+                signingCredentials: credentials);
+
+            var tokenValue = new JwtSecurityTokenHandler().WriteToken(token);
+
+            return new AuthResponse
+            {
+                Token = tokenValue,
+                ExpiresAtUtc = expiresAtUtc,
+                AppUserId = user.Id,
+                CustomerProfileId = profile.Id,
+                UserName = user.UserName,
+                Email = user.Email,
+                FullName = $"{user.FirstName} {user.LastName}".Trim(),
+                Role = user.Role.ToString()
+            };
+        }
+
+        private static bool IsValidEmail(string email)
+        {
+            if (string.IsNullOrWhiteSpace(email))
+                return false;
+
+            try
+            {
+                var addr = new MailAddress(email);
+                return addr.Address == email;
+            }
+            catch
+            {
+                return false;
+            }
+        }
+
+        private static bool IsValidUsername(string userName)
+        {
+            if (string.IsNullOrWhiteSpace(userName))
+                return false;
+
+            return Regex.IsMatch(userName, @"^[a-zA-Z0-9._]{4,20}$");
+        }
+
+        private static bool IsStrongPassword(string password)
+        {
+            if (string.IsNullOrWhiteSpace(password))
+                return false;
+
+            return Regex.IsMatch(password,
+                @"^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[^A-Za-z\d]).{8,}$");
+        }
+
+        private static string GenerateVerificationCode()
+        {
+            return Random.Shared.Next(100000, 999999).ToString();
         }
     }
 

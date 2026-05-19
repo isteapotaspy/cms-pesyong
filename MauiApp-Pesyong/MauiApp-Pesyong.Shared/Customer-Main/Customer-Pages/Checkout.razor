@@ -5,6 +5,8 @@
 @inject CustomerDrawerState DrawerState
 @inject NavigationManager NavManager
 @inject ICustomerOrderService OrderService
+@inject ICustomerAuthService AuthService
+@inject CustomerSession Session
 
 <MudContainer MaxWidth="MaxWidth.False" Class="customer-page">
     <TopBar />
@@ -64,6 +66,39 @@
                         <MudText Typo="Typo.h6">Delivery Details</MudText>
                     </div>
 
+                    @if (SavedAddresses.Count > 0)
+                    {
+                        <MudItem xs="12">
+                            <MudSelect T="int?"
+                                       Label="Saved Address"
+                                       Variant="Variant.Outlined"
+                                       Value="_selectedSavedAddressId"
+                                       ValueChanged="OnSavedAddressChanged">
+                                @foreach (var address in SavedAddresses)
+                                {
+                                    <MudSelectItem T="int?" Value="@address.Id">
+                                        @(address.IsDefault ? $"[Default] {address.Summary}" : address.Summary)
+                                    </MudSelectItem>
+                                }
+                            </MudSelect>
+
+                            <MudButton Variant="Variant.Text"
+                                       Class="mt-2"
+                                       OnClick="@(() => NavManager.NavigateTo("/saved-addresses"))">
+                                Manage saved addresses
+                            </MudButton>
+                        </MudItem>
+                    }
+                    else
+                    {
+                        <MudItem xs="12">
+                            <MudButton Variant="Variant.Text"
+                                       OnClick="@(() => NavManager.NavigateTo("/saved-addresses"))">
+                                Add a saved address
+                            </MudButton>
+                        </MudItem>
+                    }
+                        
                     <MudGrid Spacing="2">
                         <MudItem xs="12">
                             <MudTextField T="string"
@@ -225,12 +260,6 @@
                         <MudText Typo="Typo.h5">@ToPeso(Vm.GrandTotal)</MudText>
                     </div>
 
-                    @if (HasMealItems)
-                    {
-                        <MudAlert Severity="Severity.Warning" Variant="Variant.Outlined" Class="mb-4">
-                            Short-order meal checkout is not connected yet. Please remove meal items from the cart before placing this order.
-                        </MudAlert>
-                    }
 
                     <MudButton Variant="Variant.Filled"
                                Color="Color.Primary"
@@ -266,9 +295,32 @@
     private bool _isPlacingOrder;
     private string? _errorMessage;
 
-    protected override void OnInitialized()
+    private List<CustomerAddressVm> SavedAddresses = new();
+    private int? _selectedSavedAddressId;
+
+    protected override async Task OnInitializedAsync()
     {
         Vm = CheckoutVm.FromCart(DrawerState.CartItems);
+
+        var restored = await AuthService.TryRestoreSessionAsync();
+
+        if (!restored || !Session.IsAuthenticated || Session.Profile is null)
+        {
+            NavManager.NavigateTo("/customer-login?returnUrl=%2Fcheckout", true);
+            return;
+        }
+
+        Vm.ApplyCustomerProfile(Session.Profile);
+
+        var addresses = await AuthService.GetSavedAddressesAsync();
+        SavedAddresses = addresses.Select(CustomerAddressVm.FromDto).ToList();
+
+        var defaultAddress = SavedAddresses.FirstOrDefault(x => x.IsDefault) ?? SavedAddresses.FirstOrDefault();
+        if (defaultAddress is not null)
+        {
+            _selectedSavedAddressId = defaultAddress.Id;
+            ApplySavedAddress(defaultAddress);
+        }
     }
 
     private async Task PlaceOrderAsync()
@@ -283,7 +335,7 @@
             DrawerState.SetPlacedOrder(response);
             DrawerState.ClearCartAfterCheckout();
 
-            NavManager.NavigateTo("/tracking");
+            NavManager.NavigateTo($"/tracking?orderId={response.OrderId}");
         }
         catch (Exception ex)
         {
@@ -302,6 +354,32 @@
         return Task.CompletedTask;
     }
 
+    private Task OnSavedAddressChanged(int? addressId)
+    {
+        _selectedSavedAddressId = addressId;
+
+        var selected = SavedAddresses.FirstOrDefault(x => x.Id == addressId);
+        if (selected is not null)
+        {
+            ApplySavedAddress(selected);
+        }
+
+        StateHasChanged();
+        return Task.CompletedTask;
+    }
+
+    private void ApplySavedAddress(CustomerAddressVm address)
+    {
+        Vm.DeliveryAddress.StreetAddress = address.StreetAddress;
+        Vm.DeliveryAddress.City = address.City;
+        Vm.DeliveryAddress.Barangay = address.Barangay;
+        Vm.DeliveryAddress.Landmark = address.Landmark;
+        Vm.DeliveryAddress.Latitude = address.Latitude;
+        Vm.DeliveryAddress.Longitude = address.Longitude;
+    }
+
     private static string ToPeso(decimal amount) => $"₱{amount:N0}";
-    private bool HasMealItems => Vm.Items.Any(x => x.IsMealItem);
+
+    [SupplyParameterFromQuery]
+    public string? ReturnUrl { get; set; }
 }

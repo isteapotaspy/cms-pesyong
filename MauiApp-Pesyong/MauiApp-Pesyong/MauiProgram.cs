@@ -1,3 +1,4 @@
+using MauiApp_Pesyong.Services;
 using MauiApp_Pesyong.Shared.Admin_Main.Admin_Services;
 using MauiApp_Pesyong.Shared.Customer_Main.Customer_Services;
 using MauiApp_Pesyong.Shared.Customer_Main.Customer_Vms;
@@ -42,6 +43,31 @@ public static class MauiProgram
 
         builder.Services.AddScoped<ICustomerCatalogService>(sp => sp.GetRequiredService<CustomerApiClient>());
         builder.Services.AddScoped<ICustomerOrderService>(sp => sp.GetRequiredService<CustomerApiClient>());
+
+        builder.Services.AddScoped<ICustomerTokenStore, MauiCustomerTokenStore>();
+        builder.Services.AddScoped<CustomerSession>();
+        builder.Services.AddScoped<CustomerAuthHeaderHandler>();
+
+        builder.Services.AddHttpClient<ICustomerAuthService, CustomerAuthService>(client =>
+        {
+            client.BaseAddress = new Uri("http://localhost:5010/");
+        })
+        .AddHttpMessageHandler<CustomerAuthHeaderHandler>();
+
+        builder.Services.AddHttpClient<ICustomerCatalogService, CustomerApiClient>(client =>
+        {
+            client.BaseAddress = new Uri("http://localhost:5010/");
+        })
+        .AddHttpMessageHandler<CustomerAuthHeaderHandler>();
+
+        builder.Services.AddHttpClient<ICustomerOrderService, CustomerApiClient>(client =>
+        {
+            client.BaseAddress = new Uri("http://localhost:5010/");
+        })
+        .AddHttpMessageHandler<CustomerAuthHeaderHandler>();
+
+        //if testing in android emulator
+        // change new Uri -> new Uri("http://10.0.2.2:5010/")
 
 #if DEBUG
         builder.Services.AddBlazorWebViewDeveloperTools();

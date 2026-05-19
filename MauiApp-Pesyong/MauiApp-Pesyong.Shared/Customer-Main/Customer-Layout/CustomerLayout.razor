@@ -2,6 +2,8 @@
 @implements IDisposable
 @using MauiApp_Pesyong.Shared.Customer_Main.Customer_Theme
 @inject CustomerDrawerState DrawerState
+@inject ICustomerAuthService AuthService
+@inject CustomerSession Session
 
 <MudThemeProvider Theme="@CustomerTheme.Default" />
 <MudPopoverProvider />
@@ -38,5 +40,10 @@
     public void Dispose()
     {
         DrawerState.OnChange -= HandleDrawerStateChanged;
+    }
+
+    protected override async Task OnInitializedAsync()
+    {
+        await AuthService.TryRestoreSessionAsync();
     }
 }

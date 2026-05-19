@@ -34,6 +34,7 @@ public class PackageSizeUiModel
     public string Subtitle { get; set; } = string.Empty;
     public int PaxCount { get; set; }
     public decimal Price { get; set; }
+    public List<PackageSelectionRuleUiModel> SelectionRules { get; set; } = new();
 }
 
 public class AddonUiModel

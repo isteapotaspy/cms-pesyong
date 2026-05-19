@@ -1,5 +1,4 @@
-﻿using CMS.Domain.Entities;
-using CMS.Domain.Entities.Packages;
+﻿using CMS.Domain.Entities.Packages;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
 
@@ -26,6 +25,11 @@ public class PackageSizeConfiguration : IEntityTypeConfiguration<PackageSize>
         builder.HasOne(x => x.Package)
             .WithMany(x => x.Sizes)
             .HasForeignKey(x => x.PackageId)
+            .OnDelete(DeleteBehavior.Cascade);
+
+        builder.HasMany(x => x.SelectionRules)
+            .WithOne(x => x.PackageSize)
+            .HasForeignKey(x => x.PackageSizeId)
             .OnDelete(DeleteBehavior.Cascade);
     }
 }
