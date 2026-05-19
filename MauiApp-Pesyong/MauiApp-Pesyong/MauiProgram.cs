@@ -24,6 +24,8 @@ public static class MauiProgram
 
         const string apiBaseUrl = "http://localhost:5010/";
         // Android emulator: http://10.0.2.2:5010/
+        // Windows: http://localhost:5010/
+        // LAN: http://192.168.100.246:5010/
 
         builder.Services.AddMauiBlazorWebView();
         builder.Services.AddMudServices();

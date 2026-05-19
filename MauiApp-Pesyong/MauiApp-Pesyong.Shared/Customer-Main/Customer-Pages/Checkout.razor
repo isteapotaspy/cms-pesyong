@@ -477,7 +477,9 @@
                 return;
             }
 
-            var result = await OrderService.ValidatePromoAsync(Vm.PromoCode, Vm.SubTotal);
+            var result = await OrderService.ValidatePromoAsync(
+                Vm.PromoCode,
+                Vm.SubTotal);
 
             if (result is null)
             {
@@ -488,10 +490,10 @@
 
             Vm.DiscountAmount = result.DiscountAmount;
             Snackbar.Add($"{result.Code} applied successfully.", Severity.Success);
-            StateHasChanged();
         }
         catch (Exception ex)
         {
+            Vm.DiscountAmount = 0m;
             Snackbar.Add(ex.Message, Severity.Error);
         }
     }

@@ -4,11 +4,13 @@ using CMS.Contracts.Customer.Orders;
 using CMS.Contracts.Customer.Promos;
 using MauiApp_Pesyong.Shared.Customer_Main.Customer_Models;
 using MauiApp_Pesyong.Shared.Customer_Main.Customer_Vms;
+using System.Globalization;
 using System.Net;
 using System.Net.Http.Headers;
 using System.Net.Http.Json;
 using System.Text.Json;
 using System.Web;
+using static System.Net.WebRequestMethods;
 
 namespace MauiApp_Pesyong.Shared.Customer_Main.Customer_Services;
 
@@ -247,26 +249,51 @@ public sealed class CustomerApiClient : ICustomerCatalogService, ICustomerOrderS
     decimal subTotal,
     CancellationToken cancellationToken = default)
     {
-        var url = $"api/customer/promos/validate?code={Uri.EscapeDataString(code)}&subTotal={subTotal}";
+        if (string.IsNullOrWhiteSpace(code))
+            return null;
+
+        var url =
+            $"api/customer/promos/validate?code={Uri.EscapeDataString(code)}&subTotal={subTotal}";
+
         using var response = await _http.GetAsync(url, cancellationToken);
 
-        if (response.StatusCode == System.Net.HttpStatusCode.NotFound)
+        if (response.StatusCode == HttpStatusCode.NotFound)
             return null;
 
         if (!response.IsSuccessStatusCode)
-            throw new InvalidOperationException(await ReadErrorMessageAsync(response));
+        {
+            var body = await response.Content.ReadAsStringAsync(cancellationToken);
 
-        return await response.Content.ReadFromJsonAsync<PromoValidationResponse>(cancellationToken: cancellationToken);
+            throw new InvalidOperationException(
+                $"Promo validation failed. Status: {(int)response.StatusCode} {response.ReasonPhrase}. Body: {body}");
+        }
+
+        return await response.Content.ReadFromJsonAsync<PromoValidationResponse>(
+            cancellationToken);
     }
-
-    public async Task<IReadOnlyList<ActivePromoDto>> GetActivePromosAsync(CancellationToken cancellationToken = default)
+    public async Task<IReadOnlyList<ActivePromoDto>> GetActivePromosAsync(
+    CancellationToken cancellationToken = default)
     {
-        using var response = await _http.GetAsync("api/customer/promos/active", cancellationToken);
+        using var response = await _http.GetAsync(
+            "api/customer/promos/active",
+            cancellationToken);
+
+        if (response.StatusCode == HttpStatusCode.NotFound)
+        {
+            return new List<ActivePromoDto>();
+        }
 
         if (!response.IsSuccessStatusCode)
-            throw new InvalidOperationException(await ReadErrorMessageAsync(response));
+        {
+            var body = await response.Content.ReadAsStringAsync(cancellationToken);
 
-        var items = await response.Content.ReadFromJsonAsync<List<ActivePromoDto>>(cancellationToken: cancellationToken);
+            throw new InvalidOperationException(
+                $"Loading active promos failed. Status: {(int)response.StatusCode} {response.ReasonPhrase}. Body: {body}");
+        }
+
+        var items = await response.Content.ReadFromJsonAsync<List<ActivePromoDto>>(
+            cancellationToken: cancellationToken);
+
         return items ?? new List<ActivePromoDto>();
     }
 
@@ -299,5 +326,45 @@ public sealed class CustomerApiClient : ICustomerCatalogService, ICustomerOrderS
             return null;
 
         return DeserializeMealArray(property);
+    }
+
+    private static async Task<string> ReadErrorMessageAsync(
+    HttpResponseMessage response,
+    CancellationToken cancellationToken = default)
+    {
+        var body = await response.Content.ReadAsStringAsync(cancellationToken);
+
+        if (string.IsNullOrWhiteSpace(body))
+        {
+            return $"Request failed with status code {(int)response.StatusCode} ({response.StatusCode}).";
+        }
+
+        // If ASP.NET returns ProblemDetails JSON
+        try
+        {
+            using var document = JsonDocument.Parse(body);
+            var root = document.RootElement;
+
+            if (root.TryGetProperty("message", out var message))
+                return message.GetString() ?? "Request failed.";
+
+            if (root.TryGetProperty("title", out var title))
+                return title.GetString() ?? "Request failed.";
+
+            if (root.TryGetProperty("detail", out var detail))
+                return detail.GetString() ?? "Request failed.";
+        }
+        catch
+        {
+            // Body is probably plain text or HTML, not JSON.
+        }
+
+        
+        if (body.TrimStart().StartsWith("<"))
+        {
+            return $"Server error: {(int)response.StatusCode} ({response.StatusCode}). Check the ASP.NET backend console/output window.";
+        }
+
+        return body;
     }
 }

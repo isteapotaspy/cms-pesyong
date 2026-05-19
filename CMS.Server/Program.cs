@@ -1617,51 +1617,6 @@ namespace CMS.Server
                 return Results.Ok(promos);
             });
 
-            app.MapGet("/api/customer/promos/validate", async (string code, decimal subTotal, CmsDbContext db) =>
-            {
-                if (string.IsNullOrWhiteSpace(code))
-                {
-                    return Results.BadRequest(new { message = "Promo code is required." });
-                }
-
-                var now = DateTime.UtcNow;
-
-                var promo = await db.Set<Promo>()
-                    .AsNoTracking()
-                    .FirstOrDefaultAsync(x =>
-                        x.Code == code &&
-                        now >= x.ValidFromUtc &&
-                        now <= x.ValidUntilUtc &&
-                        (!x.UsageLimit.HasValue || x.UsedCount < x.UsageLimit.Value));
-
-                if (promo is null)
-                {
-                    return Results.NotFound(new { message = "Promo code is invalid or expired." });
-                }
-
-                if (promo.MinimumOrderAmount.HasValue && subTotal < promo.MinimumOrderAmount.Value)
-                {
-                    return Results.BadRequest(new
-                    {
-                        message = $"This promo requires a minimum subtotal of ₱{promo.MinimumOrderAmount.Value:N0}."
-                    });
-                }
-
-                var discountAmount = Math.Round(subTotal * (promo.DiscountPercentageValue / 100m), 2);
-                var taxAmount = Math.Round(subTotal * 0.12m, 2);
-                var newGrandTotal = subTotal + taxAmount - discountAmount;
-
-                return Results.Ok(new PromoValidationResponse
-                {
-                    Code = promo.Code,
-                    Description = promo.Description,
-                    DiscountPercentageValue = promo.DiscountPercentageValue,
-                    DiscountAmount = discountAmount,
-                    SubTotal = subTotal,
-                    NewGrandTotal = newGrandTotal
-                });
-            });
-
             //GET validate a promo code with given subtotal and return discount details if valid
             app.MapGet("/api/customer/promos/validate", async (string code, decimal subTotal, CmsDbContext db) =>
             {

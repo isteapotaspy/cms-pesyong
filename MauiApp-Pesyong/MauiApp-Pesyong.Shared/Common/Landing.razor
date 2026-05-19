@@ -1,127 +1,612 @@
 ﻿@page "/"
 @inject NavigationManager NavManager
 
-<MudContainer MaxWidth="MaxWidth.False" Class="portal-page">
-    <div class="portal-bg-orb orb-one"></div>
-    <div class="portal-bg-orb orb-two"></div>
+<MudContainer MaxWidth="MaxWidth.False" Class="landing-page">
+    <div class="landing-glow glow-one"></div>
+    <div class="landing-glow glow-two"></div>
+    <div class="landing-pattern"></div>
 
-    <div class="portal-shell">
-        <MudPaper Class="portal-card" Elevation="0">
-            <div class="portal-header">
-                <div class="portal-brand">
-                    <div class="portal-brand-icon">
-                        <MudIcon Icon="@Icons.Material.Filled.Restaurant" />
+    <section class="landing-shell">
+        <div class="hero-grid">
+            <div class="hero-copy">
+                <div class="brand-pill">
+                    <MudIcon Icon="@Icons.Material.Filled.Restaurant" />
+                    <span>Pesyong Catering</span>
+                </div>
+
+                <MudText Typo="Typo.h2" Class="hero-title">
+                    Authentic Filipino food, made easy for every celebration.
+                </MudText>
+
+                <MudText Typo="Typo.body1" Class="hero-subtitle">
+                    Welcome to Pesyong — your convenient place to explore catering packages,
+                    short orders, kakanin favorites, and delicious meals prepared for your
+                    family gatherings, office events, and special occasions.
+                </MudText>
+
+                <div class="hero-actions">
+                    <MudButton Variant="Variant.Filled"
+                               Color="Color.Primary"
+                               Size="Size.Large"
+                               Class="primary-cta"
+                               EndIcon="@Icons.Material.Filled.ArrowForward"
+                               OnClick="@GoToCustomerLogin">
+                        Login to Pesyong
+                    </MudButton>
+
+                    <MudText Typo="Typo.caption" Class="login-note">
+                        Login to browse the menu, place orders, and track your requests.
+                    </MudText>
+                </div>
+
+                <div class="trust-row">
+                    <div class="trust-item">
+                        <MudIcon Icon="@Icons.Material.Filled.Verified" />
+                        <span>Freshly prepared</span>
                     </div>
 
-                    <div class="portal-brand-copy">
-                        <MudText Typo="Typo.overline" Class="portal-eyebrow">
-                            PESYONG CATERING MANAGEMENT SYSTEM
-                        </MudText>
+                    <div class="trust-item">
+                        <MudIcon Icon="@Icons.Material.Filled.DeliveryDining" />
+                        <span>Doorstep delivery</span>
+                    </div>
 
-                        <MudText Typo="Typo.h3" Class="portal-title">
-                            Welcome to Pesyong
-                        </MudText>
-
-                        <MudText Typo="Typo.body1" Class="portal-subtitle">
-                            Choose where you want to continue. Customers can browse packages and place orders, while admins can sign in to manage the system.
-                        </MudText>
+                    <div class="trust-item">
+                        <MudIcon Icon="@Icons.Material.Filled.EventAvailable" />
+                        <span>Event-ready packages</span>
                     </div>
                 </div>
             </div>
 
-            <div class="portal-grid">
-                <MudPaper Class="portal-option customer-option" Elevation="0">
-                    <div class="portal-option-top">
-                        <div class="portal-option-icon">
-                            <MudIcon Icon="@Icons.Material.Filled.Storefront" />
-                        </div>
+            <MudPaper Class="hero-card" Elevation="0">
+                <div class="hero-card-header">
+                    <MudChip T="string" Color="Color.Primary" Variant="Variant.Outlined" Size="Size.Small">
+                        Customer Portal
+                    </MudChip>
 
-                        <MudChip T="string" Color="Color.Primary" Variant="Variant.Outlined" Size="Size.Small">
-                            Public Access
-                        </MudChip>
+                    <div class="hero-card-icon">
+                        <MudIcon Icon="@Icons.Material.Filled.LocalDining" />
                     </div>
+                </div>
 
-                    <div class="portal-option-content">
-                        <MudText Typo="Typo.h5" Class="portal-option-title">Customer</MudText>
+                <MudText Typo="Typo.h4" Class="hero-card-title">
+                    Start your food journey with Pesyong.
+                </MudText>
 
-                        <MudText Typo="Typo.body2" Class="portal-option-copy">
-                            Browse catering packages, add items to cart, checkout, and track your order in the customer experience.
-                        </MudText>
+                <MudText Typo="Typo.body2" Class="hero-card-copy">
+                    Sign in to access the customer menu, check available packages,
+                    choose your favorites, and submit your order in a smoother way.
+                </MudText>
 
-                        <div class="portal-feature-list">
-                            <div class="portal-feature-item">
-                                <MudIcon Icon="@Icons.Material.Filled.CheckCircle" />
-                                <span>Browse menu packages</span>
-                            </div>
-
-                            <div class="portal-feature-item">
-                                <MudIcon Icon="@Icons.Material.Filled.CheckCircle" />
-                                <span>Add to cart and checkout</span>
-                            </div>
-
-                            <div class="portal-feature-item">
-                                <MudIcon Icon="@Icons.Material.Filled.CheckCircle" />
-                                <span>Track orders in real time</span>
-                            </div>
+                <div class="feature-list">
+                    <div class="feature-item">
+                        <div class="feature-icon">
+                            <MudIcon Icon="@Icons.Material.Filled.RestaurantMenu" />
+                        </div>
+                        <div>
+                            <MudText Typo="Typo.subtitle2">Explore the menu</MudText>
+                            <MudText Typo="Typo.caption">View catering, kakanin, and short orders.</MudText>
                         </div>
                     </div>
 
-                    <MudButton Variant="Variant.Filled"
-                               Color="Color.Primary"
-                               Size="Size.Large"
-                               FullWidth="true"
-                               Class="portal-btn"
-                               OnClick="@(() => NavManager.NavigateTo("/customer-login"))">
-                        Go to Customer Page
-                    </MudButton>
-                </MudPaper>
-
-                <MudPaper Class="portal-option admin-option" Elevation="0">
-                    <div class="portal-option-top">
-                        <div class="portal-option-icon admin">
-                            <MudIcon Icon="@Icons.Material.Filled.AdminPanelSettings" />
+                    <div class="feature-item">
+                        <div class="feature-icon">
+                            <MudIcon Icon="@Icons.Material.Filled.ShoppingCart" />
                         </div>
-
-                        <MudChip T="string" Color="Color.Secondary" Variant="Variant.Outlined" Size="Size.Small">
-                            Restricted Access
-                        </MudChip>
-                    </div>
-
-                    <div class="portal-option-content">
-                        <MudText Typo="Typo.h5" Class="portal-option-title">Admin</MudText>
-
-                        <MudText Typo="Typo.body2" Class="portal-option-copy">
-                            Sign in to manage packages, orders, dashboards, customer activity, and the rest of the admin-side operations.
-                        </MudText>
-
-                        <div class="portal-feature-list">
-                            <div class="portal-feature-item">
-                                <MudIcon Icon="@Icons.Material.Filled.CheckCircle" />
-                                <span>Manage packages and menu</span>
-                            </div>
-
-                            <div class="portal-feature-item">
-                                <MudIcon Icon="@Icons.Material.Filled.CheckCircle" />
-                                <span>Handle orders and reports</span>
-                            </div>
-
-                            <div class="portal-feature-item">
-                                <MudIcon Icon="@Icons.Material.Filled.CheckCircle" />
-                                <span>Access admin dashboard</span>
-                            </div>
+                        <div>
+                            <MudText Typo="Typo.subtitle2">Order with ease</MudText>
+                            <MudText Typo="Typo.caption">Add items, review details, and checkout.</MudText>
                         </div>
                     </div>
 
-                    <MudButton Variant="Variant.Outlined"
-                               Color="Color.Primary"
-                               Size="Size.Large"
-                               FullWidth="true"
-                               Class="portal-btn admin-btn"
-                               OnClick="@(() => NavManager.NavigateTo("/admin-login"))">
-                        Admin Login
-                    </MudButton>
-                </MudPaper>
-            </div>
-        </MudPaper>
-    </div>
+                    <div class="feature-item">
+                        <div class="feature-icon">
+                            <MudIcon Icon="@Icons.Material.Filled.ReceiptLong" />
+                        </div>
+                        <div>
+                            <MudText Typo="Typo.subtitle2">Track your request</MudText>
+                            <MudText Typo="Typo.caption">Stay updated after placing your order.</MudText>
+                        </div>
+                    </div>
+                </div>
+
+                <MudButton Variant="Variant.Filled"
+                           Color="Color.Primary"
+                           Size="Size.Large"
+                           FullWidth="true"
+                           Class="card-cta"
+                           OnClick="@GoToCustomerLogin">
+                    Continue to Login
+                </MudButton>
+            </MudPaper>
+        </div>
+
+        <div class="intro-section">
+            <MudPaper Class="intro-card" Elevation="0">
+                <MudIcon Icon="@Icons.Material.Filled.Celebration" />
+                <MudText Typo="Typo.h6">For celebrations</MudText>
+                <MudText Typo="Typo.body2">
+                    Perfect for birthdays, reunions, family gatherings, and meaningful occasions.
+                </MudText>
+            </MudPaper>
+
+            <MudPaper Class="intro-card" Elevation="0">
+                <MudIcon Icon="@Icons.Material.Filled.BusinessCenter" />
+                <MudText Typo="Typo.h6">For work events</MudText>
+                <MudText Typo="Typo.body2">
+                    Convenient meal options for meetings, office lunches, and corporate events.
+                </MudText>
+            </MudPaper>
+
+            <MudPaper Class="intro-card" Elevation="0">
+                <MudIcon Icon="@Icons.Material.Filled.Favorite" />
+                <MudText Typo="Typo.h6">For everyday cravings</MudText>
+                <MudText Typo="Typo.body2">
+                    Enjoy Filipino favorites made simple, warm, and close to home.
+                </MudText>
+            </MudPaper>
+        </div>
+    </section>
 </MudContainer>
+
+@code {
+    private void GoToCustomerLogin()
+    {
+        NavManager.NavigateTo("/customer-login");
+    }
+}
+
+<style>
+    .landing-page {
+        position: relative;
+        min-height: 100vh;
+        overflow: hidden;
+        padding: 48px 24px;
+        background: radial-gradient(circle at top left, rgba(255, 122, 69, 0.16), transparent 32rem), radial-gradient(circle at bottom right, rgba(108, 92, 231, 0.14), transparent 34rem), linear-gradient(135deg, #fff9f3 0%, #fffaf6 42%, #f8efe7 100%);
+    }
+
+    .landing-pattern {
+        position: absolute;
+        inset: 0;
+        opacity: 0.38;
+        background-image: linear-gradient(rgba(120, 74, 42, 0.06) 1px, transparent 1px), linear-gradient(90deg, rgba(120, 74, 42, 0.06) 1px, transparent 1px);
+        background-size: 42px 42px;
+        pointer-events: none;
+    }
+
+    .landing-glow {
+        position: absolute;
+        width: 360px;
+        height: 360px;
+        border-radius: 999px;
+        filter: blur(16px);
+        opacity: 0.45;
+        pointer-events: none;
+    }
+
+    .glow-one {
+        top: -140px;
+        right: 12%;
+        background: rgba(255, 128, 76, 0.28);
+    }
+
+    .glow-two {
+        bottom: -160px;
+        left: 8%;
+        background: rgba(255, 204, 128, 0.38);
+    }
+
+    .landing-shell {
+        position: relative;
+        z-index: 1;
+        width: min(1180px, 100%);
+        margin: 0 auto;
+    }
+
+    .hero-grid {
+        display: grid;
+        grid-template-columns: minmax(0, 1.05fr) minmax(360px, 0.75fr);
+        gap: 32px;
+        align-items: center;
+        min-height: calc(100vh - 180px);
+    }
+
+    .hero-copy {
+        padding: 24px 0;
+    }
+
+    .brand-pill {
+        display: inline-flex;
+        align-items: center;
+        gap: 10px;
+        padding: 10px 16px;
+        margin-bottom: 24px;
+        border: 1px solid rgba(137, 82, 43, 0.18);
+        border-radius: 999px;
+        background: rgba(255, 255, 255, 0.72);
+        color: #8a4d28;
+        font-weight: 700;
+        letter-spacing: 0.02em;
+        box-shadow: 0 12px 40px rgba(99, 58, 26, 0.08);
+        backdrop-filter: blur(12px);
+    }
+
+        .brand-pill .mud-icon-root {
+            font-size: 20px;
+            color: #e85d2a;
+        }
+
+    .hero-title {
+        max-width: 760px;
+        color: #24140d;
+        font-weight: 900;
+        line-height: 0.98;
+        letter-spacing: -0.055em;
+        margin-bottom: 22px;
+    }
+
+    .hero-subtitle {
+        max-width: 680px;
+        color: #6d5a4d;
+        font-size: 1.08rem;
+        line-height: 1.8;
+        margin-bottom: 32px;
+    }
+
+    .hero-actions {
+        display: flex;
+        align-items: center;
+        gap: 18px;
+        flex-wrap: wrap;
+        margin-bottom: 28px;
+    }
+
+    .primary-cta,
+    .card-cta {
+        min-height: 52px;
+        border-radius: 16px;
+        padding-inline: 26px;
+        font-weight: 800;
+        text-transform: none;
+        box-shadow: 0 18px 36px rgba(232, 93, 42, 0.28);
+    }
+
+    .login-note {
+        color: #7a675b;
+        max-width: 280px;
+        line-height: 1.5;
+    }
+
+    .trust-row {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 12px;
+    }
+
+    .trust-item {
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+        padding: 10px 14px;
+        border-radius: 999px;
+        background: rgba(255, 255, 255, 0.7);
+        border: 1px solid rgba(137, 82, 43, 0.13);
+        color: #5f493b;
+        font-size: 0.92rem;
+        font-weight: 650;
+    }
+
+        .trust-item .mud-icon-root {
+            color: #2e9d63;
+            font-size: 19px;
+        }
+
+    .hero-card {
+        position: relative;
+        padding: 28px;
+        border-radius: 32px;
+        background: linear-gradient(180deg, rgba(255, 255, 255, 0.94), rgba(255, 250, 245, 0.88));
+        border: 1px solid rgba(137, 82, 43, 0.16);
+        box-shadow: 0 28px 80px rgba(72, 42, 22, 0.16);
+        backdrop-filter: blur(18px);
+    }
+
+        .hero-card::before {
+            content: "";
+            position: absolute;
+            inset: 14px;
+            border-radius: 24px;
+            border: 1px solid rgba(232, 93, 42, 0.12);
+            pointer-events: none;
+        }
+
+    .hero-card-header {
+        position: relative;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 26px;
+    }
+
+    .hero-card-icon {
+        display: grid;
+        place-items: center;
+        width: 58px;
+        height: 58px;
+        border-radius: 20px;
+        background: linear-gradient(135deg, #ff794d, #d8491f);
+        color: white;
+        box-shadow: 0 14px 28px rgba(216, 73, 31, 0.25);
+    }
+
+        .hero-card-icon .mud-icon-root {
+            font-size: 30px;
+        }
+
+    .hero-card-title {
+        position: relative;
+        color: #2d1b12;
+        font-weight: 850;
+        line-height: 1.12;
+        letter-spacing: -0.035em;
+        margin-bottom: 12px;
+    }
+
+    .hero-card-copy {
+        position: relative;
+        color: #756256;
+        line-height: 1.7;
+        margin-bottom: 24px;
+    }
+
+    .feature-list {
+        position: relative;
+        display: grid;
+        gap: 14px;
+        margin-bottom: 26px;
+    }
+
+    .feature-item {
+        display: grid;
+        grid-template-columns: 46px 1fr;
+        gap: 12px;
+        align-items: center;
+        padding: 14px;
+        border-radius: 18px;
+        background: rgba(255, 246, 239, 0.78);
+        border: 1px solid rgba(137, 82, 43, 0.12);
+    }
+
+    .feature-icon {
+        display: grid;
+        place-items: center;
+        width: 42px;
+        height: 42px;
+        border-radius: 15px;
+        background: #fff;
+        color: #e85d2a;
+        box-shadow: 0 8px 22px rgba(103, 63, 32, 0.08);
+    }
+
+    .feature-item .mud-typography-subtitle2 {
+        color: #321f15;
+        font-weight: 800;
+        margin-bottom: 2px;
+    }
+
+    .feature-item .mud-typography-caption {
+        color: #7d685b;
+    }
+
+    .intro-section {
+        display: grid;
+        grid-template-columns: repeat(3, 1fr);
+        gap: 18px;
+        margin-top: 10px;
+    }
+
+    .intro-card {
+        padding: 22px;
+        border-radius: 24px;
+        background: rgba(255, 255, 255, 0.68);
+        border: 1px solid rgba(137, 82, 43, 0.13);
+        box-shadow: 0 18px 46px rgba(72, 42, 22, 0.08);
+        backdrop-filter: blur(14px);
+    }
+
+        .intro-card .mud-icon-root {
+            color: #e85d2a;
+            font-size: 30px;
+            margin-bottom: 12px;
+        }
+
+        .intro-card .mud-typography-h6 {
+            color: #2b1a11;
+            font-weight: 850;
+            margin-bottom: 8px;
+        }
+
+        .intro-card .mud-typography-body2 {
+            color: #745f52;
+            line-height: 1.65;
+        }
+
+    @@media (max-width: 960px) {
+        .landing-page {
+            padding: 32px 18px;
+        }
+
+        .hero-grid {
+            grid-template-columns: 1fr;
+            min-height: auto;
+        }
+
+        .hero-title {
+            font-size: 3rem;
+        }
+
+        .hero-card {
+            padding: 24px;
+        }
+
+        .intro-section {
+            grid-template-columns: 1fr;
+        }
+    }
+
+    @@media (max-width: 600px) {
+        .landing-page {
+            padding: 24px 14px;
+        }
+
+        .hero-title {
+            font-size: 2.35rem;
+        }
+
+        .hero-subtitle {
+            font-size: 1rem;
+        }
+
+        .hero-actions {
+            align-items: stretch;
+            flex-direction: column;
+        }
+
+        .primary-cta {
+            width: 100%;
+        }
+
+        .login-note {
+            max-width: none;
+        }
+
+        .hero-card {
+            border-radius: 24px;
+        }
+
+        .trust-row {
+            flex-direction: column;
+        }
+
+        .trust-item {
+            width: 100%;
+        }
+    }
+
+    .brand-pill {
+        display: inline-flex;
+        align-items: center;
+        gap: 10px;
+        padding: 10px 16px;
+        margin-bottom: 24px;
+        border: 1px solid rgba(232, 93, 42, 0.25);
+        border-radius: 999px;
+        background: rgba(255, 255, 255, 0.82);
+        color: #c95722 !important;
+        font-weight: 800;
+        letter-spacing: 0.02em;
+        box-shadow: 0 12px 40px rgba(99, 58, 26, 0.08);
+        backdrop-filter: blur(12px);
+    }
+
+        .brand-pill .mud-icon-root,
+        .brand-pill span {
+            color: #e85d2a !important;
+        }
+
+    .hero-title {
+        max-width: 760px;
+        color: #e85d2a !important;
+        font-weight: 900;
+        line-height: 0.98;
+        letter-spacing: -0.055em;
+        margin-bottom: 22px;
+    }
+
+    .hero-subtitle {
+        max-width: 680px;
+        color: #8a5a3c !important;
+        font-size: 1.08rem;
+        line-height: 1.8;
+        margin-bottom: 32px;
+    }
+
+    .login-note {
+        color: #b4572b !important;
+        max-width: 280px;
+        line-height: 1.5;
+        font-weight: 600;
+    }
+
+    .hero-card .mud-chip-root {
+        background: rgba(255, 122, 69, 0.10) !important;
+        border-color: #e85d2a !important;
+    }
+
+        .hero-card .mud-chip-content,
+        .hero-card .mud-chip-root span {
+            color: #e85d2a !important;
+            font-weight: 700;
+        }
+
+    .hero-card-title {
+        position: relative;
+        color: #e85d2a !important;
+        font-weight: 850;
+        line-height: 1.12;
+        letter-spacing: -0.035em;
+        margin-bottom: 12px;
+    }
+
+    .hero-card-copy {
+        position: relative;
+        color: #8a5a3c !important;
+        line-height: 1.7;
+        margin-bottom: 24px;
+    }
+
+    .feature-item .mud-typography-subtitle2 {
+        color: #c95722 !important;
+        font-weight: 800;
+        margin-bottom: 2px;
+    }
+
+    .feature-item .mud-typography-caption {
+        color: #8a5a3c !important;
+    }
+
+    .intro-card .mud-icon-root {
+        color: #e85d2a !important;
+        font-size: 30px;
+        margin-bottom: 12px;
+    }
+
+    .intro-card .mud-typography-h6 {
+        color: #c95722 !important;
+        font-weight: 850;
+        margin-bottom: 8px;
+    }
+
+    .intro-card .mud-typography-body2 {
+        color: #8a5a3c !important;
+        line-height: 1.65;
+    }
+
+    .primary-cta,
+    .card-cta {
+        min-height: 52px;
+        border-radius: 16px;
+        padding-inline: 26px;
+        font-weight: 800;
+        text-transform: none;
+        background: linear-gradient(135deg, #ff7a45, #e85d2a) !important;
+        color: #ffffff !important;
+        box-shadow: 0 18px 36px rgba(232, 93, 42, 0.28);
+    }
+
+        .primary-cta .mud-button-label,
+        .primary-cta .mud-icon-root,
+        .card-cta .mud-button-label,
+        .card-cta .mud-icon-root {
+            color: #ffffff !important;
+        }
+</style>
