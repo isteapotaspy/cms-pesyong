@@ -5,6 +5,7 @@ namespace CMS.Domain.Entities.Packages;
 
 public class Package : BaseEntity
 {
+
     public int MenuCategoryId { get; set; }
 
     public string Title { get; set; } = string.Empty;
@@ -24,5 +25,4 @@ public class Package : BaseEntity
     public MenuCategory MenuCategory { get; set; } = default!;
     public ICollection<PackageSize> Sizes { get; set; } = new List<PackageSize>();
     public ICollection<PackageAddon> Addons { get; set; } = new List<PackageAddon>();
-    public ICollection<PackageSelectionRule> SelectionRules { get; set; } = new List<PackageSelectionRule>();
 }

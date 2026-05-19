@@ -6,6 +6,8 @@
 @inject NavigationManager NavManager
 @inject CustomerDrawerState DrawerState
 @inject ICustomerOrderService OrderService
+@inject ICustomerAuthService AuthService
+@inject CustomerSession Session
 
 @if (_isLoading)
 {
@@ -41,8 +43,8 @@ else if (Vm is null)
             <MudButton Variant="Variant.Filled"
                        Color="Color.Primary"
                        Class="mt-4"
-                       OnClick="@(() => NavManager.NavigateTo("/"))">
-                Back to Menu
+                       OnClick="@(() => NavManager.NavigateTo("/customer-orders"))">
+                Go to My Orders
             </MudButton>
         </MudPaper>
     </MudContainer>
@@ -87,9 +89,7 @@ else
                     <div class="tracking-map-placeholder">
                         <div class="tracking-route-line"></div>
                         <div class="tracking-dot kitchen">Pesyong Kitchen</div>
-                        <div class="tracking-dot rider">
-                            @(string.IsNullOrWhiteSpace(Vm.Rider.Name) ? "Rider pending" : $"{Vm.Rider.Name} (moving)")
-                        </div>
+                        <div class="tracking-dot rider">@Vm.Rider.Name (moving)</div>
                         <div class="tracking-dot home">Your Home</div>
                     </div>
                 </MudPaper>
@@ -103,16 +103,14 @@ else
                         </MudAvatar>
 
                         <div class="rider-info">
-                            <MudText Typo="Typo.subtitle1">
-                                @(string.IsNullOrWhiteSpace(Vm.Rider.Name) ? "Rider not assigned yet" : Vm.Rider.Name)
-                            </MudText>
+                            <MudText Typo="Typo.subtitle1">@Vm.Rider.Name</MudText>
                             <MudText Typo="Typo.body2">@Vm.Rider.Vehicle • @Vm.Rider.PlateNumber</MudText>
                             <MudText Typo="Typo.caption">★ @Vm.Rider.Rating | @Vm.Rider.TotalTrips+ trips</MudText>
                         </div>
 
                         <div class="rider-actions">
-                            <MudButton Variant="Variant.Outlined" Disabled="@string.IsNullOrWhiteSpace(Vm.Rider.Name)">Chat</MudButton>
-                            <MudButton Variant="Variant.Filled" Color="Color.Primary" Disabled="@string.IsNullOrWhiteSpace(Vm.Rider.Name)">Call</MudButton>
+                            <MudButton Variant="Variant.Outlined">Chat</MudButton>
+                            <MudButton Variant="Variant.Filled" Color="Color.Primary">Call</MudButton>
                         </div>
                     </div>
                 </MudPaper>
@@ -206,8 +204,8 @@ else
                            FullWidth="true"
                            Size="Size.Large"
                            Class="tracking-back-btn"
-                           OnClick="@(() => NavManager.NavigateTo("/"))">
-                    Back to Menu
+                           OnClick="@(() => NavManager.NavigateTo("/customer-orders"))">
+                    Back to My Orders
                 </MudButton>
             </MudItem>
         </MudGrid>
@@ -217,11 +215,14 @@ else
 }
 
 @code {
+    [SupplyParameterFromQuery]
+    public int? OrderId { get; set; }
+
     private TrackingVm? Vm;
     private bool _isLoading = true;
     private string? _errorMessage;
 
-    protected override async Task OnInitializedAsync()
+    protected override async Task OnParametersSetAsync()
     {
         await LoadTrackingAsync();
     }
@@ -238,13 +239,31 @@ else
             _isLoading = true;
             _errorMessage = null;
 
-            if (!DrawerState.CurrentOrderId.HasValue)
+            var restored = await AuthService.TryRestoreSessionAsync();
+            if (!restored || !Session.IsAuthenticated)
+            {
+                var returnUrl = OrderId.HasValue
+                    ? $"/tracking?orderId={OrderId.Value}"
+                    : "/tracking";
+
+                NavManager.NavigateTo($"/customer-login?returnUrl={Uri.EscapeDataString(returnUrl)}", true);
+                return;
+            }
+
+            var targetOrderId = ResolveOrderId();
+
+            if (!targetOrderId.HasValue)
             {
                 Vm = null;
                 return;
             }
 
-            Vm = await OrderService.GetTrackingAsync(DrawerState.CurrentOrderId.Value);
+            Vm = await OrderService.GetTrackingAsync(targetOrderId.Value);
+
+            if (Vm is null)
+            {
+                _errorMessage = "Tracking details were not found for this order.";
+            }
         }
         catch (Exception ex)
         {
@@ -254,6 +273,17 @@ else
         {
             _isLoading = false;
         }
+    }
+
+    private int? ResolveOrderId()
+    {
+        if (OrderId.HasValue && OrderId.Value > 0)
+            return OrderId.Value;
+
+        if (DrawerState.CurrentOrderId.HasValue && DrawerState.CurrentOrderId.Value > 0)
+            return DrawerState.CurrentOrderId.Value;
+
+        return null;
     }
 
     private static string GetStepClass(TrackingStepState state) =>

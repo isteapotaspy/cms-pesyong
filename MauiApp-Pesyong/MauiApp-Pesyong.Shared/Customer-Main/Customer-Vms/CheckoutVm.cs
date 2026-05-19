@@ -1,11 +1,11 @@
-﻿using CMS.Contracts.Customer.Orders;
+﻿using CMS.Contracts.Customer.Auth;
+using CMS.Contracts.Customer.Orders;
 using MauiApp_Pesyong.Shared.Customer_Main.Customer_Models;
-
 namespace MauiApp_Pesyong.Shared.Customer_Main.Customer_Vms;
 
 public class CheckoutVm
 {
-    public int? CustomerProfileId { get; set; } = 1;
+    public int? CustomerProfileId { get; set; }
 
     public ContactInfoVm ContactInfo { get; set; } = new();
     public DeliveryAddressVm DeliveryAddress { get; set; } = new();
@@ -30,16 +30,16 @@ public class CheckoutVm
 
     public List<string> AvailableCities { get; set; } = new()
     {
-    "Davao City",
-    "Manila",
-    "Makati",
-    "Pasig",
-    "Taguig",
-    "Mandaluyong",
-    "Marikina",
-    "Pasay",
-    "San Juan",
-    "Caloocan"
+        "Davao City",
+        "Manila",
+        "Makati",
+        "Pasig",
+        "Taguig",
+        "Mandaluyong",
+        "Marikina",
+        "Pasay",
+        "San Juan",
+        "Caloocan"
     };
 
     public List<string> AvailablePaymentMethods { get; set; } = new()
@@ -81,6 +81,21 @@ public class CheckoutVm
             Items = cartItems.ToList()
         };
     }
+
+    public void ApplyCustomerProfile(CustomerMeResponse profile)
+    {
+        CustomerProfileId = profile.CustomerProfileId;
+
+        if (string.IsNullOrWhiteSpace(ContactInfo.FullName))
+            ContactInfo.FullName = profile.FullName;
+
+        if (string.IsNullOrWhiteSpace(ContactInfo.EmailAddress))
+            ContactInfo.EmailAddress = profile.Email;
+
+        if (string.IsNullOrWhiteSpace(ContactInfo.MobileNumber))
+            ContactInfo.MobileNumber = profile.MobileNumber;
+    }
+
     public PlaceOrderRequest ToRequest()
     {
         return new PlaceOrderRequest
@@ -134,27 +149,3 @@ public class CheckoutVm
         };
     }
 }
-
-public class ContactInfoVm
-{
-    public string FullName { get; set; } = string.Empty;
-    public string EmailAddress { get; set; } = string.Empty;
-    public string MobileNumber { get; set; } = string.Empty;
-}
-
-public class DeliveryAddressVm
-{
-    public string StreetAddress { get; set; } = string.Empty;
-    public string City { get; set; } = string.Empty;
-    public string Barangay { get; set; } = string.Empty;
-    public string Landmark { get; set; } = string.Empty;
-    public decimal? Latitude { get; set; }
-    public decimal? Longitude { get; set; }
-}
-
-public class DeliveryScheduleVm
-{
-    public DateTime DeliveryDate { get; set; } = DateTime.Today;
-    public string TimeSlot { get; set; } = "11:30 AM";
-}
-

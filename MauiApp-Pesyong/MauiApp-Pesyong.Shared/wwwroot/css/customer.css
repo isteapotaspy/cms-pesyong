@@ -57,68 +57,132 @@ html, body {
     background: var(--pesyong-bg);
 }
 
+
 .customer-page {
     padding: 22px 26px 40px;
 }
 
 /* TOP BAR */
 .topbar {
-    display: grid;
-    grid-template-columns: auto auto minmax(260px, 1fr) auto auto auto;
-    gap: 12px;
-    align-items: center;
-    padding: 14px 16px;
-    margin-bottom: 18px;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    padding: 12px;
+    margin-bottom: 16px;
     background: var(--pesyong-surface);
     border: 1px solid var(--pesyong-border);
     border-radius: 20px;
     box-shadow: 0 6px 18px rgba(15, 23, 42, 0.03);
 }
 
+.topbar-row {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    min-width: 0;
+}
+
+.topbar-row-main {
+    justify-content: space-between;
+}
+
+.topbar-row-search,
+.topbar-row-meta {
+    width: 100%;
+}
+
+
 .brand-chip {
     display: flex;
     align-items: center;
     gap: 10px;
+    min-width: 0;
 }
 
+
 .brand-logo-wrap {
-    width: 48px;
-    height: 48px;
-    border-radius: 14px;
-    overflow: hidden;
+    width: 42px;
+    height: 42px;
     display: grid;
     place-items: center;
-    background: #fff1e8;
+    border-radius: 14px;
+    background: #fff7ef;
+    border: 1px solid rgba(241, 144, 43, 0.22);
+    overflow: hidden;
     flex-shrink: 0;
 }
 
 .brand-svg-logo {
-    width: 40px;
-    height: 40px;
+    width: 26px;
+    height: 26px;
     display: block;
 }
 
+
 .brand-name {
     font-weight: 800;
+    line-height: 1;
+    white-space: nowrap;
+    font-size: 1rem !important;
 }
 
+
 .location-pill {
-    display: flex;
+    display: inline-flex;
     align-items: center;
     gap: 8px;
-    padding: 10px 12px;
+    padding: 8px 12px;
     border-radius: 14px;
     background: #f8f9fd;
     color: var(--pesyong-muted);
+    max-width: 100%;
+}
+
+.location-pill .mud-typography {
     white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
 }
 
 .search-field {
     width: 100%;
 }
 
+.search-field .mud-input-control {
+    margin-top: 0 !important;
+}
+
+
+.topbar-actions {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    flex-shrink: 0;
+}
+
+.topbar-icon-btn {
+    width: 38px !important;
+    height: 38px !important;
+    border: 1px solid var(--pesyong-border);
+    background: white;
+    border-radius: 12px;
+}
+
+.compact-btn {
+    min-width: auto !important;
+    padding-inline: 10px !important;
+    white-space: nowrap;
+    text-transform: none !important;
+}
+
 .nav-action-btn {
-    min-width: 70px;
+    min-width: auto;
+    white-space: nowrap;
+    text-transform: none !important;
+}
+
+.nav-avatar-clickable {
+    cursor: pointer;
 }
 
 .cart-icon-btn {
@@ -128,10 +192,97 @@ html, body {
 }
 
 .nav-avatar {
-    background: linear-gradient(135deg, #dbeafe, #c4b5fd);
-    color: #1e2230;
-    font-weight: 700;
+    width: 38px !important;
+    height: 38px !important;
+    background: linear-gradient(135deg, #f1902b, #ec6611) !important;
+    color: white !important;
+    font-weight: 800 !important;
 }
+
+.avatar-menu .mud-menu-activator {
+    display: flex;
+    align-items: center;
+}
+
+.avatar-trigger {
+    border: none;
+    background: transparent;
+    padding: 0;
+    margin: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+}
+
+.account-menu-wrap {
+    position: relative;
+    display: flex;
+    align-items: center;
+}
+
+.account-dropdown {
+    position: absolute;
+    top: calc(100% + 8px);
+    right: 0;
+    min-width: 170px;
+    background: white;
+    border: 1px solid var(--pesyong-border);
+    border-radius: 14px;
+    box-shadow: 0 10px 24px rgba(15, 23, 42, 0.12);
+    padding: 8px;
+    z-index: 1000;
+}
+
+.account-dropdown-item {
+    width: 100%;
+    border: none;
+    background: transparent;
+    text-align: left;
+    padding: 10px 12px;
+    border-radius: 10px;
+    cursor: pointer;
+    font: inherit;
+}
+
+.account-dropdown-item:hover {
+    background: #f8f9fd;
+}
+
+.account-dropdown-item.danger {
+    color: #d14343;
+}
+
+
+
+@media (max-width: 1200px) {
+    .topbar {
+        grid-template-columns: auto minmax(220px, 1fr) auto;
+    }
+
+    .location-pill {
+        display: none;
+    }
+}
+
+@media (max-width: 900px) {
+    .topbar {
+        grid-template-columns: 1fr;
+    }
+
+    .brand-chip {
+        justify-content: flex-start;
+    }
+
+    .topbar-actions {
+        justify-content: flex-start;
+    }
+
+    .location-pill {
+        display: flex;
+    }
+}
+
 
 /* HERO */
 .hero-banner {
@@ -2006,5 +2157,390 @@ html, body {
     .package-size-card,
     .option-card {
         min-height: unset;
+    }
+}
+
+
+
+
+
+/* ===== RESPONSIVE IMPROVEMENTS ===== */
+
+@media (max-width: 959px) {
+    .customer-page {
+        padding: 16px 14px 28px;
+    }
+
+    .hero-banner {
+        min-height: 260px;
+        padding: 22px 18px;
+        border-radius: 22px;
+    }
+
+    .hero-title {
+        font-size: 2rem !important;
+        line-height: 1.05;
+    }
+
+    .hero-subtitle {
+        font-size: 0.95rem !important;
+        margin-bottom: 18px;
+    }
+
+    .category-row,
+    .toolbar-row,
+    .section-head,
+    .checkout-header,
+    .tracking-hero,
+    .promo-panel {
+        flex-direction: column;
+        align-items: stretch;
+    }
+
+    .category-left {
+        flex-wrap: nowrap;
+        overflow-x: auto;
+        padding-bottom: 4px;
+        scrollbar-width: none;
+    }
+
+        .category-left::-webkit-scrollbar {
+            display: none;
+        }
+
+    .toolbar-pill,
+    .dish-search,
+    .toolbar-actions,
+    .toolbar-pills {
+        width: 100%;
+        min-width: 0;
+    }
+
+    .toolbar-actions {
+        flex-direction: column;
+        align-items: stretch;
+        margin-left: 0;
+    }
+
+    .package-grid {
+        grid-template-columns: 1fr;
+    }
+
+    .promo-panel {
+        grid-template-columns: 1fr;
+        padding: 20px;
+    }
+
+    .promo-image {
+        min-height: 160px;
+    }
+
+    .footer-grid {
+        grid-template-columns: 1fr;
+    }
+
+    .checkout-grid,
+    .tracking-grid {
+        grid-template-columns: 1fr;
+    }
+
+    .size-grid {
+        grid-template-columns: 1fr;
+    }
+
+    .drawer-footer {
+        grid-template-columns: 1fr;
+        justify-items: stretch;
+        text-align: left;
+    }
+
+    .drawer-total {
+        margin-left: 0;
+        text-align: left;
+    }
+
+    .mud-drawer.package-drawer,
+    .mud-drawer.cart-drawer {
+        width: min(100vw, 100vw) !important;
+        min-width: 0 !important;
+        max-width: 100vw !important;
+    }
+
+    .drawer-body {
+        padding: 20px 16px 14px;
+    }
+
+    .drawer-footer,
+    .cart-footer {
+        padding: 14px 16px 18px;
+    }
+
+    .tracking-eta {
+        text-align: left;
+    }
+
+    .tracking-hero-left,
+    .rider-card,
+    .selection-item,
+    .summary-row,
+    .promo-row,
+    .promo-mini-row,
+    .newsletter-row {
+        flex-direction: column;
+        align-items: flex-start;
+    }
+
+    .rider-actions {
+        width: 100%;
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 10px;
+    }
+
+    .profile-page-shell {
+        padding: 1rem 0.75rem 1.5rem;
+    }
+
+    .profile-main-card,
+    .profile-side-card {
+        padding: 1.25rem;
+    }
+
+    .profile-actions {
+        flex-direction: column;
+        align-items: stretch;
+    }
+}
+
+@media (min-width: 600px) and (max-width: 1199px) {
+    .package-grid {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+}
+
+@media (max-width: 599px) {
+    .customer-page {
+        padding: 12px 10px 22px;
+    }
+
+    .hero-banner {
+        min-height: 220px;
+        padding: 18px 14px;
+        margin-bottom: 18px;
+    }
+
+    .hero-title {
+        font-size: 1.75rem !important;
+    }
+
+    .hero-subtitle {
+        font-size: 0.9rem !important;
+    }
+
+    .food-card-image {
+        height: 150px;
+    }
+
+    .food-card-actions {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 10px;
+    }
+
+    .toolbar-pill {
+        min-width: 0;
+        width: 100%;
+        padding: 12px 14px;
+    }
+
+    .checkout-card,
+    .summary-card,
+    .help-card,
+    .tracking-card,
+    .tracking-help-card,
+    .footer-panel {
+        padding: 16px;
+        border-radius: 18px;
+    }
+
+    .tracking-map-placeholder {
+        min-height: 220px;
+    }
+
+    .cart-item,
+    .upsell-card {
+        grid-template-columns: 1fr;
+    }
+
+    .cart-item-right {
+        align-items: flex-start;
+    }
+
+    .time-slot-grid,
+    .payment-grid {
+        grid-template-columns: 1fr;
+    }
+
+    .profile-avatar-lg {
+        width: 72px !important;
+        height: 72px !important;
+        font-size: 1.5rem !important;
+    }
+}
+
+/* =========================================================
+   MOBILE / DESKTOP POLISH FIXES
+   ========================================================= */
+
+/* Remove the extra location row from the topbar everywhere */
+.topbar-row-meta {
+    display: none !important;
+}
+
+/* Keep the header tighter */
+.topbar {
+    gap: 8px !important;
+}
+
+.topbar-row-main {
+    gap: 10px;
+}
+
+.brand-chip {
+    flex: 1 1 auto;
+    min-width: 0;
+    gap: 8px;
+}
+
+.brand-name {
+    display: inline-block !important;
+    font-size: 0.98rem !important;
+    font-weight: 800 !important;
+    white-space: nowrap !important;
+    line-height: 1 !important;
+}
+
+/* Right-side controls stay compact */
+.topbar-actions {
+    margin-left: auto;
+    gap: 6px !important;
+    flex-shrink: 0;
+}
+
+/* Desktop: no topbar location */
+.location-pill {
+    display: none !important;
+}
+
+/* Category buttons should feel closer to desktop */
+.category-left {
+    gap: 10px;
+    flex-wrap: nowrap !important;
+    overflow-x: auto;
+    overflow-y: hidden;
+    padding-bottom: 4px;
+    -webkit-overflow-scrolling: touch;
+    scrollbar-width: none;
+}
+
+    .category-left::-webkit-scrollbar {
+        display: none;
+    }
+
+.category-btn {
+    padding: 10px 14px !important;
+    border-radius: 16px !important;
+    line-height: 1.2 !important;
+    white-space: nowrap !important;
+    font-size: 0.92rem !important;
+}
+
+/* Mobile-specific fixes */
+@media (max-width: 599px) {
+    .topbar {
+        padding: 10px !important;
+        border-radius: 18px !important;
+    }
+
+    .brand-chip {
+        gap: 8px !important;
+    }
+
+    .brand-logo-wrap {
+        width: 38px !important;
+        height: 38px !important;
+        border-radius: 12px !important;
+    }
+
+    .brand-svg-logo {
+        width: 22px !important;
+        height: 22px !important;
+    }
+
+    /* Keep Pesyong visible on phones */
+    .brand-name {
+        display: inline-block !important;
+        font-size: 0.90rem !important;
+        max-width: none !important;
+        overflow: visible !important;
+        text-overflow: clip !important;
+    }
+
+    /* Smaller icons/avatar so the brand still fits */
+    .topbar-icon-btn,
+    .cart-icon-btn,
+    .nav-avatar {
+        width: 36px !important;
+        height: 36px !important;
+        min-width: 36px !important;
+    }
+
+    .search-field .mud-input-root {
+        min-height: 48px;
+    }
+
+    .search-field .mud-input-slot input {
+        font-size: 0.92rem;
+    }
+
+    /* Tabs/buttons closer to desktop look */
+    .category-row {
+        gap: 12px !important;
+        align-items: stretch !important;
+    }
+
+    .category-btn {
+        padding: 9px 14px !important;
+        border-radius: 14px !important;
+        font-size: 0.88rem !important;
+    }
+
+    /* Keep + add-to-cart on the side, not below */
+    .food-card-actions {
+        flex-direction: row !important;
+        align-items: center !important;
+        justify-content: space-between !important;
+        gap: 12px !important;
+    }
+
+        .food-card-actions > div:first-child {
+            flex: 1 1 auto;
+            min-width: 0;
+        }
+
+        .food-card-actions .mud-icon-button-root,
+        .food-card-actions .card-add-btn {
+            margin-left: auto !important;
+            flex-shrink: 0 !important;
+            align-self: center !important;
+        }
+}
+
+@media (max-width: 599px) {
+    .category-btn {
+        font-size: 0.74rem !important;
+        padding: 8px 10px !important;
+        border-radius: 12px !important;
+        min-height: 38px !important;
     }
 }

@@ -28,14 +28,46 @@ public static class CustomerMappings
             ReviewCount = dto.ReviewCount,
             IsAvailable = dto.IsAvailable,
             IsCustomizable = dto.IsCustomizable,
+
             Sizes = dto.Sizes.Select(x => new PackageSizeUiModel
             {
                 Id = x.Id,
                 Label = x.Label,
                 Subtitle = x.Subtitle,
                 PaxCount = x.PaxCount,
-                Price = x.Price
+                Price = x.Price,
+                SelectionRules = x.SelectionRules.Select(r => new PackageSelectionRuleUiModel
+                {
+                    Id = r.Id,
+                    Title = r.Title,
+                    Description = r.Description,
+                    SelectionType = r.SelectionType,
+                    AllowedMealType = r.AllowedMealType,
+                    MinSelections = r.MinSelections,
+                    MaxSelections = r.MaxSelections,
+                    IsRequired = r.IsRequired,
+                    DisplayOrder = r.DisplayOrder,
+                    Options = r.Options.Select(o => new PackageSelectionOptionUiModel
+                    {
+                        Id = o.Id,
+                        MealId = o.MealId,
+                        AdditionalPrice = o.AdditionalPrice,
+                        IsDefault = o.IsDefault,
+                        Meal = new MealOptionUiModel
+                        {
+                            Id = o.Meal.Id,
+                            Name = o.Meal.Name,
+                            Description = o.Meal.Description,
+                            MealType = o.Meal.MealType,
+                            BasePrice = o.Meal.BasePrice,
+                            AdditionalPrice = o.Meal.AdditionalPrice,
+                            ImageClass = string.IsNullOrWhiteSpace(o.Meal.ImageUrl) ? "food-image-one" : o.Meal.ImageUrl,
+                            IsDefault = o.Meal.IsDefault
+                        }
+                    }).ToList()
+                }).ToList()
             }).ToList(),
+
             Addons = dto.Addons.Select(x => new AddonUiModel
             {
                 Id = x.Id,
@@ -43,36 +75,6 @@ public static class CustomerMappings
                 Description = x.Description,
                 Price = x.Price,
                 IsAvailable = x.IsAvailable
-            }).ToList(),
-            SelectionRules = dto.SelectionRules.Select(r => new PackageSelectionRuleUiModel
-            {
-                Id = r.Id,
-                Title = r.Title,
-                Description = r.Description,
-                SelectionType = r.SelectionType,
-                AllowedMealType = r.AllowedMealType,
-                MinSelections = r.MinSelections,
-                MaxSelections = r.MaxSelections,
-                IsRequired = r.IsRequired,
-                DisplayOrder = r.DisplayOrder,
-                Options = r.Options.Select(o => new PackageSelectionOptionUiModel
-                {
-                    Id = o.Id,
-                    MealId = o.MealId,
-                    AdditionalPrice = o.AdditionalPrice,
-                    IsDefault = o.IsDefault,
-                    Meal = new MealOptionUiModel
-                    {
-                        Id = o.Meal.Id,
-                        Name = o.Meal.Name,
-                        Description = o.Meal.Description,
-                        MealType = o.Meal.MealType,
-                        BasePrice = o.Meal.BasePrice,
-                        AdditionalPrice = o.Meal.AdditionalPrice,
-                        ImageClass = string.IsNullOrWhiteSpace(o.Meal.ImageUrl) ? "food-image-one" : o.Meal.ImageUrl,
-                        IsDefault = o.Meal.IsDefault
-                    }
-                }).ToList()
             }).ToList()
         };
     }

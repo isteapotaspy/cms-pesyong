@@ -13,7 +13,7 @@ namespace CMS.Server.Controller.Admin;
 public sealed class AdminPackagesController : ControllerBase
 {
     private readonly CmsDbContext _dbContext;
-
+   
     public AdminPackagesController(CmsDbContext dbContext)
     {
         _dbContext = dbContext;
@@ -88,7 +88,7 @@ public sealed class AdminPackagesController : ControllerBase
             return BadRequest("Package title is required.");
         }
 
-        if (!TryBuildSelectionRules(request.SelectionRules, packageId: 0, out var rules, out var errorMessage))
+        if (!TryBuildSizes(request.Sizes, packageId: null, out var sizes, out var errorMessage))
         {
             return BadRequest(errorMessage);
         }
@@ -96,21 +96,20 @@ public sealed class AdminPackagesController : ControllerBase
         var package = new Package
         {
             MenuCategoryId = request.MenuCategoryId,
-            Title = request.Title.Trim(),
-            Description = request.Description.Trim(),
-            CardSummary = request.CardSummary.Trim(),
-            Badge = request.Badge.Trim(),
-            Notice = request.Notice.Trim(),
-            ServesLabel = request.ServesLabel.Trim(),
-            InclusionText = request.InclusionText.Trim(),
-            ImageUrl = request.ImageUrl.Trim(),
+            Title = Clean(request.Title),
+            Description = Clean(request.Description),
+            CardSummary = Clean(request.CardSummary),
+            Badge = Clean(request.Badge),
+            Notice = Clean(request.Notice),
+            ServesLabel = Clean(request.ServesLabel),
+            InclusionText = Clean(request.InclusionText),
+            ImageUrl = Clean(request.ImageUrl),
             Rating = request.Rating,
             ReviewCount = request.ReviewCount,
             IsAvailable = request.IsAvailable,
             IsCustomizable = request.IsCustomizable,
-            Sizes = BuildSizes(request.Sizes, packageId: 0),
-            Addons = BuildAddons(request.Addons, packageId: 0),
-            SelectionRules = rules
+            Sizes = sizes,
+            Addons = BuildAddons(request.Addons, packageId: null)
         };
 
         _dbContext.Packages.Add(package);
@@ -143,16 +142,18 @@ public sealed class AdminPackagesController : ControllerBase
             return BadRequest("Package title is required.");
         }
 
-        if (!TryBuildSelectionRules(request.SelectionRules, id, out var newRules, out var errorMessage))
+        if (!TryBuildSizes(request.Sizes, packageId: id, out var newSizes, out var errorMessage))
         {
             return BadRequest(errorMessage);
         }
 
+        var newAddons = BuildAddons(request.Addons, packageId: id);
+
         var package = await _dbContext.Packages
             .Include(existing => existing.Sizes)
+                .ThenInclude(size => size.SelectionRules)
+                    .ThenInclude(rule => rule.Options)
             .Include(existing => existing.Addons)
-            .Include(existing => existing.SelectionRules)
-                .ThenInclude(rule => rule.Options)
             .FirstOrDefaultAsync(existing => existing.Id == id);
 
         if (package is null)
@@ -160,34 +161,35 @@ public sealed class AdminPackagesController : ControllerBase
             return NotFound();
         }
 
-        var oldOptions = package.SelectionRules
+        var oldRules = package.Sizes
+            .SelectMany(size => size.SelectionRules)
+            .ToList();
+
+        var oldOptions = oldRules
             .SelectMany(rule => rule.Options)
             .ToList();
 
         _dbContext.PackageSelectionOptions.RemoveRange(oldOptions);
-        _dbContext.PackageSelectionRules.RemoveRange(package.SelectionRules);
+        _dbContext.PackageSelectionRules.RemoveRange(oldRules);
         _dbContext.PackageSizes.RemoveRange(package.Sizes);
         _dbContext.PackageAddons.RemoveRange(package.Addons);
 
-        await _dbContext.SaveChangesAsync();
-
         package.MenuCategoryId = request.MenuCategoryId;
-        package.Title = request.Title.Trim();
-        package.Description = request.Description.Trim();
-        package.CardSummary = request.CardSummary.Trim();
-        package.Badge = request.Badge.Trim();
-        package.Notice = request.Notice.Trim();
-        package.ServesLabel = request.ServesLabel.Trim();
-        package.InclusionText = request.InclusionText.Trim();
-        package.ImageUrl = request.ImageUrl.Trim();
+        package.Title = Clean(request.Title);
+        package.Description = Clean(request.Description);
+        package.CardSummary = Clean(request.CardSummary);
+        package.Badge = Clean(request.Badge);
+        package.Notice = Clean(request.Notice);
+        package.ServesLabel = Clean(request.ServesLabel);
+        package.InclusionText = Clean(request.InclusionText);
+        package.ImageUrl = Clean(request.ImageUrl);
         package.Rating = request.Rating;
         package.ReviewCount = request.ReviewCount;
         package.IsAvailable = request.IsAvailable;
         package.IsCustomizable = request.IsCustomizable;
 
-        package.Sizes = BuildSizes(request.Sizes, id);
-        package.Addons = BuildAddons(request.Addons, id);
-        package.SelectionRules = newRules;
+        package.Sizes = newSizes;
+        package.Addons = newAddons;
 
         await _dbContext.SaveChangesAsync();
 
@@ -202,9 +204,9 @@ public sealed class AdminPackagesController : ControllerBase
     {
         var package = await _dbContext.Packages
             .Include(existing => existing.Sizes)
+                .ThenInclude(size => size.SelectionRules)
+                    .ThenInclude(rule => rule.Options)
             .Include(existing => existing.Addons)
-            .Include(existing => existing.SelectionRules)
-                .ThenInclude(rule => rule.Options)
             .FirstOrDefaultAsync(existing => existing.Id == id);
 
         if (package is null)
@@ -212,12 +214,16 @@ public sealed class AdminPackagesController : ControllerBase
             return NotFound();
         }
 
-        var options = package.SelectionRules
+        var rules = package.Sizes
+            .SelectMany(size => size.SelectionRules)
+            .ToList();
+
+        var options = rules
             .SelectMany(rule => rule.Options)
             .ToList();
 
         _dbContext.PackageSelectionOptions.RemoveRange(options);
-        _dbContext.PackageSelectionRules.RemoveRange(package.SelectionRules);
+        _dbContext.PackageSelectionRules.RemoveRange(rules);
         _dbContext.PackageSizes.RemoveRange(package.Sizes);
         _dbContext.PackageAddons.RemoveRange(package.Addons);
         _dbContext.Packages.Remove(package);
@@ -233,47 +239,107 @@ public sealed class AdminPackagesController : ControllerBase
             .AsNoTracking()
             .Include(package => package.MenuCategory)
             .Include(package => package.Sizes)
-            .Include(package => package.Addons)
-            .Include(package => package.SelectionRules)
-                .ThenInclude(rule => rule.Options)
-                    .ThenInclude(option => option.Meal);
+                .ThenInclude(size => size.SelectionRules)
+                    .ThenInclude(rule => rule.Options)
+                        .ThenInclude(option => option.Meal)
+            .Include(package => package.Addons);
     }
 
-    private static List<PackageSize> BuildSizes(IEnumerable<PackageSizeRequest> requests, int packageId)
+    private static bool TryBuildSizes(
+        IEnumerable<PackageSizeRequest>? requests,
+        int? packageId,
+        out List<PackageSize> sizes,
+        out string? errorMessage)
     {
-        return requests.Select(request => new PackageSize
+        sizes = new List<PackageSize>();
+        errorMessage = null;
+
+        foreach (var request in requests ?? Enumerable.Empty<PackageSizeRequest>())
         {
-            PackageId = packageId,
-            Label = request.Label.Trim(),
-            Subtitle = request.Subtitle.Trim(),
-            PaxCount = request.PaxCount,
-            Price = request.Price
-        }).ToList();
+            if (string.IsNullOrWhiteSpace(request.Label))
+            {
+                errorMessage = "Each package size must have a label.";
+                return false;
+            }
+
+            if (request.PaxCount <= 0)
+            {
+                errorMessage = $"Package size '{request.Label}' must have a pax count greater than zero.";
+                return false;
+            }
+
+            if (request.Price < 0)
+            {
+                errorMessage = $"Package size '{request.Label}' cannot have a negative price.";
+                return false;
+            }
+
+            if (!TryBuildSelectionRules(request.SelectionRules, out var rules, out errorMessage))
+            {
+                return false;
+            }
+
+            var size = new PackageSize
+            {
+                Label = Clean(request.Label),
+                Subtitle = Clean(request.Subtitle),
+                PaxCount = request.PaxCount,
+                Price = request.Price,
+                SelectionRules = rules
+            };
+
+            if (packageId.HasValue)
+            {
+                size.PackageId = packageId.Value;
+            }
+
+            sizes.Add(size);
+        }
+
+        return true;
     }
 
-    private static List<PackageAddon> BuildAddons(IEnumerable<PackageAddonRequest> requests, int packageId)
+    private static List<PackageAddon> BuildAddons(
+        IEnumerable<PackageAddonRequest>? requests,
+        int? packageId)
     {
-        return requests.Select(request => new PackageAddon
-        {
-            PackageId = packageId,
-            Name = request.Name.Trim(),
-            Description = request.Description.Trim(),
-            Price = request.Price,
-            IsAvailable = request.IsAvailable
-        }).ToList();
+        return (requests ?? Enumerable.Empty<PackageAddonRequest>())
+            .Select(request =>
+            {
+                var addon = new PackageAddon
+                {
+                    Name = Clean(request.Name),
+                    Description = Clean(request.Description),
+                    Price = request.Price,
+                    IsAvailable = request.IsAvailable
+                };
+
+                if (packageId.HasValue)
+                {
+                    addon.PackageId = packageId.Value;
+                }
+
+                return addon;
+            })
+            .ToList();
     }
 
     private static bool TryBuildSelectionRules(
-        IEnumerable<PackageSelectionRuleRequest> requests,
-        int packageId,
+        IEnumerable<PackageSelectionRuleRequest>? requests,
         out List<PackageSelectionRule> rules,
         out string? errorMessage)
     {
         rules = new List<PackageSelectionRule>();
         errorMessage = null;
 
-        foreach (var request in requests)
+        foreach (var request in requests ?? Enumerable.Empty<PackageSelectionRuleRequest>())
         {
+            if (string.IsNullOrWhiteSpace(request.Title))
+            {
+                errorMessage = "Each selection rule must have a title.";
+                return false;
+            }
+
             if (request.MaxSelections < request.MinSelections)
             {
                 errorMessage = $"Rule '{request.Title}' has MaxSelections lower than MinSelections.";
@@ -294,21 +360,22 @@ public sealed class AdminPackagesController : ControllerBase
 
             var rule = new PackageSelectionRule
             {
-                PackageId = packageId,
-                Title = request.Title.Trim(),
-                Description = request.Description.Trim(),
+                Title = Clean(request.Title),
+                Description = Clean(request.Description),
                 SelectionType = selectionType,
                 AllowedMealType = allowedMealType,
                 MinSelections = request.MinSelections,
                 MaxSelections = request.MaxSelections,
                 IsRequired = request.IsRequired,
                 DisplayOrder = request.DisplayOrder,
-                Options = request.Options.Select(option => new PackageSelectionOption
-                {
-                    MealId = option.MealId,
-                    AdditionalPrice = option.AdditionalPrice,
-                    IsDefault = option.IsDefault
-                }).ToList()
+                Options = (request.Options ?? Enumerable.Empty<PackageSelectionOptionRequest>())
+                    .Select(option => new PackageSelectionOption
+                    {
+                        MealId = option.MealId,
+                        AdditionalPrice = option.AdditionalPrice,
+                        IsDefault = option.IsDefault
+                    })
+                    .ToList()
             };
 
             rules.Add(rule);
@@ -350,7 +417,8 @@ public sealed class AdminPackagesController : ControllerBase
                     Label = size.Label,
                     Subtitle = size.Subtitle,
                     PaxCount = size.PaxCount,
-                    Price = size.Price
+                    Price = size.Price,
+                    SelectionRules = MapSelectionRules(size.SelectionRules)
                 })
                 .ToList(),
 
@@ -364,34 +432,43 @@ public sealed class AdminPackagesController : ControllerBase
                     Price = addon.Price,
                     IsAvailable = addon.IsAvailable
                 })
-                .ToList(),
-
-            SelectionRules = package.SelectionRules
-                .OrderBy(rule => rule.DisplayOrder)
-                .Select(rule => new PackageSelectionRuleDto
-                {
-                    Id = rule.Id,
-                    Title = rule.Title,
-                    Description = rule.Description,
-                    SelectionType = rule.SelectionType.ToString(),
-                    AllowedMealType = rule.AllowedMealType.ToString(),
-                    MinSelections = rule.MinSelections,
-                    MaxSelections = rule.MaxSelections,
-                    IsRequired = rule.IsRequired,
-                    DisplayOrder = rule.DisplayOrder,
-                    Options = rule.Options
-                        .OrderBy(option => option.Meal.Name)
-                        .Select(option => new PackageSelectionOptionDto
-                        {
-                            Id = option.Id,
-                            MealId = option.MealId,
-                            MealName = option.Meal?.Name ?? string.Empty,
-                            AdditionalPrice = option.AdditionalPrice,
-                            IsDefault = option.IsDefault
-                        })
-                        .ToList()
-                })
                 .ToList()
         };
+    }
+
+    private static List<PackageSelectionRuleDto> MapSelectionRules(
+        IEnumerable<PackageSelectionRule>? rules)
+    {
+        return (rules ?? Enumerable.Empty<PackageSelectionRule>())
+            .OrderBy(rule => rule.DisplayOrder)
+            .Select(rule => new PackageSelectionRuleDto
+            {
+                Id = rule.Id,
+                Title = rule.Title,
+                Description = rule.Description,
+                SelectionType = rule.SelectionType.ToString(),
+                AllowedMealType = rule.AllowedMealType.ToString(),
+                MinSelections = rule.MinSelections,
+                MaxSelections = rule.MaxSelections,
+                IsRequired = rule.IsRequired,
+                DisplayOrder = rule.DisplayOrder,
+                Options = (rule.Options ?? Enumerable.Empty<PackageSelectionOption>())
+                    .OrderBy(option => option.Meal != null ? option.Meal.Name : string.Empty)
+                    .Select(option => new PackageSelectionOptionDto
+                    {
+                        Id = option.Id,
+                        MealId = option.MealId,
+                        MealName = option.Meal != null ? option.Meal.Name : string.Empty,
+                        AdditionalPrice = option.AdditionalPrice,
+                        IsDefault = option.IsDefault
+                    })
+                    .ToList()
+            })
+            .ToList();
+    }
+
+    private static string Clean(string? value)
+    {
+        return value?.Trim() ?? string.Empty;
     }
 }

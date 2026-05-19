@@ -1,8 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Text;
-
-namespace CMS.Contracts.Customer.Menu;
+﻿namespace CMS.Contracts.Customer.Menu;
 
 public class PackageSizeDto
 {
@@ -11,4 +7,6 @@ public class PackageSizeDto
     public string Subtitle { get; set; } = string.Empty;
     public int PaxCount { get; set; }
     public decimal Price { get; set; }
+
+    public List<PackageSelectionRuleDto> SelectionRules { get; set; } = new();
 }

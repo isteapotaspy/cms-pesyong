@@ -497,6 +497,9 @@ namespace CMS.Infrastructure.Migrations
                     b.Property<DateTime>("CreatedAtUtc")
                         .HasColumnType("datetime2");
 
+                    b.Property<bool>("IsActive")
+                        .HasColumnType("bit");
+
                     b.Property<bool>("IsDefault")
                         .HasColumnType("bit");
 
@@ -540,6 +543,9 @@ namespace CMS.Infrastructure.Migrations
                     b.Property<int>("DisplayOrder")
                         .HasColumnType("int");
 
+                    b.Property<bool>("IsActive")
+                        .HasColumnType("bit");
+
                     b.Property<bool>("IsRequired")
                         .HasColumnType("bit");
 
@@ -549,7 +555,7 @@ namespace CMS.Infrastructure.Migrations
                     b.Property<int>("MinSelections")
                         .HasColumnType("int");
 
-                    b.Property<int>("PackageId")
+                    b.Property<int>("PackageSizeId")
                         .HasColumnType("int");
 
                     b.Property<int>("SelectionType")
@@ -565,7 +571,7 @@ namespace CMS.Infrastructure.Migrations
 
                     b.HasKey("Id");
 
-                    b.HasIndex("PackageId");
+                    b.HasIndex("PackageSizeId");
 
                     b.ToTable("PackageSelectionRules", (string)null);
                 });
@@ -580,6 +586,9 @@ namespace CMS.Infrastructure.Migrations
 
                     b.Property<DateTime>("CreatedAtUtc")
                         .HasColumnType("datetime2");
+
+                    b.Property<bool>("IsAvailable")
+                        .HasColumnType("bit");
 
                     b.Property<string>("Label")
                         .IsRequired()
@@ -932,12 +941,22 @@ namespace CMS.Infrastructure.Migrations
                         .HasMaxLength(150)
                         .HasColumnType("nvarchar(150)");
 
+                    b.Property<string>("EmailVerificationCode")
+                        .HasMaxLength(20)
+                        .HasColumnType("nvarchar(20)");
+
+                    b.Property<DateTime?>("EmailVerificationCodeExpiresAtUtc")
+                        .HasColumnType("datetime2");
+
                     b.Property<string>("FirstName")
                         .IsRequired()
                         .HasMaxLength(100)
                         .HasColumnType("nvarchar(100)");
 
                     b.Property<bool>("IsActive")
+                        .HasColumnType("bit");
+
+                    b.Property<bool>("IsEmailVerified")
                         .HasColumnType("bit");
 
                     b.Property<string>("LastName")
@@ -958,8 +977,8 @@ namespace CMS.Infrastructure.Migrations
 
                     b.Property<string>("UserName")
                         .IsRequired()
-                        .HasMaxLength(100)
-                        .HasColumnType("nvarchar(100)");
+                        .HasMaxLength(50)
+                        .HasColumnType("nvarchar(50)");
 
                     b.HasKey("Id");
 
@@ -1151,13 +1170,13 @@ namespace CMS.Infrastructure.Migrations
 
             modelBuilder.Entity("CMS.Domain.Entities.Packages.PackageSelectionRule", b =>
                 {
-                    b.HasOne("CMS.Domain.Entities.Packages.Package", "Package")
+                    b.HasOne("CMS.Domain.Entities.Packages.PackageSize", "PackageSize")
                         .WithMany("SelectionRules")
-                        .HasForeignKey("PackageId")
+                        .HasForeignKey("PackageSizeId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
-                    b.Navigation("Package");
+                    b.Navigation("PackageSize");
                 });
 
             modelBuilder.Entity("CMS.Domain.Entities.Packages.PackageSize", b =>
@@ -1275,14 +1294,17 @@ namespace CMS.Infrastructure.Migrations
                 {
                     b.Navigation("Addons");
 
-                    b.Navigation("SelectionRules");
-
                     b.Navigation("Sizes");
                 });
 
             modelBuilder.Entity("CMS.Domain.Entities.Packages.PackageSelectionRule", b =>
                 {
                     b.Navigation("Options");
+                });
+
+            modelBuilder.Entity("CMS.Domain.Entities.Packages.PackageSize", b =>
+                {
+                    b.Navigation("SelectionRules");
                 });
 
             modelBuilder.Entity("CMS.Domain.Entities.Payment.Delivery", b =>

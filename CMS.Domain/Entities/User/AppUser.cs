@@ -16,4 +16,8 @@ public class AppUser : BaseEntity
     public CustomerProfile? CustomerProfile { get; set; }
 
     public string FullName => $"{FirstName} {LastName}".Trim();
+
+    public bool IsEmailVerified { get; set; }
+    public string? EmailVerificationCode { get; set; }
+    public DateTime? EmailVerificationCodeExpiresAtUtc { get; set; }
 }

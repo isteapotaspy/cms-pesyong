@@ -171,7 +171,7 @@ public static class CmsDbContextSeeder
         var fiestaPackage = await EnsurePackageAsync(db, new Package
         {
             MenuCategoryId = cateringCategory.Id,
-            Title = "Grand Fiesta Package A",
+            Title = "Grand Fiesta Package A - Updated",
             Description = "Complete feast for celebrations with customizable viands, dessert, and beverage.",
             CardSummary = "A flexible catering package for family gatherings and events.",
             Badge = "Popular",
@@ -220,77 +220,220 @@ public static class CmsDbContextSeeder
         }, cancellationToken);
 
         // Sizes
-        await EnsurePackageSizeAsync(db, fiestaPackage.Id, "10 Persons", "4 Main Courses", 10, 2800m, cancellationToken);
-        await EnsurePackageSizeAsync(db, fiestaPackage.Id, "20 Persons", "5 Main Courses", 20, 4500m, cancellationToken);
-        await EnsurePackageSizeAsync(db, fiestaPackage.Id, "50 Persons", "7 Main Courses", 50, 9800m, cancellationToken);
+        var fiesta10 = await EnsurePackageSizeAsync(db, fiestaPackage.Id, "10 Persons", "Choose 4 Viands", 10, 2800m, cancellationToken);
+        var fiesta20 = await EnsurePackageSizeAsync(db, fiestaPackage.Id, "20 Persons", "Choose 5 Viands", 20, 4500m, cancellationToken);
+        var fiesta50 = await EnsurePackageSizeAsync(db, fiestaPackage.Id, "50 Persons", "Choose 7 Viands", 50, 9800m, cancellationToken);
 
-        await EnsurePackageSizeAsync(db, boodlePackage.Id, "10 Persons", "Seafood Feast", 10, 8900m, cancellationToken);
-        await EnsurePackageSizeAsync(db, boodlePackage.Id, "20 Persons", "Expanded Spread", 20, 14500m, cancellationToken);
+        var boodle10 = await EnsurePackageSizeAsync(db, boodlePackage.Id, "10 Persons", "Seafood Feast", 10, 8900m, cancellationToken);
+        var boodle20 = await EnsurePackageSizeAsync(db, boodlePackage.Id, "20 Persons", "Expanded Spread", 20, 14500m, cancellationToken);
 
-        await EnsurePackageSizeAsync(db, bikoTrayPackage.Id, "Medium Tray", "Great for sharing", 8, 280m, cancellationToken);
+        var bikoMedium = await EnsurePackageSizeAsync(db, bikoTrayPackage.Id, "Medium Tray", "Great for sharing", 8, 280m, cancellationToken);
 
         // Add-ons
-        var extraSauce = await EnsurePackageAddonAsync(db, fiestaPackage.Id,
+        await EnsurePackageAddonAsync(db, fiestaPackage.Id,
             "Extra Lechon Sauce", "500ml of our signature liver sauce", 150m, cancellationToken);
 
-        var dessertTray = await EnsurePackageAddonAsync(db, fiestaPackage.Id,
+        await EnsurePackageAddonAsync(db, fiestaPackage.Id,
             "Premium Dessert Tray", "Add assorted Filipino sweets", 350m, cancellationToken);
 
-        var shrimpTray = await EnsurePackageAddonAsync(db, boodlePackage.Id,
+        await EnsurePackageAddonAsync(db, boodlePackage.Id,
             "Garlic Butter Shrimp Tray", "Extra tray for seafood lovers", 550m, cancellationToken);
 
-        // Customization rules for Grand Fiesta Package A
-        var chooseViands = await EnsurePackageSelectionRuleAsync(db, new PackageSelectionRule
+        // =========================
+        // Size-based rules for Fiesta Package
+        // =========================
+
+        // 10 Persons
+        var fiesta10Viands = await EnsurePackageSelectionRuleAsync(db, new PackageSelectionRule
         {
-            PackageId = fiestaPackage.Id,
-            Title = "Choose 2 Viands",
-            Description = "Select two viand dishes for this package.",
+            PackageSizeId = fiesta10.Id,
+            Title = "Choose 4 Viands",
+            Description = "Select four viand dishes for this package size.",
             SelectionType = PackageSelectionType.ChooseMany,
             AllowedMealType = MealType.Viand,
-            MinSelections = 2,
-            MaxSelections = 2,
+            MinSelections = 4,
+            MaxSelections = 4,
             IsRequired = true,
-            DisplayOrder = 1
+            DisplayOrder = 1,
+            IsActive = true
         }, cancellationToken);
 
-        var chooseDessert = await EnsurePackageSelectionRuleAsync(db, new PackageSelectionRule
+        var fiesta10Dessert = await EnsurePackageSelectionRuleAsync(db, new PackageSelectionRule
         {
-            PackageId = fiestaPackage.Id,
+            PackageSizeId = fiesta10.Id,
             Title = "Choose 1 Dessert",
-            Description = "Select one dessert for this package.",
+            Description = "Select one dessert for this package size.",
             SelectionType = PackageSelectionType.ChooseOne,
-            AllowedMealType = (MealType)MealType.Dessert,
+            AllowedMealType = MealType.Dessert,
             MinSelections = 1,
             MaxSelections = 1,
             IsRequired = true,
-            DisplayOrder = 2
+            DisplayOrder = 2,
+            IsActive = true
         }, cancellationToken);
 
-        var chooseDrink = await EnsurePackageSelectionRuleAsync(db, new PackageSelectionRule
+        var fiesta10Drink = await EnsurePackageSelectionRuleAsync(db, new PackageSelectionRule
         {
-            PackageId = fiestaPackage.Id,
+            PackageSizeId = fiesta10.Id,
             Title = "Choose 1 Beverage",
-            Description = "Select one beverage for this package.",
+            Description = "Select one beverage for this package size.",
             SelectionType = PackageSelectionType.ChooseOne,
             AllowedMealType = MealType.Beverage,
             MinSelections = 1,
             MaxSelections = 1,
             IsRequired = true,
-            DisplayOrder = 3
+            DisplayOrder = 3,
+            IsActive = true
         }, cancellationToken);
 
-        // Rule options
-        await EnsurePackageSelectionOptionAsync(db, chooseViands.Id, chickenInasal.Id, 0m, false, cancellationToken);
-        await EnsurePackageSelectionOptionAsync(db, chooseViands.Id, porkAdobo.Id, 0m, true, cancellationToken);
-        await EnsurePackageSelectionOptionAsync(db, chooseViands.Id, beefCaldereta.Id, 30m, false, cancellationToken);
-        await EnsurePackageSelectionOptionAsync(db, chooseViands.Id, porkSisig.Id, 0m, false, cancellationToken);
+        // 20 Persons
+        var fiesta20Viands = await EnsurePackageSelectionRuleAsync(db, new PackageSelectionRule
+        {
+            PackageSizeId = fiesta20.Id,
+            Title = "Choose 5 Viands",
+            Description = "Select five viand dishes for this package size.",
+            SelectionType = PackageSelectionType.ChooseMany,
+            AllowedMealType = MealType.Viand,
+            MinSelections = 5,
+            MaxSelections = 5,
+            IsRequired = true,
+            DisplayOrder = 1,
+            IsActive = true
+        }, cancellationToken);
 
-        await EnsurePackageSelectionOptionAsync(db, chooseDessert.Id, lecheFlan.Id, 0m, true, cancellationToken);
-        await EnsurePackageSelectionOptionAsync(db, chooseDessert.Id, mangoFloat.Id, 20m, false, cancellationToken);
+        var fiesta20Dessert = await EnsurePackageSelectionRuleAsync(db, new PackageSelectionRule
+        {
+            PackageSizeId = fiesta20.Id,
+            Title = "Choose 1 Dessert",
+            Description = "Select one dessert for this package size.",
+            SelectionType = PackageSelectionType.ChooseOne,
+            AllowedMealType = MealType.Dessert,
+            MinSelections = 1,
+            MaxSelections = 1,
+            IsRequired = true,
+            DisplayOrder = 2,
+            IsActive = true
+        }, cancellationToken);
 
-        await EnsurePackageSelectionOptionAsync(db, chooseDrink.Id, icedTea.Id, 0m, true, cancellationToken);
-        await EnsurePackageSelectionOptionAsync(db, chooseDrink.Id, pineappleJuice.Id, 10m, false, cancellationToken);
+        var fiesta20Drink = await EnsurePackageSelectionRuleAsync(db, new PackageSelectionRule
+        {
+            PackageSizeId = fiesta20.Id,
+            Title = "Choose 1 Beverage",
+            Description = "Select one beverage for this package size.",
+            SelectionType = PackageSelectionType.ChooseOne,
+            AllowedMealType = MealType.Beverage,
+            MinSelections = 1,
+            MaxSelections = 1,
+            IsRequired = true,
+            DisplayOrder = 3,
+            IsActive = true
+        }, cancellationToken);
+
+        // 50 Persons
+        var fiesta50Viands = await EnsurePackageSelectionRuleAsync(db, new PackageSelectionRule
+        {
+            PackageSizeId = fiesta50.Id,
+            Title = "Choose 7 Viands",
+            Description = "Select seven viand dishes for this package size.",
+            SelectionType = PackageSelectionType.ChooseMany,
+            AllowedMealType = MealType.Viand,
+            MinSelections = 7,
+            MaxSelections = 7,
+            IsRequired = true,
+            DisplayOrder = 1,
+            IsActive = true
+        }, cancellationToken);
+
+        var fiesta50Dessert = await EnsurePackageSelectionRuleAsync(db, new PackageSelectionRule
+        {
+            PackageSizeId = fiesta50.Id,
+            Title = "Choose 2 Desserts",
+            Description = "Select two desserts for this package size.",
+            SelectionType = PackageSelectionType.ChooseMany,
+            AllowedMealType = MealType.Dessert,
+            MinSelections = 2,
+            MaxSelections = 2,
+            IsRequired = true,
+            DisplayOrder = 2,
+            IsActive = true
+        }, cancellationToken);
+
+        var fiesta50Drink = await EnsurePackageSelectionRuleAsync(db, new PackageSelectionRule
+        {
+            PackageSizeId = fiesta50.Id,
+            Title = "Choose 2 Beverages",
+            Description = "Select two beverages for this package size.",
+            SelectionType = PackageSelectionType.ChooseMany,
+            AllowedMealType = MealType.Beverage,
+            MinSelections = 2,
+            MaxSelections = 2,
+            IsRequired = true,
+            DisplayOrder = 3,
+            IsActive = true
+        }, cancellationToken);
+
+        // Rule options - reuse the same option pool per size
+        await SeedRuleOptionsAsync(db, fiesta10Viands, new[]
+        {
+            (chickenInasal, 0m, false),
+            (porkAdobo, 0m, true),
+            (beefCaldereta, 30m, false),
+            (porkSisig, 0m, false)
+        }, cancellationToken);
+        
+                await SeedRuleOptionsAsync(db, fiesta10Dessert, new[]
+                {
+            (lecheFlan, 0m, true),
+            (mangoFloat, 20m, false)
+        }, cancellationToken);
+        
+                await SeedRuleOptionsAsync(db, fiesta10Drink, new[]
+                {
+            (icedTea, 0m, true),
+            (pineappleJuice, 10m, false)
+        }, cancellationToken);
+        
+                await SeedRuleOptionsAsync(db, fiesta20Viands, new[]
+                {
+            (chickenInasal, 0m, false),
+            (porkAdobo, 0m, true),
+            (beefCaldereta, 30m, false),
+            (porkSisig, 0m, false)
+        }, cancellationToken);
+        
+                await SeedRuleOptionsAsync(db, fiesta20Dessert, new[]
+                {
+            (lecheFlan, 0m, true),
+            (mangoFloat, 20m, false)
+        }, cancellationToken);
+        
+                await SeedRuleOptionsAsync(db, fiesta20Drink, new[]
+                {
+            (icedTea, 0m, true),
+            (pineappleJuice, 10m, false)
+        }, cancellationToken);
+        
+                await SeedRuleOptionsAsync(db, fiesta50Viands, new[]
+                {
+            (chickenInasal, 0m, false),
+            (porkAdobo, 0m, true),
+            (beefCaldereta, 30m, false),
+            (porkSisig, 0m, false)
+        }, cancellationToken);
+        
+                await SeedRuleOptionsAsync(db, fiesta50Dessert, new[]
+                {
+            (lecheFlan, 0m, true),
+            (mangoFloat, 20m, false)
+        }, cancellationToken);
+        
+                await SeedRuleOptionsAsync(db, fiesta50Drink, new[]
+                {
+            (icedTea, 0m, true),
+            (pineappleJuice, 10m, false)
+        }, cancellationToken);
     }
+
 
     private static async Task<AppUser> EnsureAdminUserAsync(CmsDbContext db, CancellationToken cancellationToken)
     {
@@ -444,7 +587,7 @@ public static class CmsDbContextSeeder
         string subtitle,
         int paxCount,
         decimal price,
-        CancellationToken cancellationToken)
+    CancellationToken cancellationToken)
     {
         var existing = await db.PackageSizes
             .FirstOrDefaultAsync(
@@ -452,7 +595,15 @@ public static class CmsDbContextSeeder
                 cancellationToken);
 
         if (existing is not null)
+        {
+            existing.Subtitle = subtitle;
+            existing.PaxCount = paxCount;
+            existing.Price = price;
+            existing.IsAvailable = true;
+
+            await db.SaveChangesAsync(cancellationToken);
             return existing;
+        }
 
         var size = new PackageSize
         {
@@ -460,7 +611,8 @@ public static class CmsDbContextSeeder
             Label = label,
             Subtitle = subtitle,
             PaxCount = paxCount,
-            Price = price
+            Price = price,
+            IsAvailable = true
         };
 
         db.PackageSizes.Add(size);
@@ -507,11 +659,25 @@ public static class CmsDbContextSeeder
     {
         var existing = await db.PackageSelectionRules
             .FirstOrDefaultAsync(
-                x => x.PackageId == seed.PackageId && x.Title == seed.Title,
+                x => x.PackageSizeId == seed.PackageSizeId && x.Title == seed.Title,
                 cancellationToken);
 
         if (existing is not null)
+        {
+            existing.Description = seed.Description;
+            existing.SelectionType = seed.SelectionType;
+            existing.AllowedMealType = seed.AllowedMealType;
+            existing.MinSelections = seed.MinSelections;
+            existing.MaxSelections = seed.MaxSelections;
+            existing.IsRequired = seed.IsRequired;
+            existing.DisplayOrder = seed.DisplayOrder;
+            existing.IsActive = true;
+
+            await db.SaveChangesAsync(cancellationToken);
             return existing;
+        }
+
+        seed.IsActive = true;
 
         db.PackageSelectionRules.Add(seed);
         await db.SaveChangesAsync(cancellationToken);
@@ -533,19 +699,45 @@ public static class CmsDbContextSeeder
                 cancellationToken);
 
         if (existing is not null)
+        {
+            existing.AdditionalPrice = additionalPrice;
+            existing.IsDefault = isDefault;
+            existing.IsActive = true;
+
+            await db.SaveChangesAsync(cancellationToken);
             return existing;
+        }
 
         var option = new PackageSelectionOption
         {
             PackageSelectionRuleId = ruleId,
             MealId = mealId,
             AdditionalPrice = additionalPrice,
-            IsDefault = isDefault
+            IsDefault = isDefault,
+            IsActive = true
         };
 
         db.PackageSelectionOptions.Add(option);
         await db.SaveChangesAsync(cancellationToken);
 
         return option;
+    }
+
+    private static async Task SeedRuleOptionsAsync(
+    CmsDbContext db,
+    PackageSelectionRule rule,
+    IEnumerable<(Meal meal, decimal additionalPrice, bool isDefault)> options,
+    CancellationToken cancellationToken)
+    {
+        foreach (var (meal, additionalPrice, isDefault) in options)
+        {
+            await EnsurePackageSelectionOptionAsync(
+                db,
+                rule.Id,
+                meal.Id,
+                additionalPrice,
+                isDefault,
+                cancellationToken);
+        }
     }
 }
