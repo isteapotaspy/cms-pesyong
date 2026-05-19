@@ -92,6 +92,7 @@ public partial class App : Application
 
         await _host.StartAsync();
 
+        await Task.Delay(10_000); 
         await CheckApiConnectionAsync();
 
         var mainWindow = _host.Services.GetRequiredService<MainWindow>();

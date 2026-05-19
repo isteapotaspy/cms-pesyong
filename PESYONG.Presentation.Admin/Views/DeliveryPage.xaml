@@ -114,6 +114,7 @@
 
                             <TextBlock Text="{Binding ErrorMessage}"
                                        Margin="0,0,0,8"
+                                       Foreground="IndianRed"
                                        TextWrapping="Wrap"/>
 
                             <!-- Metadata -->
