@@ -97,7 +97,6 @@ namespace CMS.Server
                         Id = x.Id,
                         CategoryId = x.MenuCategoryId,
                         CategoryName = x.MenuCategory.Name,
-
                         Title = x.Title,
                         Description = x.Description,
                         CardSummary = x.CardSummary,

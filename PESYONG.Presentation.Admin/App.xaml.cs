@@ -114,6 +114,7 @@ public partial class App : Application
                 throw new InvalidOperationException(
                     $"API was reached, but returned {(int)response.StatusCode} {response.ReasonPhrase}.");
             }
+
         }
         catch (HttpRequestException ex)
         {

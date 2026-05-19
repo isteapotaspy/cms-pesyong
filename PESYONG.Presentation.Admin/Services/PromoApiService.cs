@@ -15,9 +15,9 @@ public sealed class PromoApiService : IPromoApiService
 
     private readonly HttpClient _httpClient;
 
-    public PromoApiService(HttpClient httpClient)
+    public PromoApiService(IHttpClientFactory httpClientFactory)
     {
-        _httpClient = httpClient;
+        _httpClient = httpClientFactory.CreateClient("CMSApi");
     }
 
     public async Task<IReadOnlyList<PromoDto>> GetAllAsync(CancellationToken cancellationToken = default)
