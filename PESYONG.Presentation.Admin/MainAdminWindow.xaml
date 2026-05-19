@@ -5,9 +5,10 @@
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         xmlns:local="clr-namespace:PESYONG.Presentation.Admin"
         mc:Ignorable="d"
-        Title="MainAdminWindow" 
+        Title="Pesyong Catering Management System"
+        Icon="Assets/logo.ico"
         Loaded="MainAdminWindow_Loaded"
-        Height="450" 
+        Height="450"
         Width="800"
         MinWidth="800"
         MaxWidth="800">

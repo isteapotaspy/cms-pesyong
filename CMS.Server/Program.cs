@@ -1,15 +1,11 @@
-using CMS.Contracts.Admin.Customers;
 using CMS.Contracts.Admin.Dashboard;
-using CMS.Contracts.Admin.Meals;
-using CMS.Contracts.Admin.Orders;
-using CMS.Contracts.Admin.Package;
 using CMS.Contracts.Customer.Auth;
 using CMS.Contracts.Customer.Meals;
 using CMS.Contracts.Customer.Menu;
 using CMS.Contracts.Customer.Orders;
 using CMS.Contracts.Customer.Profile;
-using CMS.Domain.Entities;
-using CMS.Domain.Entities.Menu;
+using CMS.Contracts.Customer.Promos;
+using CMS.Domain.Entities.Payment;
 using CMS.Domain.Entities.Orders;
 using CMS.Domain.Entities.Packages;
 using CMS.Domain.Entities.User;
@@ -411,6 +407,14 @@ namespace CMS.Server
                     return Results.BadRequest(new { message = $"Unsupported payment method: '{request.PaymentMethod}'." });
                 }
 
+                if (request.DeliverySchedule.DeliveryDate.Date < DateTime.Today)
+                {
+                    return Results.BadRequest(new
+                    {
+                        message = "Delivery date cannot be earlier than today."
+                    });
+                }
+
                 CustomerProfile? customerProfile;
 
                 if (request.CustomerProfileId.HasValue)
@@ -663,7 +667,39 @@ namespace CMS.Server
                     orderItems.Add(packageOrderItem);
                 }
 
-                var discountAmount = 0m;
+                decimal discountAmount = 0m;
+                string? appliedPromoCode = null;
+
+                if (!string.IsNullOrWhiteSpace(request.PromoCode))
+                {
+                    var now = DateTime.UtcNow;
+
+                    var promo = await db.Set<Promo>()
+                        .FirstOrDefaultAsync(x =>
+                            x.Code == request.PromoCode &&
+                            now >= x.ValidFromUtc &&
+                            now <= x.ValidUntilUtc &&
+                            (!x.UsageLimit.HasValue || x.UsedCount < x.UsageLimit.Value));
+
+                    if (promo is null)
+                    {
+                        return Results.BadRequest(new { message = "Promo code is invalid or expired." });
+                    }
+
+                    if (promo.MinimumOrderAmount.HasValue && subTotal < promo.MinimumOrderAmount.Value)
+                    {
+                        return Results.BadRequest(new
+                        {
+                            message = $"This promo requires a minimum subtotal of ₱{promo.MinimumOrderAmount.Value:N0}."
+                        });
+                    }
+
+                    discountAmount = Math.Round(subTotal * (promo.DiscountPercentageValue / 100m), 2);
+                    appliedPromoCode = promo.Code;
+
+                    promo.UsedCount += 1;
+                }
+
                 var deliveryFee = 0m;
                 var taxAmount = Math.Round(subTotal * 0.12m, 2);
                 var grandTotal = subTotal + deliveryFee + taxAmount - discountAmount;
@@ -686,7 +722,7 @@ namespace CMS.Server
                     PaymentStatus = PaymentStatus.Pending,
                     CustomerNotes = request.CustomerNotes,
                     SpecialInstructions = request.SpecialInstructions,
-                    PromoCodeApplied = request.PromoCode,
+                    PromoCodeApplied = appliedPromoCode ?? string.Empty,
                     SubTotal = subTotal,
                     DeliveryFee = deliveryFee,
                     TaxAmount = taxAmount,
@@ -1553,6 +1589,126 @@ namespace CMS.Server
 
                 return Results.Ok(orders);
             }).RequireAuthorization();
+
+
+            //GET active promotions
+            app.MapGet("/api/customer/promos/active", async (CmsDbContext db) =>
+            {
+                var now = DateTime.UtcNow;
+
+                var promos = await db.Set<Promo>()
+                    .AsNoTracking()
+                    .Where(x =>
+                        now >= x.ValidFromUtc &&
+                        now <= x.ValidUntilUtc &&
+                        (!x.UsageLimit.HasValue || x.UsedCount < x.UsageLimit.Value))
+                    .OrderBy(x => x.ValidUntilUtc)
+                    .Select(x => new ActivePromoDto
+                    {
+                        Code = x.Code,
+                        Description = x.Description,
+                        DiscountPercentageValue = x.DiscountPercentageValue,
+                        MinimumOrderAmount = x.MinimumOrderAmount,
+                        ValidFromUtc = x.ValidFromUtc,
+                        ValidUntilUtc = x.ValidUntilUtc
+                    })
+                    .ToListAsync();
+
+                return Results.Ok(promos);
+            });
+
+            app.MapGet("/api/customer/promos/validate", async (string code, decimal subTotal, CmsDbContext db) =>
+            {
+                if (string.IsNullOrWhiteSpace(code))
+                {
+                    return Results.BadRequest(new { message = "Promo code is required." });
+                }
+
+                var now = DateTime.UtcNow;
+
+                var promo = await db.Set<Promo>()
+                    .AsNoTracking()
+                    .FirstOrDefaultAsync(x =>
+                        x.Code == code &&
+                        now >= x.ValidFromUtc &&
+                        now <= x.ValidUntilUtc &&
+                        (!x.UsageLimit.HasValue || x.UsedCount < x.UsageLimit.Value));
+
+                if (promo is null)
+                {
+                    return Results.NotFound(new { message = "Promo code is invalid or expired." });
+                }
+
+                if (promo.MinimumOrderAmount.HasValue && subTotal < promo.MinimumOrderAmount.Value)
+                {
+                    return Results.BadRequest(new
+                    {
+                        message = $"This promo requires a minimum subtotal of ₱{promo.MinimumOrderAmount.Value:N0}."
+                    });
+                }
+
+                var discountAmount = Math.Round(subTotal * (promo.DiscountPercentageValue / 100m), 2);
+                var taxAmount = Math.Round(subTotal * 0.12m, 2);
+                var newGrandTotal = subTotal + taxAmount - discountAmount;
+
+                return Results.Ok(new PromoValidationResponse
+                {
+                    Code = promo.Code,
+                    Description = promo.Description,
+                    DiscountPercentageValue = promo.DiscountPercentageValue,
+                    DiscountAmount = discountAmount,
+                    SubTotal = subTotal,
+                    NewGrandTotal = newGrandTotal
+                });
+            });
+
+            //GET validate a promo code with given subtotal and return discount details if valid
+            app.MapGet("/api/customer/promos/validate", async (string code, decimal subTotal, CmsDbContext db) =>
+            {
+                if (string.IsNullOrWhiteSpace(code))
+                {
+                    return Results.BadRequest(new { message = "Promo code is required." });
+                }
+
+                var now = DateTime.UtcNow;
+
+                var promo = await db.Set<Promo>()
+                    .AsNoTracking()
+                    .FirstOrDefaultAsync(x =>
+                        x.Code == code &&
+                        now >= x.ValidFromUtc &&
+                        now <= x.ValidUntilUtc &&
+                        (!x.UsageLimit.HasValue || x.UsedCount < x.UsageLimit.Value));
+
+                if (promo is null)
+                {
+                    return Results.NotFound(new { message = "Promo code is invalid or expired." });
+                }
+
+                if (promo.MinimumOrderAmount.HasValue && subTotal < promo.MinimumOrderAmount.Value)
+                {
+                    return Results.BadRequest(new
+                    {
+                        message = $"This promo requires a minimum subtotal of ₱{promo.MinimumOrderAmount.Value:N0}."
+                    });
+                }
+
+                var discountAmount = Math.Round(subTotal * (promo.DiscountPercentageValue / 100m), 2);
+                var taxAmount = Math.Round(subTotal * 0.12m, 2);
+                var newGrandTotal = subTotal + taxAmount - discountAmount;
+
+                return Results.Ok(new PromoValidationResponse
+                {
+                    Code = promo.Code,
+                    Description = promo.Description,
+                    DiscountPercentageValue = promo.DiscountPercentageValue,
+                    DiscountAmount = discountAmount,
+                    SubTotal = subTotal,
+                    NewGrandTotal = newGrandTotal
+                });
+            });
+
+
 
             app.MapControllers();
             await app.RunAsync();

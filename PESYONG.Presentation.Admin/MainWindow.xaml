@@ -6,6 +6,7 @@
         xmlns:local="clr-namespace:PESYONG.Presentation.Admin"
         mc:Ignorable="d"
         Title="PESYONG Administrative Application" 
+        Icon="/Assets/logo.ico"
         Loaded="MainWindow_Loaded"
         Height="450" 
         MinHeight="450"

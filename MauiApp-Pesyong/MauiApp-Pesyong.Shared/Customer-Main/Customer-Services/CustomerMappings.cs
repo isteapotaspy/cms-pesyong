@@ -23,7 +23,10 @@ public static class CustomerMappings
             Notice = dto.Notice,
             ServesLabel = dto.ServesLabel,
             InclusionText = dto.InclusionText,
-            ImageClass = string.IsNullOrWhiteSpace(dto.ImageUrl) ? "food-image-one" : dto.ImageUrl,
+
+            ImageClass = string.IsNullOrWhiteSpace(dto.ImageUrl) ? "food-image-one" : string.Empty,
+            ImageUrl = dto.ImageUrl ?? string.Empty,
+
             Rating = dto.Rating,
             ReviewCount = dto.ReviewCount,
             IsAvailable = dto.IsAvailable,
@@ -61,7 +64,8 @@ public static class CustomerMappings
                             MealType = o.Meal.MealType,
                             BasePrice = o.Meal.BasePrice,
                             AdditionalPrice = o.Meal.AdditionalPrice,
-                            ImageClass = string.IsNullOrWhiteSpace(o.Meal.ImageUrl) ? "food-image-one" : o.Meal.ImageUrl,
+                            ImageClass = string.IsNullOrWhiteSpace(o.Meal.ImageUrl) ? "food-image-one" : string.Empty,
+                            ImageUrl = o.Meal.ImageUrl ?? string.Empty,
                             IsDefault = o.Meal.IsDefault
                         }
                     }).ToList()
@@ -133,7 +137,8 @@ public static class CustomerMappings
             MealType = dto.MealType,
             BasePrice = dto.BasePrice,
             MinOrderQuantity = dto.MinOrderQuantity,
-            ImageClass = string.IsNullOrWhiteSpace(dto.ImageUrl) ? "food-image-one" : dto.ImageUrl,
+            ImageClass = string.IsNullOrWhiteSpace(dto.ImageUrl) ? "food-image-one" : string.Empty,
+            ImageUrl = dto.ImageUrl ?? string.Empty,
             IsAvailable = dto.IsAvailable
         };
     }

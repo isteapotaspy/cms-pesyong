@@ -3,6 +3,7 @@ using CMS.Domain.Entities.Menu;
 using CMS.Domain.Entities.Packages;
 using CMS.Domain.Entities.User;
 using CMS.Domain.Enums;
+using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 
 namespace CMS.Infrastructure.Persistence;
@@ -435,13 +436,31 @@ public static class CmsDbContextSeeder
     }
 
 
-    private static async Task<AppUser> EnsureAdminUserAsync(CmsDbContext db, CancellationToken cancellationToken)
+    private static async Task<AppUser> EnsureAdminUserAsync(
+            CmsDbContext db,
+            CancellationToken cancellationToken)
     {
         var existing = await db.AppUsers
             .FirstOrDefaultAsync(x => x.UserName == "admin", cancellationToken);
 
         if (existing is not null)
+        {
+            existing.Email = "admin@pesyong.local";
+            existing.FirstName = "System";
+            existing.LastName = "Admin";
+            existing.Role = UserRole.Admin;
+            existing.IsActive = true;
+            existing.IsEmailVerified = true;
+            existing.EmailVerificationCode = null;
+            existing.EmailVerificationCodeExpiresAtUtc = null;
+
+            existing.PasswordHash = new PasswordHasher<AppUser>()
+                .HashPassword(existing, "Admin@12345");
+
+            await db.SaveChangesAsync(cancellationToken);
+
             return existing;
+        }
 
         var admin = new AppUser
         {
@@ -449,10 +468,15 @@ public static class CmsDbContextSeeder
             Email = "admin@pesyong.local",
             FirstName = "System",
             LastName = "Admin",
-            PasswordHash = "TEMP_ADMIN_HASH_REPLACE_LATER",
             Role = UserRole.Admin,
-            IsActive = true
+            IsActive = true,
+            IsEmailVerified = true,
+            EmailVerificationCode = null,
+            EmailVerificationCodeExpiresAtUtc = null
         };
+
+        admin.PasswordHash = new PasswordHasher<AppUser>()
+            .HashPassword(admin, "Admin@12345");
 
         db.AppUsers.Add(admin);
         await db.SaveChangesAsync(cancellationToken);
