@@ -44,6 +44,8 @@ public partial class App : Application
                     client.BaseAddress = new Uri(apiBaseUrl);
                 });
 
+                services.AddScoped<IImageApiService, ImageApiService>();
+
                 services.AddScoped<IMealApiService, MealApiService>();
                 services.AddTransient<MealPageVM>();
                 services.AddTransient<MealsPage>();

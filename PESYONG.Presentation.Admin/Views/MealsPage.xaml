@@ -298,51 +298,87 @@
                         </Grid.ColumnDefinitions>
 
                         <Border Grid.Column="0"
-                                MinHeight="240"
-                                BorderThickness="1"
-                                CornerRadius="4">
+                MinHeight="240"
+                BorderThickness="1"
+                CornerRadius="4">
                             <Grid Margin="8">
-                                <Image Source="{Binding SelectedMeal.ImagePreviewSource}"
-                                       Stretch="Uniform"
-                                       HorizontalAlignment="Center"
-                                       VerticalAlignment="Center"/>
+                                <Image Source="{Binding SelectedImagePreviewSource}"
+                       Stretch="Uniform"
+                       HorizontalAlignment="Center"
+                       VerticalAlignment="Center"/>
 
-                                <TextBlock Text="{Binding SelectedMeal.ImagePlaceholderText}"
-                                           TextAlignment="Center"
-                                           TextWrapping="Wrap"
-                                           HorizontalAlignment="Center"
-                                           VerticalAlignment="Center"/>
+                                <TextBlock Text="{Binding ImagePlaceholderText}"
+                           TextAlignment="Center"
+                           TextWrapping="Wrap"
+                           HorizontalAlignment="Center"
+                           VerticalAlignment="Center"/>
                             </Grid>
                         </Border>
 
                         <StackPanel Grid.Column="2"
-                                    HorizontalAlignment="Center"
-                                    VerticalAlignment="Center">
+                    VerticalAlignment="Center">
 
-                            <TextBlock Text="Image URL"
-                                       Margin="0,0,0,4"/>
+                            <GroupBox Header="Meal Image">
+                                <Grid Margin="8">
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="120"/>
+                                        <ColumnDefinition Width="*"/>
+                                    </Grid.ColumnDefinitions>
 
-                            <TextBox IsReadOnly="{Binding IsNotEditing}"
-                                     Text="{Binding SelectedMeal.ImageUrl, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"/>
+                                    <Grid.RowDefinitions>
+                                        <RowDefinition Height="Auto"/>
+                                        <RowDefinition Height="8"/>
+                                        <RowDefinition Height="Auto"/>
+                                        <RowDefinition Height="8"/>
+                                        <RowDefinition Height="Auto"/>
+                                        <RowDefinition Height="8"/>
+                                        <RowDefinition Height="Auto"/>
+                                    </Grid.RowDefinitions>
 
-                            <StackPanel Orientation="Horizontal"
-                                        Margin="0,8,0,8">
-                                <Button Content="Upload Image"
-                                        IsEnabled="{Binding IsEditing}"
-                                        Command="{Binding SelectedMeal.PickImageCommand}"
-                                        Margin="0,0,8,0"/>
+                                    <TextBlock Grid.Row="0"
+                               Grid.Column="0"
+                               Text="Image URL"
+                               VerticalAlignment="Center"/>
 
-                                <Button Content="Clear Upload"
-                                        IsEnabled="{Binding IsEditing}"
-                                        Command="{Binding SelectedMeal.ClearUploadedImageCommand}"/>
-                            </StackPanel>
+                                    <TextBox Grid.Row="0"
+                                             Grid.Column="1"
+                                             Width="112"
+                                             IsReadOnly="{Binding IsNotEditing}"
+                                             Text="{Binding SelectedMeal.ImageUrl, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"/>     
 
-                            <TextBlock Text="{Binding SelectedMeal.ImageStatusText}"
-                                       TextWrapping="Wrap"
-                                       Margin="0,0,0,8"/>
+                                    <TextBlock Grid.Row="2"
+                                               Grid.Column="0"
+                                               Text="Local File"
+                                               VerticalAlignment="Center"/>
 
-                            <TextBlock Text="The uploaded file is stored in SelectedMeal.UploadedImageBytes for now. Once the image service is ready, upload that byte array first, then assign the returned URL to SelectedMeal.ImageUrl before saving."
-                                       TextWrapping="Wrap"/>
+                                    <TextBox Grid.Row="2"
+                                             Grid.Column="1"
+                                             Width="112"
+                                             IsReadOnly="True"
+                                             Text="{Binding SelectedLocalImagePath, Mode=OneWay}"/>
+
+                                    <StackPanel Grid.Row="4"
+                                Grid.Column="1"
+                                Orientation="Vertical">
+                                        <Button Content="Upload Image"
+                                                IsEnabled="{Binding IsEditing}"
+                                                Command="{Binding UploadMealImageFromDeviceCommand}"
+                                                Margin="0,0,8,0"
+                                                HorizontalAlignment="Center"
+                                                Width="112"/>
+
+                                        <Button Content="Clear Image" Width="112"
+                                                Margin="0,12,0,0"
+                                                IsEnabled="{Binding IsEditing}"
+                                                Command="{Binding ClearMealImageCommand}"/>
+                                    </StackPanel>
+
+                                    <TextBlock Grid.Row="6"
+                               Grid.Column="1"
+                               Text="{Binding ImageStatusText}"
+                               TextWrapping="Wrap"/>
+                                </Grid>
+                            </GroupBox>
                         </StackPanel>
                     </Grid>
                 </TabItem>
