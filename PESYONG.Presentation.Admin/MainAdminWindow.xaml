@@ -72,37 +72,12 @@
 
         <Menu Grid.Row="0" 
               FontSize="12">
-            <MenuItem Header="_1 File" 
-                      Background="Transparent"
-                      InputGestureText="1">
-                <MenuItem Header="_Refresh" InputGestureText="R"/>
-                <MenuItem Header="E_xit" InputGestureText="E"/>
-            </MenuItem>
-            
-            <MenuItem Header="_2 View" InputGestureText="2">
-                <MenuItem Header="_Dashboard" InputGestureText="D" Click="DashboardMenuItem_Click"/>
-                <Separator/>
-                <MenuItem Header="_Meals" InputGestureText="M" Click="MealsMenuItem_Click"/>
-                <MenuItem Header="Pac_kages" InputGestureText="K" Click="PackagesMenuItem_Click"/>
-                <MenuItem Header="_Orders" InputGestureText="O" Click="OrdersMenuItem_Click"/>
-                <MenuItem Header="P_romos" InputGestureText="R" Click="PromosMenuItem_Click"/>
-                <MenuItem Header="_Users" InputGestureText="U"/>
-            </MenuItem>
-            <MenuItem Header="_3 Quick Actions" InputGestureText="3">
-                <MenuItem Header="Print Receipt" />
-                <MenuItem Header="Manage Customer" />
-                <Separator/>
-                <MenuItem Header="Process Order" />
-                <MenuItem Header="Update Order" />
-            </MenuItem>
-            <MenuItem Header="_4 Reports" InputGestureText="4">
-                <MenuItem Header="Sales Report" />
-                <MenuItem Header="Inventory Report" />
-            </MenuItem>
-            <MenuItem Header="_5 Settings" InputGestureText="5">
-                <MenuItem Header="User Management" />
-                <MenuItem Header="System Preferences" />
-            </MenuItem>
+            <MenuItem Header="_Exit" InputGestureText="E" Click="ExitMenuItem_Click"/>
+            <MenuItem Header="_Dashboard" InputGestureText="D" Click="DashboardMenuItem_Click"/>
+            <MenuItem Header="_Meals" InputGestureText="M" Click="MealsMenuItem_Click"/>
+            <MenuItem Header="Pac_kages" InputGestureText="K" Click="PackagesMenuItem_Click"/>
+            <MenuItem Header="_Orders" InputGestureText="O" Click="OrdersMenuItem_Click"/>
+            <MenuItem Header="P_romos" InputGestureText="R" Click="PromosMenuItem_Click"/>
         </Menu>
 
         <Frame x:Name="MainAdminFrame"

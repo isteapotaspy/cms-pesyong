@@ -90,7 +90,11 @@
                             Command="{Binding NewOrderCommand}"
                             Margin="0,0,8,0"/>
                     -->
-                    
+
+                    <Button Content="Download Receipt"
+                            Command="{Binding PrintReceiptCommand}"
+                            Margin="0,0,8,0"/>
+
                     <Button Content="{Binding EditSaveButtonText}"
                             Command="{Binding EditOrSaveCommand}"
                             Margin="0,0,8,0"/>

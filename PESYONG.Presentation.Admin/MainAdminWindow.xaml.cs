@@ -150,4 +150,9 @@ public partial class MainAdminWindow : Window
     {
         NavigateToPage("Payments");
     }
+
+    private void ExitMenuItem_Click_1(object sender, RoutedEventArgs e)
+    {
+        Application.Current.Shutdown();
+    }
 }

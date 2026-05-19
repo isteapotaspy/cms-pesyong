@@ -6,32 +6,29 @@ namespace PESYONG.Presentation.Admin.Views;
 
 public partial class PromosPage : Page
 {
+    private readonly PromosPageVM _viewModel;
     private bool _hasLoaded;
-
-    public PromosPage()
-    {
-        InitializeComponent();
-    }
 
     public PromosPage(PromosPageVM viewModel)
     {
         InitializeComponent();
-        DataContext = viewModel;
+
+        _viewModel = viewModel;
+        DataContext = _viewModel;
+
+        Loaded += PromosPage_Loaded;
     }
 
-    private async void Page_Loaded(object sender, RoutedEventArgs e)
+    private async void PromosPage_Loaded(object sender, RoutedEventArgs e)
     {
         if (_hasLoaded)
             return;
 
         _hasLoaded = true;
 
-        if (DataContext is not PromosPageVM viewModel)
-            return;
-
-        if (viewModel.LoadCommand.CanExecute(null))
+        if (_viewModel.LoadCommand.CanExecute(null))
         {
-            await viewModel.LoadCommand.ExecuteAsync(null);
+            await _viewModel.LoadCommand.ExecuteAsync(null);
         }
     }
 }
