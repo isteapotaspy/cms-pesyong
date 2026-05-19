@@ -1,0 +1,58 @@
+﻿@using Microsoft.JSInterop
+@implements IAsyncDisposable
+@inject IJSRuntime JS
+
+<div id="@_mapId" style="height:@Height; width:100%; border-radius:18px; overflow:hidden;"></div>
+
+@code {
+    [Parameter] public decimal? Latitude { get; set; }
+    [Parameter] public decimal? Longitude { get; set; }
+    [Parameter] public string Label { get; set; } = "Location";
+    [Parameter] public string Height { get; set; } = "320px";
+
+    private readonly string _mapId = $"location_map_{Guid.NewGuid():N}";
+    private IJSObjectReference? _module;
+    private bool _needsRender = true;
+
+    protected override void OnParametersSet()
+    {
+        _needsRender = true;
+    }
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (firstRender)
+        {
+            _module = await JS.InvokeAsync<IJSObjectReference>(
+                    "import",
+                    "/_content/MauiApp-Pesyong.Shared/js/locationMap.js");
+        }
+
+        if (_module is not null && _needsRender && Latitude.HasValue && Longitude.HasValue)
+        {
+            _needsRender = false;
+
+            await _module.InvokeVoidAsync(
+                "renderLocationMap",
+                _mapId,
+                Latitude.Value,
+                Longitude.Value,
+                Label);
+        }
+    }
+
+    public async ValueTask DisposeAsync()
+{
+    try
+    {
+        if (_module is not null)
+        {
+            await _module.InvokeVoidAsync("disposeLocationMap", _mapId);
+            await _module.DisposeAsync();
+        }
+    }
+    catch (JSDisconnectedException)
+    {
+    }
+}
+}

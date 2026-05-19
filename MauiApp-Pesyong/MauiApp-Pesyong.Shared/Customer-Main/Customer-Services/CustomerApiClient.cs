@@ -211,6 +211,36 @@ public sealed class CustomerApiClient : ICustomerCatalogService, ICustomerOrderS
         }
     }
 
+    public async Task<DownloadedFileVm?> DownloadInvoiceAsync(int orderId, CancellationToken cancellationToken = default)
+    {
+        using var request = await CreateAuthorizedRequestAsync(HttpMethod.Get, $"api/customer/orders/{orderId}/invoice");
+        using var response = await _http.SendAsync(request, cancellationToken);
+
+        if (response.StatusCode == System.Net.HttpStatusCode.NotFound)
+            return null;
+
+        if (!response.IsSuccessStatusCode)
+            throw new InvalidOperationException(await ReadErrorMessageAsync(response));
+
+        var bytes = await response.Content.ReadAsByteArrayAsync(cancellationToken);
+
+        var fileName =
+            response.Content.Headers.ContentDisposition?.FileNameStar ??
+            response.Content.Headers.ContentDisposition?.FileName?.Trim('"') ??
+            $"invoice-{orderId}.html";
+
+        var contentType =
+            response.Content.Headers.ContentType?.MediaType ??
+            "text/html";
+
+        return new DownloadedFileVm
+        {
+            FileName = fileName,
+            ContentType = contentType,
+            Content = bytes
+        };
+    }
+
 
     //==== HELPER CLASSES AND METHODS ====//
     private sealed class ApiMessageResponse

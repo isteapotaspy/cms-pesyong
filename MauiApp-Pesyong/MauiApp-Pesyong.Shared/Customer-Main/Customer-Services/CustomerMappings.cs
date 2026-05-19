@@ -89,17 +89,7 @@ public static class CustomerMappings
             OrderedAt = dto.OrderedAtUtc.ToLocalTime(),
             EstimatedDeliveryTime = dto.EstimatedDeliveryTimeUtc.ToLocalTime(),
             AmountPaid = dto.AmountPaid,
-            Rider = dto.Rider is null
-                ? new RiderVm()
-                : new RiderVm
-                {
-                    Name = dto.Rider.Name,
-                    Vehicle = dto.Rider.Vehicle,
-                    PlateNumber = dto.Rider.PlateNumber,
-                    Rating = dto.Rider.Rating,
-                    TotalTrips = dto.Rider.TotalTrips,
-                    ContactNumber = dto.Rider.ContactNumber
-                },
+
             DeliveryAddress = new DeliveryAddressVm
             {
                 StreetAddress = dto.DeliveryAddress.StreetAddress,
@@ -109,6 +99,7 @@ public static class CustomerMappings
                 Latitude = dto.DeliveryAddress.Latitude,
                 Longitude = dto.DeliveryAddress.Longitude
             },
+
             Steps = dto.Steps.Select(x => new TrackingStepVm
             {
                 Title = x.Title,
@@ -116,6 +107,7 @@ public static class CustomerMappings
                 Timestamp = x.TimestampUtc?.ToLocalTime(),
                 State = x.State
             }).ToList(),
+
             Items = dto.Items.Select((x, i) => new TrackingSelectionVm
             {
                 Name = x.PackageTitle,
