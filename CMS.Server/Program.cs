@@ -29,6 +29,7 @@ using Microsoft.IdentityModel.Tokens;
 using System.Net.Mail;
 using System.Text.RegularExpressions;
 using CMS.Server.Services;
+using CMS.Server.Hubs;
 using Microsoft.AspNetCore.Http.Features;
 
 namespace CMS.Server
@@ -46,6 +47,8 @@ namespace CMS.Server
 
             // Learn more about configuring OpenAPI at https://aka.ms/aspnet/openapi
             builder.Services.AddOpenApi();
+
+            builder.Services.AddSignalR();
 
             builder.Services.AddCors(options =>
             {
@@ -90,6 +93,23 @@ namespace CMS.Server
                         IssuerSigningKey = new SymmetricSecurityKey(jwtKey),
                         ClockSkew = TimeSpan.Zero
                     };
+
+                    options.Events = new JwtBearerEvents
+                    {
+                        OnMessageReceived = context =>
+                        {
+                            var accessToken = context.Request.Query["access_token"];
+                            var path = context.HttpContext.Request.Path;
+
+                            if (!string.IsNullOrWhiteSpace(accessToken) &&
+                                path.StartsWithSegments("/hubs/orders"))
+                            {
+                                context.Token = accessToken;
+                            }
+
+                            return Task.CompletedTask;
+                        }
+                    };
                 });
 
             builder.Services.Configure<FormOptions>(options =>
@@ -127,6 +147,8 @@ namespace CMS.Server
                 //app.MapOpenApi();
                 await app.Services.SeedDatabaseAsync();
             }
+
+            app.MapHub<OrderHub>("/hubs/orders");
 
 
             // =================== CUSTOMER ENDPOINTS =================== //
