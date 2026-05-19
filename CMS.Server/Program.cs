@@ -210,7 +210,7 @@ namespace CMS.Server
                         Sizes = x.Sizes
                             .Where(s => s.IsAvailable)
                             .OrderBy(s => s.PaxCount)
-                            .Select(s => new PackageSizeDto
+                            .Select(s => new Contracts.Customer.Menu.PackageSizeDto
                             {
                                 Id = s.Id,
                                 Label = s.Label,
@@ -220,7 +220,7 @@ namespace CMS.Server
                                 SelectionRules = s.SelectionRules
                                     .Where(r => r.IsActive)
                                     .OrderBy(r => r.DisplayOrder)
-                                    .Select(r => new PackageSelectionRuleDto
+                                    .Select(r => new Contracts.Customer.Menu.PackageSelectionRuleDto
                                     {
                                         Id = r.Id,
                                         Title = r.Title,
@@ -234,7 +234,7 @@ namespace CMS.Server
                                         Options = r.Options
                                             .Where(o => o.IsActive && o.Meal.IsAvailable)
                                             .OrderBy(o => o.Meal.Name)
-                                            .Select(o => new PackageSelectionOptionDto
+                                            .Select(o => new Contracts.Customer.Menu.PackageSelectionOptionDto
                                             {
                                                 Id = o.Id,
                                                 MealId = o.MealId,
@@ -319,7 +319,7 @@ namespace CMS.Server
                         Sizes = x.Sizes
                             .Where(s => s.IsAvailable)
                             .OrderBy(s => s.PaxCount)
-                            .Select(s => new PackageSizeDto
+                            .Select(s => new Contracts.Customer.Menu.PackageSizeDto
                             {
                                 Id = s.Id,
                                 Label = s.Label,
@@ -329,7 +329,7 @@ namespace CMS.Server
                                 SelectionRules = s.SelectionRules
                                     .Where(r => r.IsActive)
                                     .OrderBy(r => r.DisplayOrder)
-                                    .Select(r => new PackageSelectionRuleDto
+                                    .Select(r => new Contracts.Customer.Menu.PackageSelectionRuleDto
                                     {
                                         Id = r.Id,
                                         Title = r.Title,
@@ -343,7 +343,7 @@ namespace CMS.Server
                                         Options = r.Options
                                             .Where(o => o.IsActive && o.Meal.IsAvailable)
                                             .OrderBy(o => o.Meal.Name)
-                                            .Select(o => new PackageSelectionOptionDto
+                                            .Select(o => new Contracts.Customer.Menu.PackageSelectionOptionDto
                                             {
                                                 Id = o.Id,
                                                 MealId = o.MealId,

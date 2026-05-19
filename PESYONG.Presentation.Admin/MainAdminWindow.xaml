@@ -82,12 +82,12 @@
                 <MenuItem Header="_Dashboard" InputGestureText="D" Click="DashboardMenuItem_Click"/>
                 <Separator/>
                 <MenuItem Header="_Meals" InputGestureText="M" Click="MealsMenuItem_Click"/>
-                <MenuItem Header="_Packages" InputGestureText="P" Click="PackagesMenuItem_Click"/>
-                <MenuItem Header="_Payments" InputGestureText="P" Click="PaymentsMenuItem_Click"/>
-                <MenuItem Header="_Promos" InputGestureText="P" Click="PromosMenuItem_Click"/>
+                <MenuItem Header="Pac_kages" InputGestureText="K" Click="PackagesMenuItem_Click"/>
                 <MenuItem Header="_Orders" InputGestureText="O" Click="OrdersMenuItem_Click"/>
-                <MenuItem Header="_Delivery" InputGestureText="D" Click="DeliveriesMenuItem_Click"/>
-                <MenuItem Header="_Customers" InputGestureText="C"/>
+                <MenuItem Header="Deli_very" InputGestureText="V" Click="DeliveriesMenuItem_Click"/>
+                <MenuItem Header="Pa_yments" InputGestureText="Y" Click="PaymentsMenuItem_Click"/>
+                <MenuItem Header="P_romos" InputGestureText="R" Click="PromosMenuItem_Click"/>
+                <MenuItem Header="_Users" InputGestureText="U"/>
             </MenuItem>
             <MenuItem Header="_3 Quick Actions" InputGestureText="3">
                 <MenuItem Header="Print Receipt" />

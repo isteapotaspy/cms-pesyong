@@ -44,7 +44,12 @@
                                  Height="32"
                                  Margin="6"
                                  HorizontalAlignment="Center"
-                                 VerticalAlignment="Center"/>
+                                 VerticalAlignment="Center">
+                            <Ellipse.Fill>
+                                <ImageBrush ImageSource="{Binding ImageUrl}"
+                                            Stretch="UniformToFill"/>
+                            </Ellipse.Fill>
+                        </Ellipse>
 
                         <TextBlock Grid.Row="0"
                                    Grid.Column="1"
@@ -320,6 +325,7 @@
                 </TabItem>
 
                 <!-- IMAGE TAB -->
+                <!-- IMAGE TAB -->
                 <TabItem Header="Image">
                     <Grid Margin="0,8,0,0">
                         <Grid.ColumnDefinitions>
@@ -329,50 +335,88 @@
                         </Grid.ColumnDefinitions>
 
                         <Border Grid.Column="0"
-                                MinHeight="240"
-                                BorderThickness="1"
-                                CornerRadius="4">
+                MinHeight="240"
+                BorderThickness="1"
+                CornerRadius="4">
                             <Grid Margin="8">
-                                <Image Source="{Binding SelectedPackage.ImagePreviewSource}"
-                                       Stretch="Uniform"
-                                       HorizontalAlignment="Center"
-                                       VerticalAlignment="Center"/>
+                                <Image Source="{Binding SelectedImagePreviewSource}"
+                       Stretch="Uniform"
+                       HorizontalAlignment="Center"
+                       VerticalAlignment="Center"/>
 
-                                <TextBlock Text="{Binding SelectedPackage.ImagePlaceholderText}"
-                                           TextAlignment="Center"
-                                           TextWrapping="Wrap"
-                                           HorizontalAlignment="Center"
-                                           VerticalAlignment="Center"/>
+                                <TextBlock Text="{Binding ImagePlaceholderText}"
+                           TextAlignment="Center"
+                           TextWrapping="Wrap"
+                           HorizontalAlignment="Center"
+                           VerticalAlignment="Center"/>
                             </Grid>
                         </Border>
 
                         <StackPanel Grid.Column="2"
-                                    VerticalAlignment="Top">
+                    VerticalAlignment="Center">
 
-                            <TextBlock Text="Image URL"
-                                       Margin="0,0,0,4"/>
+                            <GroupBox Header="Package Image">
+                                <Grid Margin="8">
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="120"/>
+                                        <ColumnDefinition Width="*"/>
+                                    </Grid.ColumnDefinitions>
 
-                            <TextBox IsReadOnly="{Binding IsNotEditing}"
-                                     Text="{Binding SelectedPackage.ImageUrl, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"/>
+                                    <Grid.RowDefinitions>
+                                        <RowDefinition Height="Auto"/>
+                                        <RowDefinition Height="8"/>
+                                        <RowDefinition Height="Auto"/>
+                                        <RowDefinition Height="8"/>
+                                        <RowDefinition Height="Auto"/>
+                                        <RowDefinition Height="8"/>
+                                        <RowDefinition Height="Auto"/>
+                                    </Grid.RowDefinitions>
 
-                            <StackPanel Orientation="Horizontal"
-                                        Margin="0,8,0,8">
-                                <Button Content="Upload Image"
-                                        IsEnabled="{Binding IsEditing}"
-                                        Command="{Binding SelectedPackage.PickImageCommand}"
-                                        Margin="0,0,8,0"/>
+                                    <TextBlock Grid.Row="0"
+                               Grid.Column="0"
+                               Text="Image URL"
+                               VerticalAlignment="Center"/>
 
-                                <Button Content="Clear Upload"
-                                        IsEnabled="{Binding IsEditing}"
-                                        Command="{Binding SelectedPackage.ClearUploadedImageCommand}"/>
-                            </StackPanel>
+                                    <TextBox Grid.Row="0"
+                             Grid.Column="1"
+                             Width="112"
+                             IsReadOnly="{Binding IsNotEditing}"
+                             Text="{Binding SelectedPackage.ImageUrl, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"/>
 
-                            <TextBlock Text="{Binding SelectedPackage.ImageStatusText}"
-                                       TextWrapping="Wrap"
-                                       Margin="0,0,0,8"/>
+                                    <TextBlock Grid.Row="2"
+                               Grid.Column="0"
+                               Text="Local File"
+                               VerticalAlignment="Center"/>
 
-                            <TextBlock Text="The uploaded file is stored in SelectedPackage.UploadedImageBytes for now. Once the image service is ready, upload that byte array first, then assign the returned URL to SelectedPackage.ImageUrl before saving."
-                                       TextWrapping="Wrap"/>
+                                    <TextBox Grid.Row="2"
+                             Grid.Column="1"
+                             Width="112"
+                             IsReadOnly="True"
+                             Text="{Binding SelectedLocalImagePath, Mode=OneWay}"/>
+
+                                    <StackPanel Grid.Row="4"
+                                Grid.Column="1"
+                                Orientation="Vertical">
+                                        <Button Content="Upload Image"
+                                IsEnabled="{Binding IsEditing}"
+                                Command="{Binding UploadPackageImageFromDeviceCommand}"
+                                Margin="0,0,8,0"
+                                HorizontalAlignment="Center"
+                                Width="112"/>
+
+                                        <Button Content="Clear Image"
+                                Width="112"
+                                Margin="0,12,0,0"
+                                IsEnabled="{Binding IsEditing}"
+                                Command="{Binding ClearPackageImageCommand}"/>
+                                    </StackPanel>
+
+                                    <TextBlock Grid.Row="6"
+                               Grid.Column="1"
+                               Text="{Binding ImageStatusText}"
+                               TextWrapping="Wrap"/>
+                                </Grid>
+                            </GroupBox>
                         </StackPanel>
                     </Grid>
                 </TabItem>
@@ -483,73 +527,120 @@
 
                 <!-- RULES TAB -->
                 <TabItem Header="Rules">
-                    <Grid Margin="0,8,0,0">
+                    <Grid Margin="0,8,0,0"
+          HorizontalAlignment="Stretch"
+          VerticalAlignment="Stretch">
+
                         <Grid.RowDefinitions>
+                            <RowDefinition Height="Auto"/>
+                            <RowDefinition Height="8"/>
                             <RowDefinition Height="Auto"/>
                             <RowDefinition Height="8"/>
                             <RowDefinition Height="*"/>
                         </Grid.RowDefinitions>
 
-                        <Button Grid.Row="0"
-                                Content="Add Rule"
-                                IsEnabled="{Binding IsEditing}"
-                                HorizontalAlignment="Left"
-                                Command="{Binding AddSelectionRuleCommand}"/>
+                        <!-- Rules belong to a package size, so choose the size first. -->
+                        <Grid Grid.Row="0">
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="90"/>
+                                <ColumnDefinition Width="*"/>
+                                <ColumnDefinition Width="12"/>
+                                <ColumnDefinition Width="Auto"/>
+                            </Grid.ColumnDefinitions>
 
-                        <DataGrid Grid.Row="2"
-                                  ItemsSource="{Binding SelectedPackage.SelectionRules}"
-                                  AutoGenerateColumns="False"
-                                  CanUserAddRows="False"
-                                  IsReadOnly="{Binding IsNotEditing}"
-                                  RowDetailsVisibilityMode="VisibleWhenSelected">
+                            <TextBlock Grid.Column="0"
+                       Text="Size"
+                       VerticalAlignment="Center"/>
+
+                            <ComboBox Grid.Column="1"
+                      IsEnabled="{Binding IsEditing}"
+                      ItemsSource="{Binding SelectedPackage.Sizes}"
+                      SelectedItem="{Binding SelectedSize, Mode=TwoWay}"
+                      DisplayMemberPath="Label"/>
+
+                            <Button Grid.Column="3"
+                    Content="Add Rule"
+                    IsEnabled="{Binding IsEditing}"
+                    HorizontalAlignment="Left"
+                    Command="{Binding AddSelectionRuleCommand}"/>
+                        </Grid>
+
+                        <TextBlock Grid.Row="2"
+                   Text="Select or create a package size before adding rules."
+                   TextWrapping="Wrap">
+                            <TextBlock.Style>
+                                <Style TargetType="TextBlock">
+                                    <Setter Property="Visibility" Value="Collapsed"/>
+                                    <Style.Triggers>
+                                        <DataTrigger Binding="{Binding SelectedSize}" Value="{x:Null}">
+                                            <Setter Property="Visibility" Value="Visible"/>
+                                        </DataTrigger>
+                                    </Style.Triggers>
+                                </Style>
+                            </TextBlock.Style>
+                        </TextBlock>
+
+                        <DataGrid Grid.Row="4"
+                  ItemsSource="{Binding SelectedSize.SelectionRules}"
+                  AutoGenerateColumns="False"
+                  CanUserAddRows="False"
+                  IsReadOnly="{Binding IsNotEditing}"
+                  RowDetailsVisibilityMode="VisibleWhenSelected"
+                  HorizontalAlignment="Stretch"
+                  HorizontalContentAlignment="Stretch"
+                  ColumnWidth="*"
+                  ScrollViewer.HorizontalScrollBarVisibility="Disabled">
+
                             <DataGrid.Columns>
                                 <DataGridTextColumn Header="Title"
-                                                    Width="*"
-                                                    Binding="{Binding Title, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"/>
+                                    Width="*"
+                                    Binding="{Binding Title, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"/>
 
                                 <DataGridTemplateColumn Header="Type"
-                                                        Width="110">
+                                        Width="140">
                                     <DataGridTemplateColumn.CellTemplate>
                                         <DataTemplate>
-                                            <ComboBox IsHitTestVisible="{Binding DataContext.IsEditing, RelativeSource={RelativeSource AncestorType=Page}}"
-                                                      Focusable="{Binding DataContext.IsEditing, RelativeSource={RelativeSource AncestorType=Page}}"
-                                                      ItemsSource="{Binding DataContext.SelectionTypeOptions, RelativeSource={RelativeSource AncestorType=Page}}"
-                                                      SelectedItem="{Binding SelectionType, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"/>
+                                            <ComboBox HorizontalAlignment="Stretch"
+                                      IsHitTestVisible="{Binding DataContext.IsEditing, RelativeSource={RelativeSource AncestorType=Page}}"
+                                      Focusable="{Binding DataContext.IsEditing, RelativeSource={RelativeSource AncestorType=Page}}"
+                                      ItemsSource="{Binding DataContext.SelectionTypeOptions, RelativeSource={RelativeSource AncestorType=Page}}"
+                                      SelectedItem="{Binding SelectionType, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"/>
                                         </DataTemplate>
                                     </DataGridTemplateColumn.CellTemplate>
                                 </DataGridTemplateColumn>
 
                                 <DataGridTemplateColumn Header="Meal Type"
-                                                        Width="110">
+                                        Width="140">
                                     <DataGridTemplateColumn.CellTemplate>
                                         <DataTemplate>
-                                            <ComboBox IsHitTestVisible="{Binding DataContext.IsEditing, RelativeSource={RelativeSource AncestorType=Page}}"
-                                                      Focusable="{Binding DataContext.IsEditing, RelativeSource={RelativeSource AncestorType=Page}}"
-                                                      ItemsSource="{Binding DataContext.MealTypeOptions, RelativeSource={RelativeSource AncestorType=Page}}"
-                                                      SelectedItem="{Binding AllowedMealType, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"/>
+                                            <ComboBox HorizontalAlignment="Stretch"
+                                      IsHitTestVisible="{Binding DataContext.IsEditing, RelativeSource={RelativeSource AncestorType=Page}}"
+                                      Focusable="{Binding DataContext.IsEditing, RelativeSource={RelativeSource AncestorType=Page}}"
+                                      ItemsSource="{Binding DataContext.MealTypeOptions, RelativeSource={RelativeSource AncestorType=Page}}"
+                                      SelectedItem="{Binding AllowedMealType, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"/>
                                         </DataTemplate>
                                     </DataGridTemplateColumn.CellTemplate>
                                 </DataGridTemplateColumn>
 
                                 <DataGridTextColumn Header="Min"
-                                                    Width="50"
-                                                    Binding="{Binding MinSelections, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"/>
+                                    Width="70"
+                                    Binding="{Binding MinSelections, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"/>
 
                                 <DataGridTextColumn Header="Max"
-                                                    Width="50"
-                                                    Binding="{Binding MaxSelections, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"/>
+                                    Width="70"
+                                    Binding="{Binding MaxSelections, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"/>
 
                                 <DataGridCheckBoxColumn Header="Req."
-                                                        Width="55"
-                                                        Binding="{Binding IsRequired, Mode=TwoWay}"/>
+                                        Width="70"
+                                        Binding="{Binding IsRequired, Mode=TwoWay}"/>
 
-                                <DataGridTemplateColumn Width="80">
+                                <DataGridTemplateColumn Width="100">
                                     <DataGridTemplateColumn.CellTemplate>
                                         <DataTemplate>
                                             <Button Content="Remove"
-                                                    IsEnabled="{Binding DataContext.IsEditing, RelativeSource={RelativeSource AncestorType=Page}}"
-                                                    Command="{Binding DataContext.RemoveSelectionRuleCommand, RelativeSource={RelativeSource AncestorType=Page}}"
-                                                    CommandParameter="{Binding}"/>
+                                    IsEnabled="{Binding DataContext.IsEditing, RelativeSource={RelativeSource AncestorType=Page}}"
+                                    Command="{Binding DataContext.RemoveSelectionRuleCommand, RelativeSource={RelativeSource AncestorType=Page}}"
+                                    CommandParameter="{Binding}"/>
                                         </DataTemplate>
                                     </DataGridTemplateColumn.CellTemplate>
                                 </DataGridTemplateColumn>
@@ -557,7 +648,10 @@
 
                             <DataGrid.RowDetailsTemplate>
                                 <DataTemplate>
-                                    <Grid Margin="8">
+                                    <Grid Margin="8"
+                          HorizontalAlignment="Stretch"
+                          Width="{Binding RelativeSource={RelativeSource AncestorType=DataGrid}, Path=ActualWidth}">
+
                                         <Grid.RowDefinitions>
                                             <RowDefinition Height="Auto"/>
                                             <RowDefinition Height="8"/>
@@ -565,48 +659,54 @@
                                         </Grid.RowDefinitions>
 
                                         <Button Grid.Row="0"
-                                                Content="Add Option"
-                                                IsEnabled="{Binding DataContext.IsEditing, RelativeSource={RelativeSource AncestorType=Page}}"
-                                                HorizontalAlignment="Left"
-                                                Command="{Binding DataContext.AddOptionCommand, RelativeSource={RelativeSource AncestorType=Page}}"
-                                                CommandParameter="{Binding}"/>
+                                Content="Add Option"
+                                IsEnabled="{Binding DataContext.IsEditing, RelativeSource={RelativeSource AncestorType=Page}}"
+                                HorizontalAlignment="Left"
+                                Command="{Binding DataContext.AddOptionCommand, RelativeSource={RelativeSource AncestorType=Page}}"
+                                CommandParameter="{Binding}"/>
 
                                         <DataGrid Grid.Row="2"
-                                                  ItemsSource="{Binding Options}"
-                                                  AutoGenerateColumns="False"
-                                                  CanUserAddRows="False"
-                                                  IsReadOnly="{Binding DataContext.IsNotEditing, RelativeSource={RelativeSource AncestorType=Page}}"
-                                                  MaxHeight="140">
+                                  ItemsSource="{Binding Options}"
+                                  AutoGenerateColumns="False"
+                                  CanUserAddRows="False"
+                                  IsReadOnly="{Binding DataContext.IsNotEditing, RelativeSource={RelativeSource AncestorType=Page}}"
+                                  MaxHeight="140"
+                                  HorizontalAlignment="Stretch"
+                                  HorizontalContentAlignment="Stretch"
+                                  ColumnWidth="*"
+                                  ScrollViewer.HorizontalScrollBarVisibility="Disabled">
+
                                             <DataGrid.Columns>
                                                 <DataGridTemplateColumn Header="Meal"
-                                                                        Width="*">
+                                                        Width="*">
                                                     <DataGridTemplateColumn.CellTemplate>
                                                         <DataTemplate>
-                                                            <ComboBox IsHitTestVisible="{Binding DataContext.IsEditing, RelativeSource={RelativeSource AncestorType=Page}}"
-                                                                      Focusable="{Binding DataContext.IsEditing, RelativeSource={RelativeSource AncestorType=Page}}"
-                                                                      ItemsSource="{Binding DataContext.Meals, RelativeSource={RelativeSource AncestorType=Page}}"
-                                                                      DisplayMemberPath="Name"
-                                                                      SelectedValuePath="Id"
-                                                                      SelectedValue="{Binding MealId, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"/>
+                                                            <ComboBox HorizontalAlignment="Stretch"
+                                                      IsHitTestVisible="{Binding DataContext.IsEditing, RelativeSource={RelativeSource AncestorType=Page}}"
+                                                      Focusable="{Binding DataContext.IsEditing, RelativeSource={RelativeSource AncestorType=Page}}"
+                                                      ItemsSource="{Binding DataContext.Meals, RelativeSource={RelativeSource AncestorType=Page}}"
+                                                      DisplayMemberPath="Name"
+                                                      SelectedValuePath="Id"
+                                                      SelectedValue="{Binding MealId, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"/>
                                                         </DataTemplate>
                                                     </DataGridTemplateColumn.CellTemplate>
                                                 </DataGridTemplateColumn>
 
                                                 <DataGridTextColumn Header="Extra"
-                                                                    Width="80"
-                                                                    Binding="{Binding AdditionalPrice, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"/>
+                                                    Width="120"
+                                                    Binding="{Binding AdditionalPrice, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"/>
 
                                                 <DataGridCheckBoxColumn Header="Default"
-                                                                        Width="70"
-                                                                        Binding="{Binding IsDefault, Mode=TwoWay}"/>
+                                                        Width="100"
+                                                        Binding="{Binding IsDefault, Mode=TwoWay}"/>
 
-                                                <DataGridTemplateColumn Width="80">
+                                                <DataGridTemplateColumn Width="120">
                                                     <DataGridTemplateColumn.CellTemplate>
                                                         <DataTemplate>
                                                             <Button Content="Remove"
-                                                                    IsEnabled="{Binding DataContext.IsEditing, RelativeSource={RelativeSource AncestorType=Page}}"
-                                                                    Command="{Binding DataContext.RemoveOptionCommand, RelativeSource={RelativeSource AncestorType=Page}}"
-                                                                    CommandParameter="{Binding}"/>
+                                                    IsEnabled="{Binding DataContext.IsEditing, RelativeSource={RelativeSource AncestorType=Page}}"
+                                                    Command="{Binding DataContext.RemoveOptionCommand, RelativeSource={RelativeSource AncestorType=Page}}"
+                                                    CommandParameter="{Binding}"/>
                                                         </DataTemplate>
                                                     </DataGridTemplateColumn.CellTemplate>
                                                 </DataGridTemplateColumn>

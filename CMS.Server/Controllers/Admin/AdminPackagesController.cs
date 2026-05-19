@@ -1,19 +1,18 @@
 ﻿using CMS.Contracts.Admin.Package;
-using CMS.Contracts.Customer.Menu;
 using CMS.Domain.Entities.Packages;
 using CMS.Domain.Enums;
 using CMS.Infrastructure.Persistence;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 
-namespace CMS.Server.Controller.Admin;
+namespace CMS.Server.Controllers.Admin;
 
 [ApiController]
 [Route("api/admin/packages")]
 public sealed class AdminPackagesController : ControllerBase
 {
     private readonly CmsDbContext _dbContext;
-   
+
     public AdminPackagesController(CmsDbContext dbContext)
     {
         _dbContext = dbContext;
@@ -78,24 +77,26 @@ public sealed class AdminPackagesController : ControllerBase
     [HttpPost]
     public async Task<ActionResult<PackageDto>> Create(CreatePackageRequest request)
     {
-        if (request.MenuCategoryId <= 0)
+        var headerValidation = await ValidatePackageHeaderAsync(
+            request.MenuCategoryId,
+            request.Title);
+
+        if (!headerValidation.IsValid)
         {
-            return BadRequest("Menu category is required.");
+            return BadRequest(headerValidation.ErrorMessage);
         }
 
-        if (string.IsNullOrWhiteSpace(request.Title))
-        {
-            return BadRequest("Package title is required.");
-        }
+        var sizesBuildResult = await BuildSizesAsync(request.Sizes);
 
-        if (!TryBuildSizes(request.Sizes, packageId: null, out var sizes, out var errorMessage))
+        if (!sizesBuildResult.IsValid)
         {
-            return BadRequest(errorMessage);
+            return BadRequest(sizesBuildResult.ErrorMessage);
         }
 
         var package = new Package
         {
             MenuCategoryId = request.MenuCategoryId,
+
             Title = Clean(request.Title),
             Description = Clean(request.Description),
             CardSummary = Clean(request.CardSummary),
@@ -104,12 +105,14 @@ public sealed class AdminPackagesController : ControllerBase
             ServesLabel = Clean(request.ServesLabel),
             InclusionText = Clean(request.InclusionText),
             ImageUrl = Clean(request.ImageUrl),
+
             Rating = request.Rating,
             ReviewCount = request.ReviewCount,
             IsAvailable = request.IsAvailable,
             IsCustomizable = request.IsCustomizable,
-            Sizes = sizes,
-            Addons = BuildAddons(request.Addons, packageId: null)
+
+            Sizes = sizesBuildResult.Sizes,
+            Addons = BuildAddons(request.Addons)
         };
 
         _dbContext.Packages.Add(package);
@@ -125,29 +128,30 @@ public sealed class AdminPackagesController : ControllerBase
     }
 
     [HttpPut("{id:int}")]
-    public async Task<ActionResult<PackageDto>> Update(int id, UpdatePackageRequest request)
+    public async Task<ActionResult<PackageDto>> Update(
+        int id,
+        UpdatePackageRequest request)
     {
         if (id != request.Id)
         {
             return BadRequest("Route id and request id do not match.");
         }
 
-        if (request.MenuCategoryId <= 0)
+        var headerValidation = await ValidatePackageHeaderAsync(
+            request.MenuCategoryId,
+            request.Title);
+
+        if (!headerValidation.IsValid)
         {
-            return BadRequest("Menu category is required.");
+            return BadRequest(headerValidation.ErrorMessage);
         }
 
-        if (string.IsNullOrWhiteSpace(request.Title))
-        {
-            return BadRequest("Package title is required.");
-        }
+        var sizesBuildResult = await BuildSizesAsync(request.Sizes);
 
-        if (!TryBuildSizes(request.Sizes, packageId: id, out var newSizes, out var errorMessage))
+        if (!sizesBuildResult.IsValid)
         {
-            return BadRequest(errorMessage);
+            return BadRequest(sizesBuildResult.ErrorMessage);
         }
-
-        var newAddons = BuildAddons(request.Addons, packageId: id);
 
         var package = await _dbContext.Packages
             .Include(existing => existing.Sizes)
@@ -175,6 +179,7 @@ public sealed class AdminPackagesController : ControllerBase
         _dbContext.PackageAddons.RemoveRange(package.Addons);
 
         package.MenuCategoryId = request.MenuCategoryId;
+
         package.Title = Clean(request.Title);
         package.Description = Clean(request.Description);
         package.CardSummary = Clean(request.CardSummary);
@@ -183,13 +188,14 @@ public sealed class AdminPackagesController : ControllerBase
         package.ServesLabel = Clean(request.ServesLabel);
         package.InclusionText = Clean(request.InclusionText);
         package.ImageUrl = Clean(request.ImageUrl);
+
         package.Rating = request.Rating;
         package.ReviewCount = request.ReviewCount;
         package.IsAvailable = request.IsAvailable;
         package.IsCustomizable = request.IsCustomizable;
 
-        package.Sizes = newSizes;
-        package.Addons = newAddons;
+        package.Sizes = sizesBuildResult.Sizes;
+        package.Addons = BuildAddons(request.Addons);
 
         await _dbContext.SaveChangesAsync();
 
@@ -245,120 +251,178 @@ public sealed class AdminPackagesController : ControllerBase
             .Include(package => package.Addons);
     }
 
-    private static bool TryBuildSizes(
-        IEnumerable<PackageSizeRequest>? requests,
-        int? packageId,
-        out List<PackageSize> sizes,
-        out string? errorMessage)
+    private async Task<PackageHeaderValidationResult> ValidatePackageHeaderAsync(
+        int menuCategoryId,
+        string title)
     {
-        sizes = new List<PackageSize>();
-        errorMessage = null;
+        if (menuCategoryId <= 0)
+        {
+            return PackageHeaderValidationResult.Fail("Menu category is required.");
+        }
+
+        var categoryExists = await _dbContext.MenuCategories
+            .AsNoTracking()
+            .AnyAsync(category => category.Id == menuCategoryId);
+
+        if (!categoryExists)
+        {
+            return PackageHeaderValidationResult.Fail(
+                $"Menu category id {menuCategoryId} was not found.");
+        }
+
+        if (string.IsNullOrWhiteSpace(title))
+        {
+            return PackageHeaderValidationResult.Fail("Package title is required.");
+        }
+
+        return PackageHeaderValidationResult.Success();
+    }
+
+    private async Task<PackageSizesBuildResult> BuildSizesAsync(
+        IEnumerable<PackageSizeRequest>? requests)
+    {
+        var sizes = new List<PackageSize>();
 
         foreach (var request in requests ?? Enumerable.Empty<PackageSizeRequest>())
         {
             if (string.IsNullOrWhiteSpace(request.Label))
             {
-                errorMessage = "Each package size must have a label.";
-                return false;
+                return PackageSizesBuildResult.Fail(
+                    "Each package size must have a label.");
             }
 
             if (request.PaxCount <= 0)
             {
-                errorMessage = $"Package size '{request.Label}' must have a pax count greater than zero.";
-                return false;
+                return PackageSizesBuildResult.Fail(
+                    $"Package size '{request.Label}' must have a pax count greater than zero.");
             }
 
             if (request.Price < 0)
             {
-                errorMessage = $"Package size '{request.Label}' cannot have a negative price.";
-                return false;
+                return PackageSizesBuildResult.Fail(
+                    $"Package size '{request.Label}' cannot have a negative price.");
             }
 
-            if (!TryBuildSelectionRules(request.SelectionRules, out var rules, out errorMessage))
+            var rulesBuildResult = await BuildSelectionRulesAsync(
+                request.SelectionRules);
+
+            if (!rulesBuildResult.IsValid)
             {
-                return false;
+                return PackageSizesBuildResult.Fail(
+                    rulesBuildResult.ErrorMessage);
             }
 
-            var size = new PackageSize
+            sizes.Add(new PackageSize
             {
                 Label = Clean(request.Label),
                 Subtitle = Clean(request.Subtitle),
                 PaxCount = request.PaxCount,
                 Price = request.Price,
-                SelectionRules = rules
-            };
-
-            if (packageId.HasValue)
-            {
-                size.PackageId = packageId.Value;
-            }
-
-            sizes.Add(size);
+                IsAvailable = true,
+                SelectionRules = rulesBuildResult.Rules
+            });
         }
 
-        return true;
+        return PackageSizesBuildResult.Success(sizes);
     }
 
-    private static List<PackageAddon> BuildAddons(
-        IEnumerable<PackageAddonRequest>? requests,
-        int? packageId)
+    private async Task<PackageRulesBuildResult> BuildSelectionRulesAsync(
+        IEnumerable<PackageSelectionRuleRequest>? requests)
     {
-        return (requests ?? Enumerable.Empty<PackageAddonRequest>())
-            .Select(request =>
-            {
-                var addon = new PackageAddon
-                {
-                    Name = Clean(request.Name),
-                    Description = Clean(request.Description),
-                    Price = request.Price,
-                    IsAvailable = request.IsAvailable
-                };
-
-                if (packageId.HasValue)
-                {
-                    addon.PackageId = packageId.Value;
-                }
-
-                return addon;
-            })
-            .ToList();
-    }
-
-    private static bool TryBuildSelectionRules(
-        IEnumerable<PackageSelectionRuleRequest>? requests,
-        out List<PackageSelectionRule> rules,
-        out string? errorMessage)
-    {
-        rules = new List<PackageSelectionRule>();
-        errorMessage = null;
+        var rules = new List<PackageSelectionRule>();
 
         foreach (var request in requests ?? Enumerable.Empty<PackageSelectionRuleRequest>())
         {
             if (string.IsNullOrWhiteSpace(request.Title))
             {
-                errorMessage = "Each selection rule must have a title.";
-                return false;
+                return PackageRulesBuildResult.Fail(
+                    "Each selection rule must have a title.");
+            }
+
+            if (!Enum.TryParse(
+                    request.SelectionType,
+                    ignoreCase: true,
+                    out PackageSelectionType selectionType))
+            {
+                return PackageRulesBuildResult.Fail(
+                    $"Invalid package selection type: {request.SelectionType}");
+            }
+
+            if (!Enum.TryParse(
+                    request.AllowedMealType,
+                    ignoreCase: true,
+                    out MealType allowedMealType))
+            {
+                return PackageRulesBuildResult.Fail(
+                    $"Invalid meal type: {request.AllowedMealType}");
+            }
+
+            if (request.MinSelections < 0)
+            {
+                return PackageRulesBuildResult.Fail(
+                    $"Rule '{request.Title}' cannot have negative MinSelections.");
             }
 
             if (request.MaxSelections < request.MinSelections)
             {
-                errorMessage = $"Rule '{request.Title}' has MaxSelections lower than MinSelections.";
-                return false;
+                return PackageRulesBuildResult.Fail(
+                    $"Rule '{request.Title}' has MaxSelections lower than MinSelections.");
             }
 
-            if (!Enum.TryParse(request.SelectionType, ignoreCase: true, out PackageSelectionType selectionType))
+            if (request.IsRequired && request.MinSelections <= 0)
             {
-                errorMessage = $"Invalid package selection type: {request.SelectionType}";
-                return false;
+                return PackageRulesBuildResult.Fail(
+                    $"Required rule '{request.Title}' must require at least one selection.");
             }
 
-            if (!Enum.TryParse(request.AllowedMealType, ignoreCase: true, out MealType allowedMealType))
+            var options = new List<PackageSelectionOption>();
+
+            foreach (var optionRequest in request.Options ?? Enumerable.Empty<PackageSelectionOptionRequest>())
             {
-                errorMessage = $"Invalid meal type: {request.AllowedMealType}";
-                return false;
+                if (optionRequest.MealId <= 0)
+                {
+                    return PackageRulesBuildResult.Fail(
+                        $"Rule '{request.Title}' contains an invalid meal option.");
+                }
+
+                var meal = await _dbContext.Meals
+                    .AsNoTracking()
+                    .FirstOrDefaultAsync(existingMeal => existingMeal.Id == optionRequest.MealId);
+
+                if (meal is null)
+                {
+                    return PackageRulesBuildResult.Fail(
+                        $"Meal id {optionRequest.MealId} was not found for rule '{request.Title}'.");
+                }
+
+                if (meal.MealType != allowedMealType)
+                {
+                    return PackageRulesBuildResult.Fail(
+                        $"Meal '{meal.Name}' is '{meal.MealType}', but rule '{request.Title}' only allows '{allowedMealType}'.");
+                }
+
+                if (optionRequest.AdditionalPrice < 0)
+                {
+                    return PackageRulesBuildResult.Fail(
+                        $"Option meal '{meal.Name}' cannot have a negative additional price.");
+                }
+
+                options.Add(new PackageSelectionOption
+                {
+                    MealId = optionRequest.MealId,
+                    AdditionalPrice = optionRequest.AdditionalPrice,
+                    IsDefault = optionRequest.IsDefault,
+                    IsActive = true
+                });
             }
 
-            var rule = new PackageSelectionRule
+            if (request.IsRequired && options.Count < request.MinSelections)
+            {
+                return PackageRulesBuildResult.Fail(
+                    $"Rule '{request.Title}' needs at least {request.MinSelections} option(s).");
+            }
+
+            rules.Add(new PackageSelectionRule
             {
                 Title = Clean(request.Title),
                 Description = Clean(request.Description),
@@ -368,20 +432,27 @@ public sealed class AdminPackagesController : ControllerBase
                 MaxSelections = request.MaxSelections,
                 IsRequired = request.IsRequired,
                 DisplayOrder = request.DisplayOrder,
-                Options = (request.Options ?? Enumerable.Empty<PackageSelectionOptionRequest>())
-                    .Select(option => new PackageSelectionOption
-                    {
-                        MealId = option.MealId,
-                        AdditionalPrice = option.AdditionalPrice,
-                        IsDefault = option.IsDefault
-                    })
-                    .ToList()
-            };
-
-            rules.Add(rule);
+                IsActive = true,
+                Options = options
+            });
         }
 
-        return true;
+        return PackageRulesBuildResult.Success(rules);
+    }
+
+    private static List<PackageAddon> BuildAddons(
+        IEnumerable<PackageAddonRequest>? requests)
+    {
+        return (requests ?? Enumerable.Empty<PackageAddonRequest>())
+            .Where(request => !string.IsNullOrWhiteSpace(request.Name))
+            .Select(request => new PackageAddon
+            {
+                Name = Clean(request.Name),
+                Description = Clean(request.Description),
+                Price = request.Price < 0 ? 0 : request.Price,
+                IsAvailable = request.IsAvailable
+            })
+            .ToList();
     }
 
     private static PackageDto ToDto(Package package)
@@ -452,6 +523,7 @@ public sealed class AdminPackagesController : ControllerBase
                 MaxSelections = rule.MaxSelections,
                 IsRequired = rule.IsRequired,
                 DisplayOrder = rule.DisplayOrder,
+
                 Options = (rule.Options ?? Enumerable.Empty<PackageSelectionOption>())
                     .OrderBy(option => option.Meal != null ? option.Meal.Name : string.Empty)
                     .Select(option => new PackageSelectionOptionDto
@@ -470,5 +542,52 @@ public sealed class AdminPackagesController : ControllerBase
     private static string Clean(string? value)
     {
         return value?.Trim() ?? string.Empty;
+    }
+
+    private sealed record PackageHeaderValidationResult(
+        bool IsValid,
+        string? ErrorMessage)
+    {
+        public static PackageHeaderValidationResult Success()
+        {
+            return new PackageHeaderValidationResult(true, null);
+        }
+
+        public static PackageHeaderValidationResult Fail(string? errorMessage)
+        {
+            return new PackageHeaderValidationResult(false, errorMessage);
+        }
+    }
+
+    private sealed record PackageSizesBuildResult(
+        bool IsValid,
+        List<PackageSize> Sizes,
+        string? ErrorMessage)
+    {
+        public static PackageSizesBuildResult Success(List<PackageSize> sizes)
+        {
+            return new PackageSizesBuildResult(true, sizes, null);
+        }
+
+        public static PackageSizesBuildResult Fail(string? errorMessage)
+        {
+            return new PackageSizesBuildResult(false, new List<PackageSize>(), errorMessage);
+        }
+    }
+
+    private sealed record PackageRulesBuildResult(
+        bool IsValid,
+        List<PackageSelectionRule> Rules,
+        string? ErrorMessage)
+    {
+        public static PackageRulesBuildResult Success(List<PackageSelectionRule> rules)
+        {
+            return new PackageRulesBuildResult(true, rules, null);
+        }
+
+        public static PackageRulesBuildResult Fail(string? errorMessage)
+        {
+            return new PackageRulesBuildResult(false, new List<PackageSelectionRule>(), errorMessage);
+        }
     }
 }

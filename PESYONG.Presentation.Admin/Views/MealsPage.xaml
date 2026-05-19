@@ -127,7 +127,7 @@
                                        Margin="0,0,0,8"
                                        TextWrapping="Wrap"/>
                             -->
-                            
+
                             <!-- Metadata -->
                             <Grid Margin="0,0,0,8">
                                 <Grid.ColumnDefinitions>
@@ -350,7 +350,7 @@
                                              Grid.Column="1"
                                              Width="112"
                                              IsReadOnly="{Binding IsNotEditing}"
-                                             Text="{Binding SelectedMeal.ImageUrl, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"/>     
+                                             Text="{Binding SelectedMeal.ImageUrl, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"/>
 
                                     <TextBlock Grid.Row="2"
                                                Grid.Column="0"
