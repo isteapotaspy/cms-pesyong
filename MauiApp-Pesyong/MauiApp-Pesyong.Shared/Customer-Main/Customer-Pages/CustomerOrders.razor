@@ -5,6 +5,9 @@
 @inject ICustomerOrderService OrderService
 @inject CustomerSession Session
 @inject NavigationManager NavManager
+@implements IAsyncDisposable
+@inject ICustomerOrderRealtimeService RealtimeService
+@inject ISnackbar Snackbar
 
 <MudContainer MaxWidth="MaxWidth.False" Class="customer-page orders-page">
     <TopBar />
@@ -357,11 +360,20 @@
 
         try
         {
-            var items = await OrderService.GetMyOrdersAsync();
-            Orders = items
-                .Select(CustomerOrderListItemVm.FromDto)
-                .OrderByDescending(x => x.OrderedAtUtc)
-                .ToList();
+            await LoadOrdersAsync();
+
+            if (Session.Profile is not null)
+            {
+                try
+                {
+                    RealtimeService.OrderStatusUpdated += HandleOrderStatusUpdated;
+                    await RealtimeService.JoinCustomerAsync(Session.Profile.CustomerProfileId);
+                }
+                catch (Exception ex)
+                {
+                    Snackbar.Add($"Live updates unavailable: {ex.Message}", Severity.Warning);
+                }
+            }
         }
         catch (Exception ex)
         {
@@ -371,6 +383,31 @@
         {
             _isLoading = false;
         }
+    }
+
+    private async Task LoadOrdersAsync()
+    {
+        var items = await OrderService.GetMyOrdersAsync();
+        Orders = items
+            .Select(CustomerOrderListItemVm.FromDto)
+            .OrderByDescending(x => x.OrderedAtUtc)
+            .ToList();
+    }
+
+    private void HandleOrderStatusUpdated(CMS.Contracts.Customer.Orders.OrderStatusUpdatedEvent evt)
+    {
+        var existing = Orders.FirstOrDefault(x => x.Id == evt.OrderId);
+        if (existing is null)
+            return;
+
+        existing.Status = evt.Status;
+        existing.PaymentStatus = evt.PaymentStatus;
+
+        Snackbar.Add(
+            $"Order #{evt.OrderNumber} is now {evt.Status}.",
+            GetSnackbarSeverity(evt.Status));
+
+        InvokeAsync(StateHasChanged);
     }
 
     private static Color GetStatusColor(string? status) =>
@@ -384,4 +421,26 @@
             "cancelled" => Color.Error,
             _ => Color.Default
         };
+
+    public async ValueTask DisposeAsync()
+    {
+        RealtimeService.OrderStatusUpdated -= HandleOrderStatusUpdated;
+
+        if (Session.Profile is not null)
+        {
+            await RealtimeService.LeaveCustomerAsync(Session.Profile.CustomerProfileId);
+        }
+    }
+
+    private static Severity GetSnackbarSeverity(string? status) =>
+    status?.Trim().ToLowerInvariant() switch
+    {
+        "confirmed" => Severity.Info,
+        "preparing" => Severity.Warning,
+        "outfordelivery" => Severity.Info,
+        "out for delivery" => Severity.Info,
+        "delivered" => Severity.Success,
+        "cancelled" => Severity.Error,
+        _ => Severity.Normal
+    };
 }

@@ -4,7 +4,6 @@ using MauiApp_Pesyong.Shared.Customer_Main.Customer_Services;
 using MauiApp_Pesyong.Shared.Customer_Main.Customer_Vms;
 using MauiApp_Pesyong.Shared.Services;
 using Microsoft.AspNetCore.Components.WebView.Maui;
-using Microsoft.Extensions.DependencyInjection;
 using MudBlazor.Services;
 
 namespace MauiApp_Pesyong;
@@ -23,51 +22,41 @@ public static class MauiProgram
                 fonts.AddFont("OpenSans-Semibold.ttf", "OpenSansSemibold");
             });
 
+        const string apiBaseUrl = "http://localhost:5010/";
+        // Android emulator: http://10.0.2.2:5010/
+
         builder.Services.AddMauiBlazorWebView();
-        builder.Services.AddSingleton<AdminDataService>();
         builder.Services.AddMudServices();
+
+        builder.Services.AddSingleton<AdminDataService>();
+
         builder.Services.AddScoped<CustomerDrawerState>();
         builder.Services.AddScoped<ShortOrdersVm>();
+        builder.Services.AddScoped<CustomerSession>();
+        builder.Services.AddScoped<ICustomerTokenStore, MauiCustomerTokenStore>();
+        builder.Services.AddScoped<CustomerAuthHeaderHandler>();
 
-
+        // Plain named client used by SignalR realtime service for base URL
         builder.Services.AddHttpClient("CMSApi", client =>
         {
-            client.BaseAddress = new Uri("http://localhost:5010/");
+            client.BaseAddress = new Uri(apiBaseUrl);
         });
 
-        builder.Services.AddScoped<CustomerApiClient>(sp =>
+        // CustomerApiClient now handles bearer tokens itself for protected calls
+        builder.Services.AddHttpClient<CustomerApiClient>(client =>
         {
-            var factory = sp.GetRequiredService<IHttpClientFactory>();
-            return new CustomerApiClient(factory.CreateClient("CMSApi"));
+            client.BaseAddress = new Uri(apiBaseUrl);
         });
 
         builder.Services.AddScoped<ICustomerCatalogService>(sp => sp.GetRequiredService<CustomerApiClient>());
         builder.Services.AddScoped<ICustomerOrderService>(sp => sp.GetRequiredService<CustomerApiClient>());
 
-        builder.Services.AddScoped<ICustomerTokenStore, MauiCustomerTokenStore>();
-        builder.Services.AddScoped<CustomerSession>();
-        builder.Services.AddScoped<CustomerAuthHeaderHandler>();
-
         builder.Services.AddHttpClient<ICustomerAuthService, CustomerAuthService>(client =>
         {
-            client.BaseAddress = new Uri("http://localhost:5010/");
-        })
-        .AddHttpMessageHandler<CustomerAuthHeaderHandler>();
+            client.BaseAddress = new Uri(apiBaseUrl);
+        });
 
-        builder.Services.AddHttpClient<ICustomerCatalogService, CustomerApiClient>(client =>
-        {
-            client.BaseAddress = new Uri("http://localhost:5010/");
-        })
-        .AddHttpMessageHandler<CustomerAuthHeaderHandler>();
-
-        builder.Services.AddHttpClient<ICustomerOrderService, CustomerApiClient>(client =>
-        {
-            client.BaseAddress = new Uri("http://localhost:5010/");
-        })
-        .AddHttpMessageHandler<CustomerAuthHeaderHandler>();
-
-        //if testing in android emulator
-        // change new Uri -> new Uri("http://10.0.2.2:5010/")
+        builder.Services.AddScoped<ICustomerOrderRealtimeService, CustomerOrderRealtimeService>();
 
 #if DEBUG
         builder.Services.AddBlazorWebViewDeveloperTools();

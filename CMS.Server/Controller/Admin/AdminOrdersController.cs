@@ -1,8 +1,11 @@
 ﻿using CMS.Contracts.Admin.Orders;
+using CMS.Contracts.Customer.Orders;
 using CMS.Domain.Entities.Orders;
 using CMS.Domain.Enums;
 using CMS.Infrastructure.Persistence;
+using CMS.Server.Hubs;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.SignalR;
 using Microsoft.EntityFrameworkCore;
 
 namespace CMS.Server.Controllers;
@@ -12,10 +15,14 @@ namespace CMS.Server.Controllers;
 public sealed class AdminOrdersController : ControllerBase
 {
     private readonly CmsDbContext _db;
+    private readonly IHubContext<OrderHub> _hubContext;
 
-    public AdminOrdersController(CmsDbContext db)
+    public AdminOrdersController(
+        CmsDbContext db,
+        IHubContext<OrderHub> hubContext)
     {
         _db = db;
+        _hubContext = hubContext;
     }
 
     [HttpGet]
@@ -161,6 +168,8 @@ public sealed class AdminOrdersController : ControllerBase
 
         await _db.SaveChangesAsync();
 
+        await BroadcastOrderStatusUpdatedAsync(order);
+
         var updated = await OrdersWithChildren()
             .AsNoTracking()
             .FirstAsync(x => x.Id == id);
@@ -191,6 +200,25 @@ public sealed class AdminOrdersController : ControllerBase
         return NoContent();
     }
 
+    private async Task BroadcastOrderStatusUpdatedAsync(Order order)
+    {
+        var evt = new OrderStatusUpdatedEvent
+        {
+            OrderId = order.Id,
+            CustomerProfileId = order.CustomerProfileId,
+            OrderNumber = order.OrderNumber,
+            Status = order.Status.ToString(),
+            PaymentStatus = order.PaymentStatus.ToString(),
+            UpdatedAtUtc = DateTime.UtcNow
+        };
+
+        await _hubContext.Clients.Group(OrderHub.GetOrderGroup(order.Id))
+            .SendAsync("OrderStatusUpdated", evt);
+
+        await _hubContext.Clients.Group(OrderHub.GetCustomerGroup(order.CustomerProfileId))
+            .SendAsync("OrderStatusUpdated", evt);
+    }
+
     private IQueryable<Order> OrdersWithChildren()
     {
         return _db.Orders
@@ -205,39 +233,28 @@ public sealed class AdminOrdersController : ControllerBase
         return new OrderDto
         {
             Id = order.Id,
-
-            // Rename these two if your BaseEntity uses different property names.
             DateCreated = order.CreatedAtUtc,
             DateUpdated = order.UpdatedAtUtc,
-
             OrderNumber = order.OrderNumber,
-
             CustomerProfileId = order.CustomerProfileId,
             AddressId = order.AddressId,
-
             OrderedAtUtc = order.OrderedAtUtc,
             DeliveryDate = order.DeliveryDate,
             DeliveryTimeSlot = order.DeliveryTimeSlot,
-
             Status = order.Status.ToString(),
             PaymentMethod = order.PaymentMethod.ToString(),
             PaymentStatus = order.PaymentStatus.ToString(),
-
             ContactNameSnapshot = order.ContactNameSnapshot,
             ContactEmailSnapshot = order.ContactEmailSnapshot,
             ContactMobileSnapshot = order.ContactMobileSnapshot,
-
             CustomerNotes = order.CustomerNotes,
             SpecialInstructions = order.SpecialInstructions,
-
             PromoCodeApplied = order.PromoCodeApplied,
-
             SubTotal = order.SubTotal,
             DeliveryFee = order.DeliveryFee,
             TaxAmount = order.TaxAmount,
             DiscountAmount = order.DiscountAmount,
             GrandTotal = order.GrandTotal,
-
             Items = order.Items.Select(MapToDto).ToList()
         };
     }
@@ -248,31 +265,24 @@ public sealed class AdminOrdersController : ControllerBase
         {
             Id = item.Id,
             OrderId = item.OrderId,
-
             ItemType = item.ItemType.ToString(),
-
             PackageId = item.PackageId,
             PackageSizeId = item.PackageSizeId,
             MealId = item.MealId,
-
             PackageTitleSnapshot = item.PackageTitleSnapshot,
             SizeLabelSnapshot = item.SizeLabelSnapshot,
-
             BaseUnitPrice = item.BaseUnitPrice,
             Quantity = item.Quantity,
-
             UnitPrice = item.UnitPrice,
             LineTotal = item.LineTotal,
-
-            
             MealSelections = item.MealSelections.Select(MapToDto).ToList(),
             AddonSelections = item.AddonSelections.Select(MapToDto).ToList()
         };
     }
 
-    private static OrderItemMealSelectionRequestDto MapToDto(OrderItemMealSelection selection)
+    private static Contracts.Admin.Orders.OrderItemMealSelectionRequestDto MapToDto(OrderItemMealSelection selection)
     {
-        return new OrderItemMealSelectionRequestDto
+        return new Contracts.Admin.Orders.OrderItemMealSelectionRequestDto
         {
             Id = selection.Id,
             OrderItemId = selection.OrderItemId,
@@ -304,17 +314,13 @@ public sealed class AdminOrdersController : ControllerBase
         return new OrderItem
         {
             ItemType = itemType,
-
             PackageId = request.PackageId,
             PackageSizeId = request.PackageSizeId,
             MealId = request.MealId,
-
             PackageTitleSnapshot = request.PackageTitleSnapshot,
             SizeLabelSnapshot = request.SizeLabelSnapshot,
-
             BaseUnitPrice = request.BaseUnitPrice,
             Quantity = request.Quantity <= 0 ? 1 : request.Quantity,
-
             MealSelections = request.MealSelections.Select(MapToEntity).ToList(),
             AddonSelections = request.AddonSelections.Select(MapToEntity).ToList()
         };
