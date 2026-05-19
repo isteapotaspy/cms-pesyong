@@ -32,9 +32,7 @@ public class CustomerAuthService : ICustomerAuthService
             cancellationToken);
 
         if (!response.IsSuccessStatusCode)
-        {
             throw new InvalidOperationException(await ReadErrorMessageAsync(response));
-        }
 
         var result = await response.Content.ReadFromJsonAsync<RegisterResponse>(cancellationToken: cancellationToken)
                      ?? throw new InvalidOperationException("Register returned an empty response.");
@@ -52,9 +50,7 @@ public class CustomerAuthService : ICustomerAuthService
             cancellationToken);
 
         if (!response.IsSuccessStatusCode)
-        {
             throw new InvalidOperationException(await ReadErrorMessageAsync(response));
-        }
 
         var result = await response.Content.ReadFromJsonAsync<AuthResponse>(cancellationToken: cancellationToken)
                      ?? throw new InvalidOperationException("Verify email returned an empty response.");
@@ -64,9 +60,7 @@ public class CustomerAuthService : ICustomerAuthService
 
         var me = await GetMeAsync(cancellationToken);
         if (me is not null)
-        {
             _session.SetProfile(me);
-        }
 
         return result;
     }
@@ -81,9 +75,7 @@ public class CustomerAuthService : ICustomerAuthService
             cancellationToken);
 
         if (!response.IsSuccessStatusCode)
-        {
             throw new InvalidOperationException(await ReadErrorMessageAsync(response));
-        }
 
         var result = await response.Content.ReadFromJsonAsync<MessageResponse>(cancellationToken: cancellationToken);
         return result?.Message ?? "A new verification code was sent.";
@@ -99,9 +91,7 @@ public class CustomerAuthService : ICustomerAuthService
             cancellationToken);
 
         if (!response.IsSuccessStatusCode)
-        {
             throw new InvalidOperationException(await ReadErrorMessageAsync(response));
-        }
 
         var result = await response.Content.ReadFromJsonAsync<AuthResponse>(cancellationToken: cancellationToken)
                      ?? throw new InvalidOperationException("Login returned an empty response.");
@@ -111,23 +101,16 @@ public class CustomerAuthService : ICustomerAuthService
 
         var me = await GetMeAsync(cancellationToken);
         if (me is not null)
-        {
             _session.SetProfile(me);
-        }
 
         return result;
     }
 
     public async Task<CustomerMeResponse?> GetMeAsync(CancellationToken cancellationToken = default)
     {
-        var token = await _tokenStore.GetTokenAsync();
-        if (string.IsNullOrWhiteSpace(token))
-            return null;
-
-        using var request = new HttpRequestMessage(HttpMethod.Get, "api/customer/auth/me");
-        request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", token);
-
+        using var request = await CreateAuthorizedRequestAsync(HttpMethod.Get, "api/customer/auth/me");
         using var response = await _http.SendAsync(request, cancellationToken);
+
         if (!response.IsSuccessStatusCode)
             return null;
 
@@ -138,32 +121,28 @@ public class CustomerAuthService : ICustomerAuthService
         UpdateCustomerProfileRequest request,
         CancellationToken cancellationToken = default)
     {
-        var response = await _http.PutAsJsonAsync(
-            "api/customer/profile",
-            request,
-            cancellationToken);
+        using var httpRequest = await CreateAuthorizedRequestAsync(HttpMethod.Put, "api/customer/profile");
+        httpRequest.Content = JsonContent.Create(request);
+
+        using var response = await _http.SendAsync(httpRequest, cancellationToken);
 
         if (!response.IsSuccessStatusCode)
-        {
             throw new InvalidOperationException(await ReadErrorMessageAsync(response));
-        }
 
         var result = await response.Content.ReadFromJsonAsync<CustomerMeResponse>(cancellationToken: cancellationToken)
                      ?? throw new InvalidOperationException("Update profile returned an empty response.");
 
         _session.SetProfile(result);
-
         return result;
     }
 
     public async Task<IReadOnlyList<CustomerAddressDto>> GetSavedAddressesAsync(CancellationToken cancellationToken = default)
     {
-        var response = await _http.GetAsync("api/customer/profile/addresses", cancellationToken);
+        using var request = await CreateAuthorizedRequestAsync(HttpMethod.Get, "api/customer/profile/addresses");
+        using var response = await _http.SendAsync(request, cancellationToken);
 
         if (!response.IsSuccessStatusCode)
-        {
             throw new InvalidOperationException(await ReadErrorMessageAsync(response));
-        }
 
         var result = await response.Content.ReadFromJsonAsync<List<CustomerAddressDto>>(cancellationToken: cancellationToken);
         return result ?? new List<CustomerAddressDto>();
@@ -173,15 +152,13 @@ public class CustomerAuthService : ICustomerAuthService
         SaveCustomerAddressRequest request,
         CancellationToken cancellationToken = default)
     {
-        var response = await _http.PostAsJsonAsync(
-            "api/customer/profile/addresses",
-            request,
-            cancellationToken);
+        using var httpRequest = await CreateAuthorizedRequestAsync(HttpMethod.Post, "api/customer/profile/addresses");
+        httpRequest.Content = JsonContent.Create(request);
+
+        using var response = await _http.SendAsync(httpRequest, cancellationToken);
 
         if (!response.IsSuccessStatusCode)
-        {
             throw new InvalidOperationException(await ReadErrorMessageAsync(response));
-        }
 
         return await response.Content.ReadFromJsonAsync<CustomerAddressDto>(cancellationToken: cancellationToken)
                ?? throw new InvalidOperationException("Create address returned an empty response.");
@@ -192,15 +169,13 @@ public class CustomerAuthService : ICustomerAuthService
         SaveCustomerAddressRequest request,
         CancellationToken cancellationToken = default)
     {
-        var response = await _http.PutAsJsonAsync(
-            $"api/customer/profile/addresses/{addressId}",
-            request,
-            cancellationToken);
+        using var httpRequest = await CreateAuthorizedRequestAsync(HttpMethod.Put, $"api/customer/profile/addresses/{addressId}");
+        httpRequest.Content = JsonContent.Create(request);
+
+        using var response = await _http.SendAsync(httpRequest, cancellationToken);
 
         if (!response.IsSuccessStatusCode)
-        {
             throw new InvalidOperationException(await ReadErrorMessageAsync(response));
-        }
 
         return await response.Content.ReadFromJsonAsync<CustomerAddressDto>(cancellationToken: cancellationToken)
                ?? throw new InvalidOperationException("Update address returned an empty response.");
@@ -208,27 +183,20 @@ public class CustomerAuthService : ICustomerAuthService
 
     public async Task SetDefaultAddressAsync(int addressId, CancellationToken cancellationToken = default)
     {
-        var response = await _http.PutAsync(
-            $"api/customer/profile/addresses/{addressId}/default",
-            null,
-            cancellationToken);
+        using var request = await CreateAuthorizedRequestAsync(HttpMethod.Put, $"api/customer/profile/addresses/{addressId}/default");
+        using var response = await _http.SendAsync(request, cancellationToken);
 
         if (!response.IsSuccessStatusCode)
-        {
             throw new InvalidOperationException(await ReadErrorMessageAsync(response));
-        }
     }
 
     public async Task DeleteAddressAsync(int addressId, CancellationToken cancellationToken = default)
     {
-        var response = await _http.DeleteAsync(
-            $"api/customer/profile/addresses/{addressId}",
-            cancellationToken);
+        using var request = await CreateAuthorizedRequestAsync(HttpMethod.Delete, $"api/customer/profile/addresses/{addressId}");
+        using var response = await _http.SendAsync(request, cancellationToken);
 
         if (!response.IsSuccessStatusCode)
-        {
             throw new InvalidOperationException(await ReadErrorMessageAsync(response));
-        }
     }
 
     public async Task<bool> TryRestoreSessionAsync(CancellationToken cancellationToken = default)
@@ -269,15 +237,24 @@ public class CustomerAuthService : ICustomerAuthService
         _session.Clear();
     }
 
+    private async Task<HttpRequestMessage> CreateAuthorizedRequestAsync(HttpMethod method, string url)
+    {
+        var token = await _tokenStore.GetTokenAsync();
+        if (string.IsNullOrWhiteSpace(token))
+            throw new InvalidOperationException("You are not signed in.");
+
+        var request = new HttpRequestMessage(method, url);
+        request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", token);
+        return request;
+    }
+
     private static async Task<string> ReadErrorMessageAsync(HttpResponseMessage response)
     {
         try
         {
             var raw = await response.Content.ReadAsStringAsync();
             if (string.IsNullOrWhiteSpace(raw))
-            {
                 return $"Request failed with status code {(int)response.StatusCode}.";
-            }
 
             var parsed = JsonSerializer.Deserialize<MessageResponse>(raw, new JsonSerializerOptions
             {

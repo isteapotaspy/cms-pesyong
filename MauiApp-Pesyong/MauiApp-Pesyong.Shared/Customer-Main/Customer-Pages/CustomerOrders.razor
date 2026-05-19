@@ -6,63 +6,339 @@
 @inject CustomerSession Session
 @inject NavigationManager NavManager
 
-<MudContainer MaxWidth="MaxWidth.Large" Class="py-6">
-    <MudText Typo="Typo.h4" Class="mb-2">My Orders</MudText>
-    <MudText Typo="Typo.body2" Class="mb-4">Track your recent and previous orders here.</MudText>
+<MudContainer MaxWidth="MaxWidth.False" Class="customer-page orders-page">
+    <TopBar />
+
+    <MudPaper Class="orders-hero" Elevation="0">
+        <div class="orders-hero-copy">
+            <MudChip T="string"
+                     Color="Color.Primary"
+                     Variant="Variant.Filled"
+                     Size="Size.Small"
+                     Class="orders-hero-chip">
+                My Orders
+            </MudChip>
+
+            <MudText Typo="Typo.h4" Class="orders-page-title">
+                Track your recent and previous orders
+            </MudText>
+
+            <MudText Typo="Typo.body1" Class="orders-page-subtitle">
+                See the latest status of your catering packages and short orders, and jump straight to tracking anytime.
+            </MudText>
+        </div>
+
+        <div class="orders-hero-actions">
+            <MudButton Variant="Variant.Outlined"
+                       Class="orders-secondary-btn"
+                       OnClick="@(() => NavManager.NavigateTo("/customer-home"))">
+                Back to Menu
+            </MudButton>
+        </div>
+    </MudPaper>
 
     @if (!string.IsNullOrWhiteSpace(_errorMessage))
     {
-        <MudAlert Severity="Severity.Error" Variant="Variant.Filled" Class="mb-4">@_errorMessage</MudAlert>
+        <MudAlert Severity="Severity.Error" Variant="Variant.Filled" Class="mb-4">
+            @_errorMessage
+        </MudAlert>
     }
 
     @if (_isLoading)
     {
-        <MudProgressCircular Indeterminate="true" Color="Color.Primary" />
+        <MudPaper Class="orders-empty-card" Elevation="0">
+            <MudProgressCircular Indeterminate="true" Color="Color.Primary" />
+            <MudText Typo="Typo.body1" Class="mt-3">Loading your orders...</MudText>
+        </MudPaper>
     }
     else if (Orders.Count == 0)
     {
-        <MudPaper Class="pa-4" Elevation="0">
-            <MudText Typo="Typo.body1">You do not have any orders yet.</MudText>
+        <MudPaper Class="orders-empty-card" Elevation="0">
+            <MudIcon Icon="@Icons.Material.Filled.ReceiptLong" Class="orders-empty-icon" />
+            <MudText Typo="Typo.h6">You do not have any orders yet.</MudText>
+            <MudText Typo="Typo.body2" Class="orders-empty-copy">
+                Once you place an order, it will appear here and you can track it in real time.
+            </MudText>
+
+            <MudButton Variant="Variant.Filled"
+                       Color="Color.Primary"
+                       Class="mt-3"
+                       OnClick="@(() => NavManager.NavigateTo("/customer-home"))">
+                Start Ordering
+            </MudButton>
         </MudPaper>
     }
     else
     {
-        <MudGrid Spacing="3">
+        <div class="orders-grid">
             @foreach (var order in Orders)
             {
-                <MudItem xs="12" md="6">
-                    <MudPaper Class="pa-4" Elevation="0" Style="border-radius:18px;">
-                        <div class="d-flex justify-space-between align-start mb-2">
-                            <div>
-                                <MudText Typo="Typo.h6">#@order.OrderNumber</MudText>
-                                <MudText Typo="Typo.caption">@order.OrderedAtUtc.ToLocalTime():MMM dd, yyyy hh:mm tt</MudText>
-                            </div>
+                <MudPaper Class="order-card" Elevation="0">
+                    <div class="order-card-top">
+                        <div class="order-card-head">
+                            <MudText Typo="Typo.subtitle1" Class="order-number">
+                                #@order.OrderNumber
+                            </MudText>
 
-                            <MudChip T="string" Color="Color.Primary" Variant="Variant.Outlined">
-                                @order.Status
-                            </MudChip>
+                            <MudText Typo="Typo.caption" Class="order-date">
+                                @order.OrderedAtUtc.ToLocalTime():MMM dd, yyyy • hh:mm tt
+                            </MudText>
                         </div>
 
-                        <MudText Typo="Typo.body2">Delivery: @order.DeliveryDate:MMMM dd, yyyy • @order.DeliveryTimeSlot</MudText>
-                        <MudText Typo="Typo.body2">Items: @order.ItemCount</MudText>
-                        <MudText Typo="Typo.body2">Payment: @order.PaymentStatus</MudText>
+                        <MudChip T="string"
+                                 Color="@GetStatusColor(order.Status)"
+                                 Variant="Variant.Outlined"
+                                 Size="Size.Small">
+                            @order.Status
+                        </MudChip>
+                    </div>
 
-                        <MudDivider Class="my-3" />
+                    <MudDivider Class="my-3" />
 
-                        <div class="d-flex justify-space-between align-center">
-                            <MudText Typo="Typo.h6">₱@order.GrandTotal:N0</MudText>
-
-                            <MudButton Variant="Variant.Text"
-                                       OnClick="@(() => NavManager.NavigateTo($"/tracking?orderId={order.Id}"))">
-                                View Tracking
-                            </MudButton>
+                    <div class="order-meta-list">
+                        <div class="order-meta-row">
+                            <span class="order-meta-label">Delivery</span>
+                            <span class="order-meta-value">@order.DeliveryDate:MMMM dd, yyyy • @order.DeliveryTimeSlot</span>
                         </div>
-                    </MudPaper>
-                </MudItem>
+
+                        <div class="order-meta-row">
+                            <span class="order-meta-label">Items</span>
+                            <span class="order-meta-value">@order.ItemCount</span>
+                        </div>
+
+                        <div class="order-meta-row">
+                            <span class="order-meta-label">Payment</span>
+                            <span class="order-meta-value">@order.PaymentStatus</span>
+                        </div>
+                    </div>
+
+                    <MudDivider Class="my-3" />
+
+                    <div class="order-card-bottom">
+                        <div>
+                            <MudText Typo="Typo.caption" Class="order-total-label">TOTAL</MudText>
+                            <MudText Typo="Typo.h6" Class="order-total-value">₱@order.GrandTotal:N0</MudText>
+                        </div>
+
+                        <MudButton Variant="Variant.Filled"
+                                   Color="Color.Primary"
+                                   Class="order-track-btn"
+                                   OnClick="@(() => NavManager.NavigateTo($"/tracking?orderId={order.Id}"))">
+                            View Tracking
+                        </MudButton>
+                    </div>
+                </MudPaper>
             }
-        </MudGrid>
+        </div>
     }
+
+    <Footer />
 </MudContainer>
+
+<style>
+    .orders-page {
+        display: flex;
+        flex-direction: column;
+        gap: 1rem;
+    }
+
+    .orders-hero {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        gap: 1rem;
+        padding: 1.5rem 1.5rem;
+        border-radius: 24px;
+        background: linear-gradient(135deg, #fff4ec 0%, #fff8f3 100%);
+        border: 1px solid rgba(240, 162, 104, 0.24);
+    }
+
+    .orders-hero-copy {
+        max-width: 720px;
+    }
+
+    .orders-hero-chip {
+        margin-bottom: 0.75rem;
+    }
+
+    .orders-page-title {
+        font-weight: 800;
+        margin-bottom: 0.35rem;
+    }
+
+    .orders-page-subtitle {
+        color: var(--pesyong-muted);
+    }
+
+    .orders-hero-actions {
+        display: flex;
+        align-items: center;
+        justify-content: flex-end;
+    }
+
+    .orders-secondary-btn {
+        white-space: nowrap;
+        text-transform: none !important;
+        border-radius: 14px !important;
+    }
+
+    .orders-grid {
+        display: grid;
+        grid-template-columns: 1fr;
+        gap: 1rem;
+    }
+
+    .order-card {
+        padding: 1rem;
+        border-radius: 22px;
+        background: white;
+        border: 1px solid var(--pesyong-border);
+        box-shadow: var(--pesyong-shadow);
+    }
+
+    .order-card-top {
+        display: flex;
+        justify-content: space-between;
+        align-items: flex-start;
+        gap: 0.75rem;
+    }
+
+    .order-card-head {
+        min-width: 0;
+    }
+
+    .order-number {
+        font-weight: 800;
+        word-break: break-word;
+    }
+
+    .order-date {
+        color: var(--pesyong-muted);
+    }
+
+    .order-meta-list {
+        display: flex;
+        flex-direction: column;
+        gap: 0.6rem;
+    }
+
+    .order-meta-row {
+        display: flex;
+        justify-content: space-between;
+        gap: 0.75rem;
+        align-items: flex-start;
+    }
+
+    .order-meta-label {
+        color: var(--pesyong-muted);
+        font-size: 0.9rem;
+        flex-shrink: 0;
+    }
+
+    .order-meta-value {
+        color: var(--pesyong-text);
+        font-size: 0.95rem;
+        text-align: right;
+    }
+
+    .order-card-bottom {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        gap: 1rem;
+    }
+
+    .order-total-label {
+        color: var(--pesyong-muted);
+    }
+
+    .order-total-value {
+        font-weight: 800;
+    }
+
+    .order-track-btn {
+        border-radius: 14px !important;
+        text-transform: none !important;
+        white-space: nowrap;
+    }
+
+    .orders-empty-card {
+        padding: 2rem 1.25rem;
+        border-radius: 24px;
+        border: 1px solid var(--pesyong-border);
+        background: white;
+        text-align: center;
+    }
+
+    .orders-empty-icon {
+        font-size: 3rem !important;
+        color: var(--pesyong-primary);
+        margin-bottom: 0.75rem;
+    }
+
+    .orders-empty-copy {
+        color: var(--pesyong-muted);
+        max-width: 420px;
+        margin: 0.5rem auto 0;
+    }
+
+    @@media (max-width: 599px) {
+        .orders-hero {
+            flex-direction: column;
+            align-items: stretch;
+            padding: 1rem;
+            border-radius: 20px;
+        }
+
+        .orders-page-title {
+            font-size: 1.5rem !important;
+            line-height: 1.1;
+        }
+
+        .orders-page-subtitle {
+            font-size: 0.95rem !important;
+        }
+
+        .orders-hero-actions {
+            justify-content: stretch;
+        }
+
+            .orders-hero-actions .mud-button-root {
+                width: 100%;
+            }
+
+        .order-card {
+            padding: 0.95rem;
+        }
+
+        .order-card-top,
+        .order-card-bottom,
+        .order-meta-row {
+            flex-direction: column;
+            align-items: flex-start;
+        }
+
+        .order-meta-value {
+            text-align: left;
+        }
+
+        .order-track-btn {
+            width: 100%;
+        }
+    }
+
+    @@media (min-width: 600px) {
+        .orders-grid {
+            grid-template-columns: repeat(2, minmax(0, 1fr));
+        }
+    }
+
+    @@media (min-width: 1200px) {
+        .orders-grid {
+            grid-template-columns: repeat(3, minmax(0, 1fr));
+        }
+    }
+</style>
 
 @code {
     private List<CustomerOrderListItemVm> Orders { get; set; } = new();
@@ -82,7 +358,10 @@
         try
         {
             var items = await OrderService.GetMyOrdersAsync();
-            Orders = items.Select(CustomerOrderListItemVm.FromDto).ToList();
+            Orders = items
+                .Select(CustomerOrderListItemVm.FromDto)
+                .OrderByDescending(x => x.OrderedAtUtc)
+                .ToList();
         }
         catch (Exception ex)
         {
@@ -93,4 +372,16 @@
             _isLoading = false;
         }
     }
+
+    private static Color GetStatusColor(string? status) =>
+        status?.Trim().ToLowerInvariant() switch
+        {
+            "confirmed" => Color.Primary,
+            "preparing" => Color.Warning,
+            "outfordelivery" => Color.Info,
+            "out for delivery" => Color.Info,
+            "delivered" => Color.Success,
+            "cancelled" => Color.Error,
+            _ => Color.Default
+        };
 }

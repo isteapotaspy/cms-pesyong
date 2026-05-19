@@ -8,6 +8,8 @@ using MudBlazor.Services;
 
 var builder = WebApplication.CreateBuilder(args);
 
+
+
 // Add services to the container.
 builder.Services.AddRazorComponents()
     .AddInteractiveServerComponents();
@@ -21,9 +23,10 @@ builder.Services.AddScoped<CustomerDrawerState>();
 builder.Services.AddScoped<ShortOrdersVm>();
 
 
+
 builder.Services.AddHttpClient("CMSApi", client =>
 {
-    client.BaseAddress = new Uri(builder.Configuration["ApiBaseUrl"]!);
+    client.BaseAddress = new Uri("http://localhost:5010/");
 });
 
 builder.Services.AddScoped<CustomerApiClient>(sp =>
@@ -34,6 +37,31 @@ builder.Services.AddScoped<CustomerApiClient>(sp =>
 
 builder.Services.AddScoped<ICustomerCatalogService>(sp => sp.GetRequiredService<CustomerApiClient>());
 builder.Services.AddScoped<ICustomerOrderService>(sp => sp.GetRequiredService<CustomerApiClient>());
+
+var apiBaseUrl = builder.Configuration["ApiBaseUrl"] ?? "http://localhost:5010/";
+
+builder.Services.AddScoped<CustomerSession>();
+builder.Services.AddScoped<ICustomerTokenStore, WebCustomerTokenStore>();
+builder.Services.AddScoped<CustomerAuthHeaderHandler>();
+
+builder.Services.AddHttpClient<ICustomerAuthService, CustomerAuthService>(client =>
+{
+    client.BaseAddress = new Uri(apiBaseUrl);
+})
+.AddHttpMessageHandler<CustomerAuthHeaderHandler>();
+
+builder.Services.AddHttpClient<ICustomerCatalogService, CustomerApiClient>(client =>
+{
+    client.BaseAddress = new Uri(apiBaseUrl);
+})
+.AddHttpMessageHandler<CustomerAuthHeaderHandler>();
+
+builder.Services.AddHttpClient<ICustomerOrderService, CustomerApiClient>(client =>
+{
+    client.BaseAddress = new Uri(apiBaseUrl);
+})
+.AddHttpMessageHandler<CustomerAuthHeaderHandler>();
+
 
 var app = builder.Build();
 

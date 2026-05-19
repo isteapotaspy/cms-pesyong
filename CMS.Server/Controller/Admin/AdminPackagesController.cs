@@ -13,7 +13,7 @@ namespace CMS.Server.Controller.Admin;
 public sealed class AdminPackagesController : ControllerBase
 {
     private readonly CmsDbContext _dbContext;
-
+   
     public AdminPackagesController(CmsDbContext dbContext)
     {
         _dbContext = dbContext;
