@@ -10,4 +10,5 @@ public sealed record PackageSizeRequest
     public string Subtitle { get; init; } = string.Empty;
     public int PaxCount { get; init; }
     public decimal Price { get; init; }
+    public List<PackageSelectionRuleRequest> SelectionRules { get; set; } = new();
 }
