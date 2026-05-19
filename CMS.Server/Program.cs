@@ -33,6 +33,20 @@ namespace CMS.Server
             // Learn more about configuring OpenAPI at https://aka.ms/aspnet/openapi
             builder.Services.AddOpenApi();
 
+            builder.Services.AddCors(options =>
+            {
+                options.AddPolicy("PesyongWeb", policy =>
+                {
+                    policy.WithOrigins(
+                            "http://localhost:7110",
+                            "https://localhost:7110")
+                          .AllowAnyHeader()
+                          .AllowAnyMethod()
+                          .AllowCredentials();
+
+                });
+            });
+
             builder.Services.AddInfrastructure(builder.Configuration);
 
             var app = builder.Build();
