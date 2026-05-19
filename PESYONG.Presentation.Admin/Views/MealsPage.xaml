@@ -44,7 +44,12 @@
                                  Height="32"
                                  Margin="6"
                                  HorizontalAlignment="Center"
-                                 VerticalAlignment="Center"/>
+                                 VerticalAlignment="Center">
+                            <Ellipse.Fill>
+                                <ImageBrush ImageSource="{Binding ImageUrl}"
+                                            Stretch="UniformToFill"/>
+                            </Ellipse.Fill>
+                        </Ellipse>
 
                         <TextBlock Grid.Row="0"
                                    Grid.Column="1"
@@ -167,23 +172,25 @@
 
                                     <TextBlock Grid.Row="0"
                                                Grid.Column="0"
-                                               Text="Category ID"
+                                               Text="Category Name"
                                                VerticalAlignment="Center"/>
 
-                                    <TextBox Grid.Row="0"
-                                             Grid.Column="1"
-                                             IsReadOnly="{Binding IsNotEditing}"
-                                             Text="{Binding SelectedMeal.CategoryId, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"/>
+                                    <ComboBox Grid.Row="0"
+                                              Grid.Column="1"
+                                              IsEnabled="{Binding IsEditing}"
+                                              ItemsSource="{Binding CategoryNameOptions}"
+                                              SelectedItem="{Binding SelectedCategoryName, 
+                                                            Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"/>
 
                                     <TextBlock Grid.Row="2"
                                                Grid.Column="0"
-                                               Text="Category Name"
+                                               Text="Category ID"
                                                VerticalAlignment="Center"/>
 
                                     <TextBox Grid.Row="2"
                                              Grid.Column="1"
                                              IsReadOnly="True"
-                                             Text="{Binding SelectedMeal.CategoryName, Mode=OneWay}"/>
+                                             Text="{Binding SelectedMeal.CategoryId, Mode=OneWay}"/>
 
                                     <TextBlock Grid.Row="4"
                                                Grid.Column="0"
@@ -192,8 +199,7 @@
 
                                     <ComboBox Grid.Row="4"
                                               Grid.Column="1"
-                                              IsHitTestVisible="{Binding IsEditing}"
-                                              Focusable="{Binding IsEditing}"
+                                              IsEnabled="{Binding IsEditing}"
                                               ItemsSource="{Binding MealTypeOptions}"
                                               SelectedItem="{Binding SelectedMeal.MealType, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"/>
 

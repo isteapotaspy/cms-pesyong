@@ -323,7 +323,11 @@
                         </StackPanel>
                     </ScrollViewer>
                 </TabItem>
-
+                
+                <!-- MUST SHOW LO -->
+                <TabItem>
+                    
+                </TabItem>
             </TabControl>
         </Grid>
     </Grid>
