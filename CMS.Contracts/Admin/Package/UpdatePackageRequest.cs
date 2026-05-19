@@ -20,10 +20,10 @@ public sealed record UpdatePackageRequest
 
     public decimal Rating { get; init; }
     public int ReviewCount { get; init; }
-    public bool IsAvailable { get; init; }
+    public bool IsAvailable { get; init; } = true;
     public bool IsCustomizable { get; init; }
 
     public List<PackageSizeRequest> Sizes { get; init; } = new();
     public List<PackageAddonRequest> Addons { get; init; } = new();
-    public List<PackageSelectionRuleRequest> SelectionRules { get; init; } = new();
 }
+

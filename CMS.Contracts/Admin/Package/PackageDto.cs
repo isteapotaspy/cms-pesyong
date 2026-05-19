@@ -30,5 +30,4 @@ public sealed record PackageDto
 
     public List<PackageSizeDto> Sizes { get; init; } = new();
     public List<PackageAddonDto> Addons { get; init; } = new();
-    public List<PackageSelectionRuleDto> SelectionRules { get; init; } = new();
 }

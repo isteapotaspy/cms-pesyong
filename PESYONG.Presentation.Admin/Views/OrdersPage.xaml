@@ -38,24 +38,17 @@
                             <ColumnDefinition Width="Auto"/>
                             <ColumnDefinition Width="*"/>
                         </Grid.ColumnDefinitions>
-
-                        <Ellipse Grid.RowSpan="2"
-                                 Width="32"
-                                 Height="32"
-                                 Margin="6"
-                                 HorizontalAlignment="Center"
-                                 VerticalAlignment="Center"/>
-
+                        
                         <TextBlock Grid.Row="0"
                                    Grid.Column="1"
                                    Margin="12,6,0,0"
                                    FontWeight="Bold"
-                                   Text="{Binding OrderListTitle, Mode=OneWay}"/>
+                                   Text="{Binding OrderNumber, Mode=OneWay}"/>
 
                         <TextBlock Grid.Row="1"
                                    Grid.Column="1"
                                    Margin="12,0,0,6"
-                                   Text="{Binding OrderListSummary, Mode=OneWay}"/>
+                                   Text="{Binding OrderedAtUtc, Mode=OneWay}"/>
                     </Grid>
                 </DataTemplate>
             </ListView.ItemTemplate>
@@ -92,10 +85,12 @@
 
                 <StackPanel Grid.Column="1"
                             Orientation="Horizontal">
+                    <!--
                     <Button Content="New"
                             Command="{Binding NewOrderCommand}"
                             Margin="0,0,8,0"/>
-
+                    -->
+                    
                     <Button Content="{Binding EditSaveButtonText}"
                             Command="{Binding EditOrSaveCommand}"
                             Margin="0,0,8,0"/>
@@ -178,7 +173,7 @@
 
                                     <TextBox Grid.Row="0"
                                              Grid.Column="1"
-                                             IsReadOnly="{Binding IsNotEditing}"
+                                             IsReadOnly="True"
                                              Text="{Binding SelectedOrder.OrderNumber, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"/>
 
                                     <TextBlock Grid.Row="2"
@@ -426,7 +421,7 @@
 
                                     <TextBox Grid.Row="0"
                                              Grid.Column="1"
-                                             IsReadOnly="{Binding IsNotEditing}"
+                                             IsReadOnly="True"
                                              Text="{Binding SelectedOrder.SubTotal, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"/>
 
                                     <TextBlock Grid.Row="2"
@@ -436,7 +431,7 @@
 
                                     <TextBox Grid.Row="2"
                                              Grid.Column="1"
-                                             IsReadOnly="{Binding IsNotEditing}"
+                                             IsReadOnly="True"
                                              Text="{Binding SelectedOrder.DeliveryFee, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"/>
 
                                     <TextBlock Grid.Row="4"
@@ -446,7 +441,7 @@
 
                                     <TextBox Grid.Row="4"
                                              Grid.Column="1"
-                                             IsReadOnly="{Binding IsNotEditing}"
+                                             IsReadOnly="True"
                                              Text="{Binding SelectedOrder.TaxAmount, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"/>
 
                                     <TextBlock Grid.Row="6"
@@ -456,7 +451,7 @@
 
                                     <TextBox Grid.Row="6"
                                              Grid.Column="1"
-                                             IsReadOnly="{Binding IsNotEditing}"
+                                             IsReadOnly="True"
                                              Text="{Binding SelectedOrder.DiscountAmount, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"/>
 
                                     <TextBlock Grid.Row="8"
@@ -466,7 +461,7 @@
 
                                     <TextBox Grid.Row="8"
                                              Grid.Column="1"
-                                             IsReadOnly="{Binding IsNotEditing}"
+                                             IsReadOnly="True"
                                              Text="{Binding SelectedOrder.GrandTotal, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"/>
                                 </Grid>
                             </GroupBox>
