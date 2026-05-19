@@ -1,7 +1,10 @@
 ﻿using System.Collections.ObjectModel;
 using System.ComponentModel;
+using System.Windows.Media;
+using System.Windows.Media.Imaging;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
+using Microsoft.Win32;
 using PESYONG.Presentation.Admin.Interfaces;
 
 namespace PESYONG.Presentation.Admin.ViewModel;
@@ -9,6 +12,7 @@ namespace PESYONG.Presentation.Admin.ViewModel;
 public partial class MealPageVM : ObservableObject
 {
     private readonly IMealApiService _mealApiService;
+    private readonly IImageApiService _imageApiService;
 
     private bool _isLoadingOrSaving;
     private MealItemVM? _previousSelectedMeal;
@@ -42,13 +46,30 @@ public partial class MealPageVM : ObservableObject
     [ObservableProperty]
     private string statusMessage = "Ready.";
 
+    [ObservableProperty]
+    private string selectedLocalImagePath = string.Empty;
+
+    [ObservableProperty]
+    private ImageSource? selectedImagePreviewSource;
+
+    [ObservableProperty]
+    private string imageStatusText = "No image selected.";
+
     public bool IsNotEditing => !IsEditing;
 
     public string EditSaveButtonText => IsEditing ? "Save" : "Edit";
 
-    public MealPageVM(IMealApiService mealApiService)
+    public string ImagePlaceholderText =>
+        SelectedImagePreviewSource is null
+            ? "No image selected."
+            : string.Empty;
+
+    public MealPageVM(
+        IMealApiService mealApiService,
+        IImageApiService imageApiService)
     {
         _mealApiService = mealApiService;
+        _imageApiService = imageApiService;
     }
 
     [RelayCommand(CanExecute = nameof(CanRunCommand))]
@@ -75,6 +96,8 @@ public partial class MealPageVM : ObservableObject
 
             _isLoadingOrSaving = false;
 
+            RefreshImagePreviewFromSelectedMeal();
+
             StatusMessage = Meals.Count == 0
                 ? "No meals found."
                 : $"{Meals.Count} meal(s) loaded.";
@@ -89,6 +112,10 @@ public partial class MealPageVM : ObservableObject
             MinOrderQuantity = 1,
             IsAvailable = true
         };
+
+        SelectedLocalImagePath = string.Empty;
+        SelectedImagePreviewSource = null;
+        ImageStatusText = "No image selected.";
 
         IsEditing = true;
         IsModified = true;
@@ -146,6 +173,8 @@ public partial class MealPageVM : ObservableObject
             IsModified = false;
 
             _isLoadingOrSaving = false;
+
+            RefreshImagePreviewFromSelectedMeal();
         });
     }
 
@@ -172,8 +201,57 @@ public partial class MealPageVM : ObservableObject
             IsEditing = false;
             IsModified = false;
 
+            RefreshImagePreviewFromSelectedMeal();
+
             StatusMessage = "Meal deleted.";
         });
+    }
+
+    [RelayCommand(CanExecute = nameof(CanUseImageCommands))]
+    private async Task UploadMealImageFromDeviceAsync()
+    {
+        var dialog = new OpenFileDialog
+        {
+            Title = "Choose meal image",
+            Filter = "Image files (*.jpg;*.jpeg;*.png;*.webp)|*.jpg;*.jpeg;*.png;*.webp",
+            Multiselect = false
+        };
+
+        if (dialog.ShowDialog() != true)
+        {
+            return;
+        }
+
+        await RunSafeAsync(async () =>
+        {
+            SelectedLocalImagePath = dialog.FileName;
+            SelectedImagePreviewSource = CreateBitmapImage(dialog.FileName);
+            ImageStatusText = "Uploading image...";
+
+            var uploadedImage = await _imageApiService.UploadImageAsync(dialog.FileName);
+
+            SelectedMeal.ImageUrl = uploadedImage.ImageUrl;
+
+            IsModified = true;
+            ImageStatusText = "Image uploaded. Click Save to keep this image for the meal.";
+        });
+    }
+
+    [RelayCommand(CanExecute = nameof(CanUseImageCommands))]
+    private void ClearMealImage()
+    {
+        SelectedLocalImagePath = string.Empty;
+        SelectedImagePreviewSource = null;
+
+        if (SelectedMeal is not null)
+        {
+            SelectedMeal.ImageUrl = string.Empty;
+        }
+
+        IsModified = true;
+        ImageStatusText = "Image cleared. Click Save to apply this change.";
+
+        NotifyCommands();
     }
 
     private bool CanRunCommand()
@@ -207,6 +285,13 @@ public partial class MealPageVM : ObservableObject
                !IsEditing &&
                SelectedMeal is not null &&
                SelectedMeal.Id > 0;
+    }
+
+    private bool CanUseImageCommands()
+    {
+        return !IsBusy &&
+               IsEditing &&
+               SelectedMeal is not null;
     }
 
     private async Task RunSafeAsync(Func<Task> action)
@@ -272,6 +357,9 @@ public partial class MealPageVM : ObservableObject
         {
             IsEditing = false;
             IsModified = false;
+
+            RefreshImagePreviewFromSelectedMeal();
+
             StatusMessage = value.Id > 0
                 ? "Meal selected."
                 : "Ready.";
@@ -298,11 +386,58 @@ public partial class MealPageVM : ObservableObject
         NotifyCommands();
     }
 
+    partial void OnSelectedImagePreviewSourceChanged(ImageSource? value)
+    {
+        OnPropertyChanged(nameof(ImagePlaceholderText));
+    }
+
+    private void RefreshImagePreviewFromSelectedMeal()
+    {
+        SelectedLocalImagePath = string.Empty;
+
+        if (SelectedMeal is null || string.IsNullOrWhiteSpace(SelectedMeal.ImageUrl))
+        {
+            SelectedImagePreviewSource = null;
+            ImageStatusText = "No image uploaded.";
+            return;
+        }
+
+        SelectedImagePreviewSource = CreateBitmapImage(SelectedMeal.ImageUrl);
+        ImageStatusText = "Existing image loaded from URL.";
+    }
+
+    private static BitmapImage? CreateBitmapImage(string source)
+    {
+        if (string.IsNullOrWhiteSpace(source))
+        {
+            return null;
+        }
+
+        try
+        {
+            var bitmap = new BitmapImage();
+
+            bitmap.BeginInit();
+            bitmap.CacheOption = BitmapCacheOption.OnLoad;
+            bitmap.UriSource = new Uri(source, UriKind.RelativeOrAbsolute);
+            bitmap.EndInit();
+
+            return bitmap;
+        }
+        catch
+        {
+            return null;
+        }
+    }
+
     private void NotifyCommands()
     {
         LoadCommand.NotifyCanExecuteChanged();
         NewMealCommand.NotifyCanExecuteChanged();
         EditOrSaveCommand.NotifyCanExecuteChanged();
         DeleteCommand.NotifyCanExecuteChanged();
+
+        UploadMealImageFromDeviceCommand.NotifyCanExecuteChanged();
+        ClearMealImageCommand.NotifyCanExecuteChanged();
     }
 }

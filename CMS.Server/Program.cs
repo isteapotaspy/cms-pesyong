@@ -29,6 +29,7 @@ using Microsoft.IdentityModel.Tokens;
 using System.Net.Mail;
 using System.Text.RegularExpressions;
 using CMS.Server.Services;
+using Microsoft.AspNetCore.Http.Features;
 
 namespace CMS.Server
 {
@@ -90,6 +91,12 @@ namespace CMS.Server
                         ClockSkew = TimeSpan.Zero
                     };
                 });
+
+            builder.Services.Configure<FormOptions>(options =>
+            {
+                // 10 MB max multipart upload size.
+                options.MultipartBodyLengthLimit = 10 * 1024 * 1024;
+            });
 
             builder.Services.AddAuthorization();
             
