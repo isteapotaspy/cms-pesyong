@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Text;
+using CMS.Domain.Entities.User;
 
 namespace CMS.Contracts.Admin.Orders;
 

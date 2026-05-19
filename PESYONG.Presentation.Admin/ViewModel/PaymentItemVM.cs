@@ -49,6 +49,8 @@ public partial class PaymentItemVM : ObservableObject
     [NotifyPropertyChangedFor(nameof(ListTitle))]
     private string orderDisplay = string.Empty;
 
+
+
     public string ListTitle
     {
         get

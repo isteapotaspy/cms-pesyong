@@ -188,8 +188,8 @@
 
                                     <TextBox Grid.Row="2"
                                              Grid.Column="1"
-                                             IsReadOnly="{Binding IsNotEditing}"
-                                             Text="{Binding SelectedOrder.CustomerProfileId, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"/>
+                                             IsReadOnly="True"
+                                             Text="{Binding SelectedOrder.CustomerProfileId, Mode=OneWay, UpdateSourceTrigger=PropertyChanged}"/>
 
                                     <TextBlock Grid.Row="4"
                                                Grid.Column="0"
@@ -198,7 +198,7 @@
 
                                     <TextBox Grid.Row="4"
                                              Grid.Column="1"
-                                             IsReadOnly="{Binding IsNotEditing}"
+                                             IsReadOnly="True"
                                              Text="{Binding SelectedOrder.AddressId, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged, TargetNullValue=''}"/>
 
                                     <TextBlock Grid.Row="6"
@@ -230,7 +230,7 @@
 
                                     <TextBox Grid.Row="10"
                                              Grid.Column="1"
-                                             IsReadOnly="{Binding IsNotEditing}"
+                                             IsReadOnly="True"
                                              Text="{Binding SelectedOrder.DeliveryTimeSlot, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"/>
                                 </Grid>
                             </GroupBox>

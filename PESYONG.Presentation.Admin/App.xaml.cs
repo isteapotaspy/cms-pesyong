@@ -53,7 +53,7 @@ public partial class App : Application
                 services.AddSingleton<AdminSession>();
 
                 services.AddScoped<IImageApiService, ImageApiService>();
-
+                
                 services.AddScoped<IStatApiService, StatApiService>();
                 services.AddTransient<DashboardPageVM>();
                 services.AddTransient<DashboardPage>();
