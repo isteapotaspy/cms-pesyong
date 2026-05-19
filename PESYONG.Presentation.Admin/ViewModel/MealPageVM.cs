@@ -1,5 +1,9 @@
-﻿using System.Collections.ObjectModel;
+﻿using System;
+using System.Collections.Generic;
+using System.Collections.ObjectModel;
 using System.ComponentModel;
+using System.Linq;
+using System.Threading.Tasks;
 using System.Windows.Media;
 using System.Windows.Media.Imaging;
 using CommunityToolkit.Mvvm.ComponentModel;
@@ -15,21 +19,48 @@ public partial class MealPageVM : ObservableObject
     private readonly IImageApiService _imageApiService;
 
     private bool _isLoadingOrSaving;
+    private bool _isSyncingCategory;
     private MealItemVM? _previousSelectedMeal;
+
+    private const int DefaultCategoryId = 1;
+    private const string DefaultMealType = "Kakanin";
+
+    private static readonly IReadOnlyDictionary<int, string> CategoryNameById =
+        new Dictionary<int, string>
+        {
+            [1] = "Authentic Kakanin",
+            [2] = "Short Orders",
+            [3] = "Catering"
+        };
+
+    private static readonly IReadOnlyDictionary<string, int> CategoryIdByName =
+        CategoryNameById.ToDictionary(
+            x => x.Value,
+            x => x.Key,
+            StringComparer.OrdinalIgnoreCase);
 
     public ObservableCollection<MealItemVM> Meals { get; } = new();
 
+    public ObservableCollection<string> CategoryNameOptions { get; } =
+        new(CategoryNameById
+            .OrderBy(x => x.Key)
+            .Select(x => x.Value));
+
     public ObservableCollection<string> MealTypeOptions { get; } =
     [
-        "Breakfast",
-        "Lunch",
-        "Dinner",
-        "Snack",
+        "MainDish",
+        "Viand",
+        "SideDish",
+        "Dessert",
+        "Kakanin",
         "Beverage"
     ];
 
     [ObservableProperty]
     private MealItemVM selectedMeal = new();
+
+    [ObservableProperty]
+    private string selectedCategoryName = string.Empty;
 
     [ObservableProperty]
     private bool isBusy;
@@ -84,12 +115,19 @@ public partial class MealPageVM : ObservableObject
 
             foreach (var meal in meals)
             {
-                Meals.Add(MealItemVM.FromDto(meal));
+                var mealVm = MealItemVM.FromDto(meal);
+
+                NormalizeMealCategory(mealVm);
+                NormalizeMealType(mealVm);
+
+                Meals.Add(mealVm);
             }
 
             _isLoadingOrSaving = true;
 
             SelectedMeal = Meals.FirstOrDefault() ?? new MealItemVM();
+
+            SyncSelectedCategoryNameFromSelectedMeal();
 
             IsEditing = false;
             IsModified = false;
@@ -107,11 +145,29 @@ public partial class MealPageVM : ObservableObject
     [RelayCommand(CanExecute = nameof(CanRunCommand))]
     private void NewMeal()
     {
+        _isLoadingOrSaving = true;
+
         SelectedMeal = new MealItemVM
         {
+            CategoryId = DefaultCategoryId,
+            CategoryName = CategoryNameById[DefaultCategoryId],
+
+            Name = string.Empty,
+            Description = string.Empty,
+            MealType = DefaultMealType,
+
+            BasePrice = 0,
+            StockQuantity = 0,
             MinOrderQuantity = 1,
-            IsAvailable = true
+
+            ImageUrl = string.Empty,
+            IsAvailable = true,
+            IsViandOption = false
         };
+
+        SyncSelectedCategoryNameFromSelectedMeal();
+
+        _isLoadingOrSaving = false;
 
         SelectedLocalImagePath = string.Empty;
         SelectedImagePreviewSource = null;
@@ -139,6 +195,22 @@ public partial class MealPageVM : ObservableObject
 
         await RunSafeAsync(async () =>
         {
+            if (!TryApplySelectedCategory(out var categoryError))
+            {
+                ErrorMessage = categoryError;
+                StatusMessage = "Choose a valid category before saving.";
+                return;
+            }
+
+            NormalizeMealType(SelectedMeal);
+
+            if (!ValidateMealForSave(out var validationError))
+            {
+                ErrorMessage = validationError;
+                StatusMessage = "Please fix the meal details before saving.";
+                return;
+            }
+
             _isLoadingOrSaving = true;
 
             if (SelectedMeal.Id == 0)
@@ -146,8 +218,13 @@ public partial class MealPageVM : ObservableObject
                 StatusMessage = "Creating meal...";
 
                 var request = SelectedMeal.ToCreateRequest();
+
                 var createdMeal = await _mealApiService.CreateMealAsync(request);
+
                 var createdMealVm = MealItemVM.FromDto(createdMeal);
+
+                NormalizeMealCategory(createdMealVm);
+                NormalizeMealType(createdMealVm);
 
                 Meals.Add(createdMealVm);
                 SelectedMeal = createdMealVm;
@@ -166,8 +243,13 @@ public partial class MealPageVM : ObservableObject
 
                 SelectedMeal.CopyFrom(updatedMeal);
 
+                NormalizeMealCategory(SelectedMeal);
+                NormalizeMealType(SelectedMeal);
+
                 StatusMessage = "Meal saved.";
             }
+
+            SyncSelectedCategoryNameFromSelectedMeal();
 
             IsEditing = false;
             IsModified = false;
@@ -196,10 +278,16 @@ public partial class MealPageVM : ObservableObject
                 Meals.Remove(mealToRemove);
             }
 
+            _isLoadingOrSaving = true;
+
             SelectedMeal = Meals.FirstOrDefault() ?? new MealItemVM();
+
+            SyncSelectedCategoryNameFromSelectedMeal();
 
             IsEditing = false;
             IsModified = false;
+
+            _isLoadingOrSaving = false;
 
             RefreshImagePreviewFromSelectedMeal();
 
@@ -243,15 +331,183 @@ public partial class MealPageVM : ObservableObject
         SelectedLocalImagePath = string.Empty;
         SelectedImagePreviewSource = null;
 
-        if (SelectedMeal is not null)
-        {
-            SelectedMeal.ImageUrl = string.Empty;
-        }
+        SelectedMeal.ImageUrl = string.Empty;
 
         IsModified = true;
         ImageStatusText = "Image cleared. Click Save to apply this change.";
 
         NotifyCommands();
+    }
+
+    private void NormalizeMealCategory(MealItemVM meal)
+    {
+        if (meal.CategoryId > 0 &&
+            CategoryNameById.TryGetValue(meal.CategoryId, out var categoryNameFromId))
+        {
+            meal.CategoryName = categoryNameFromId;
+            return;
+        }
+
+        if (!string.IsNullOrWhiteSpace(meal.CategoryName) &&
+            CategoryIdByName.TryGetValue(meal.CategoryName, out var categoryIdFromName))
+        {
+            meal.CategoryId = categoryIdFromName;
+            meal.CategoryName = CategoryNameById[categoryIdFromName];
+            return;
+        }
+
+        meal.CategoryId = 0;
+        meal.CategoryName = string.Empty;
+    }
+
+    private void NormalizeMealType(MealItemVM meal)
+    {
+        if (string.IsNullOrWhiteSpace(meal.MealType))
+        {
+            meal.MealType = DefaultMealType;
+            return;
+        }
+
+        var matchingMealType = MealTypeOptions.FirstOrDefault(
+            x => string.Equals(x, meal.MealType.Trim(), StringComparison.OrdinalIgnoreCase));
+
+        meal.MealType = matchingMealType ?? DefaultMealType;
+    }
+
+    private bool TryApplySelectedCategory(out string error)
+    {
+        error = string.Empty;
+
+        if (string.IsNullOrWhiteSpace(SelectedCategoryName))
+        {
+            error = "Category is required.";
+            return false;
+        }
+
+        if (!CategoryIdByName.TryGetValue(SelectedCategoryName, out var categoryId))
+        {
+            error = $"Invalid category: {SelectedCategoryName}.";
+            return false;
+        }
+
+        ApplyCategoryById(categoryId);
+
+        return true;
+    }
+
+    private void ApplyCategoryById(int categoryId)
+    {
+        if (!CategoryNameById.TryGetValue(categoryId, out var categoryName))
+        {
+            SelectedMeal.CategoryId = 0;
+            SelectedMeal.CategoryName = string.Empty;
+            return;
+        }
+
+        SelectedMeal.CategoryId = categoryId;
+        SelectedMeal.CategoryName = categoryName;
+    }
+
+    private void ApplyCategoryByName(string? categoryName)
+    {
+        if (_isSyncingCategory)
+        {
+            return;
+        }
+
+        if (string.IsNullOrWhiteSpace(categoryName))
+        {
+            SelectedMeal.CategoryId = 0;
+            SelectedMeal.CategoryName = string.Empty;
+            return;
+        }
+
+        if (!CategoryIdByName.TryGetValue(categoryName, out var categoryId))
+        {
+            return;
+        }
+
+        ApplyCategoryById(categoryId);
+
+        if (IsEditing && !_isLoadingOrSaving)
+        {
+            IsModified = true;
+        }
+    }
+
+    private void SyncSelectedCategoryNameFromSelectedMeal()
+    {
+        try
+        {
+            _isSyncingCategory = true;
+
+            if (SelectedMeal is null)
+            {
+                SelectedCategoryName = string.Empty;
+                return;
+            }
+
+            NormalizeMealCategory(SelectedMeal);
+
+            SelectedCategoryName =
+                SelectedMeal.CategoryId > 0 &&
+                CategoryNameById.TryGetValue(SelectedMeal.CategoryId, out var categoryName)
+                    ? categoryName
+                    : string.Empty;
+        }
+        finally
+        {
+            _isSyncingCategory = false;
+        }
+    }
+
+    private bool ValidateMealForSave(out string error)
+    {
+        error = string.Empty;
+
+        if (SelectedMeal is null)
+        {
+            error = "No meal selected.";
+            return false;
+        }
+
+        if (SelectedMeal.CategoryId is not 1 and not 2 and not 3)
+        {
+            error = "Please select a valid category.";
+            return false;
+        }
+
+        if (string.IsNullOrWhiteSpace(SelectedMeal.Name))
+        {
+            error = "Meal name is required.";
+            return false;
+        }
+
+        if (!MealTypeOptions.Contains(SelectedMeal.MealType))
+        {
+            error = $"Invalid meal type: {SelectedMeal.MealType}.";
+            return false;
+        }
+
+        if (SelectedMeal.BasePrice < 0)
+        {
+            error = "Base price cannot be negative.";
+            return false;
+        }
+
+        if (SelectedMeal.StockQuantity < 0)
+        {
+            error = "Stock quantity cannot be negative.";
+            return false;
+        }
+
+        if (SelectedMeal.MinOrderQuantity <= 0)
+        {
+            error = "Minimum order quantity must be at least 1.";
+            return false;
+        }
+
+        return true;
     }
 
     private bool CanRunCommand()
@@ -276,7 +532,10 @@ public partial class MealPageVM : ObservableObject
             return SelectedMeal.Id > 0;
         }
 
-        return IsModified;
+        return IsModified &&
+               !string.IsNullOrWhiteSpace(SelectedCategoryName) &&
+               CategoryIdByName.ContainsKey(SelectedCategoryName) &&
+               !string.IsNullOrWhiteSpace(SelectedMeal.MealType);
     }
 
     private bool CanDelete()
@@ -310,7 +569,10 @@ public partial class MealPageVM : ObservableObject
         }
         catch (Exception ex)
         {
-            ErrorMessage = ex.Message;
+            ErrorMessage = ex.InnerException is not null
+                ? $"{ex.Message}{Environment.NewLine}{ex.InnerException.Message}"
+                : ex.Message;
+
             StatusMessage = "Action failed.";
         }
         finally
@@ -358,12 +620,26 @@ public partial class MealPageVM : ObservableObject
             IsEditing = false;
             IsModified = false;
 
+            NormalizeMealType(value);
+            SyncSelectedCategoryNameFromSelectedMeal();
             RefreshImagePreviewFromSelectedMeal();
 
             StatusMessage = value.Id > 0
                 ? "Meal selected."
                 : "Ready.";
         }
+
+        NotifyCommands();
+    }
+
+    partial void OnSelectedCategoryNameChanged(string value)
+    {
+        if (_isSyncingCategory)
+        {
+            return;
+        }
+
+        ApplyCategoryByName(value);
 
         NotifyCommands();
     }
@@ -421,6 +697,11 @@ public partial class MealPageVM : ObservableObject
             bitmap.CacheOption = BitmapCacheOption.OnLoad;
             bitmap.UriSource = new Uri(source, UriKind.RelativeOrAbsolute);
             bitmap.EndInit();
+
+            if (bitmap.CanFreeze)
+            {
+                bitmap.Freeze();
+            }
 
             return bitmap;
         }
