@@ -14,9 +14,11 @@ public class GetOrderTrackingResponse
     public DateTime EstimatedDeliveryTimeUtc { get; set; }
 
     public DeliveryAddressDto DeliveryAddress { get; set; } = new();
-    public RiderDto? Rider { get; set; }
+    public TrackingRiderDto? Rider { get; set; }
 
     public decimal AmountPaid { get; set; }
     public List<TrackingOrderItemDto> Items { get; set; } = new();
     public List<TrackingStepDto> Steps { get; set; } = new();
+    public string InvoiceDownloadUrl { get; set; } = string.Empty;
+
 }
