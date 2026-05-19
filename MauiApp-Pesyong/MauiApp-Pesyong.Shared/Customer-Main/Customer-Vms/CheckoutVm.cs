@@ -16,6 +16,8 @@ public class CheckoutVm
     public string CustomerNotes { get; set; } = string.Empty;
     public string SpecialInstructions { get; set; } = string.Empty;
 
+    public decimal DiscountAmount { get; set; } = 0m;
+
     public List<string> AvailableTimeSlots { get; set; } = new()
     {
         "10:00 AM",
@@ -54,7 +56,7 @@ public class CheckoutVm
     public decimal SubTotal => Items.Sum(x => x.LineTotal);
     public decimal DeliveryFee { get; set; } = 0m;
     public decimal TaxAmount => Math.Round(SubTotal * 0.12m, 2);
-    public decimal GrandTotal => SubTotal + DeliveryFee + TaxAmount;
+    public decimal GrandTotal => SubTotal + DeliveryFee + TaxAmount - DiscountAmount;
 
     public static CheckoutVm FromCart(IEnumerable<CartLineUiModel> cartItems)
     {

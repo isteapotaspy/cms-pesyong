@@ -32,7 +32,8 @@
                 @foreach (var item in DrawerState.CartItems)
                 {
                     <MudPaper Class="cart-item" Elevation="0">
-                        <div class="@($"cart-thumb {item.ImageClass}")"></div>
+                        <div class="@GetCartThumbClass(item)"
+                             style="@GetCartThumbStyle(item)"></div>
 
                         <div class="cart-item-copy">
                             <MudText Typo="Typo.subtitle2">@item.Name</MudText>
@@ -106,6 +107,21 @@
         DrawerState.SetCartDrawer(false);
         NavManager.NavigateTo("/checkout");
         return Task.CompletedTask;
+    }
+
+    private static string GetCartThumbClass(CartLineUiModel item)
+    {
+        return string.IsNullOrWhiteSpace(item.ImageUrl)
+            ? $"cart-thumb {item.ImageClass}".Trim()
+            : "cart-thumb";
+    }
+
+    private static string GetCartThumbStyle(CartLineUiModel item)
+    {
+        if (string.IsNullOrWhiteSpace(item.ImageUrl))
+            return string.Empty;
+
+        return $"background-image: linear-gradient(135deg, rgba(31,24,20,.18), rgba(31,24,20,.04)), url('{item.ImageUrl}'); background-size: cover; background-position: center;";
     }
 
     public void Dispose()

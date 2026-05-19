@@ -1,6 +1,8 @@
 ﻿@page "/customer-home"
 @layout CustomerLayout
 @using System.Linq
+@using System.Reflection
+@using CMS.Contracts.Customer.Promos
 @using MauiApp_Pesyong.Shared.Customer_Main.Customer_Models
 @using MauiApp_Pesyong.Shared.Customer_Main.Customer_Services
 @inject CustomerDrawerState DrawerState
@@ -9,6 +11,7 @@
 @implements IDisposable
 @inject ICustomerAuthService AuthService
 @inject CustomerSession Session
+@inject ICustomerOrderService OrderService
 
 <MudContainer MaxWidth="MaxWidth.False" Class="customer-page">
     <TopBar SearchText="@_searchText"
@@ -150,286 +153,335 @@
             </MudButton>
         </MudPaper>
     }
-    else if (IsAllMenuView)
-    {
-        <section class="section-block">
-            <div class="section-head">
-                <div>
-                    <MudText Typo="Typo.h4" Class="section-title">Packages</MudText>
-                    <MudText Typo="Typo.body2" Class="section-subtitle">
-                        Showing @AllMenuPackages.Count() delicious package option(s) for your event.
-                    </MudText>
-                </div>
-
-                <MudButton Variant="Variant.Text"
-                           EndIcon="@Icons.Material.Filled.KeyboardArrowRight"
-                           Class="view-all-btn"
-                           OnClick="@(() => SetCategory("Catering"))">
-                    View Packages
-                </MudButton>
-            </div>
-
-            @if (!AllMenuPackages.Any())
-            {
-                <MudPaper Class="footer-panel" Elevation="0">
-                    <MudText Typo="Typo.h6">No packages found</MudText>
-                    <MudText Typo="Typo.body2">
-                        Try another search term.
-                    </MudText>
-                </MudPaper>
-            }
-            else
-            {
-                <div class="package-grid">
-                    @foreach (var packageItem in AllMenuPackages)
-                    {
-                        <MudCard Class="food-card">
-                            <div class="@($"food-card-image {packageItem.ImageClass}")">
-                                @if (!string.IsNullOrWhiteSpace(packageItem.Badge))
-                                {
-                                    <MudChip T="string" Size="Size.Small" Color="Color.Error" Variant="Variant.Filled" Class="card-chip">
-                                        @packageItem.Badge
-                                    </MudChip>
-                                }
-                            </div>
-
-                            <MudCardContent Class="food-card-content">
-                                <MudText Typo="Typo.subtitle1" Class="card-title">@packageItem.Title</MudText>
-                                <MudText Typo="Typo.body2" Class="card-description">@packageItem.CardSummary</MudText>
-                                <MudText Typo="Typo.caption" Class="card-meta">@packageItem.ServesLabel</MudText>
-                            </MudCardContent>
-
-                            <MudCardActions Class="food-card-actions">
-                                <div>
-                                    <MudText Typo="Typo.h6" Class="card-price">@ToPeso(packageItem.Sizes.FirstOrDefault()?.Price ?? 0)</MudText>
-                                    <MudText Typo="Typo.caption" Class="card-price-note">PER PACKAGE</MudText>
-                                </div>
-
-                                <MudIconButton Icon="@Icons.Material.Filled.Add"
-                                               Color="Color.Primary"
-                                               Class="card-add-btn"
-                                               OnClick="@(() => OpenPackage(packageItem))" />
-                            </MudCardActions>
-                        </MudCard>
-                    }
-                </div>
-            }
-        </section>
-
-        <section class="section-block">
-            <div class="section-head">
-                <div>
-                    <MudText Typo="Typo.h4" Class="section-title">Short Orders</MudText>
-                    <MudText Typo="Typo.body2" Class="section-subtitle">
-                        Showing @AllMenuMeals.Count() delicious meal option(s) for quick ordering.
-                    </MudText>
-                </div>
-
-                <MudButton Variant="Variant.Text"
-                           EndIcon="@Icons.Material.Filled.KeyboardArrowRight"
-                           Class="view-all-btn"
-                           OnClick="@(() => SetCategory("Short Orders"))">
-                    View Short Orders
-                </MudButton>
-            </div>
-
-            @if (!AllMenuMeals.Any())
-            {
-                <MudPaper Class="footer-panel" Elevation="0">
-                    <MudText Typo="Typo.h6">No meals found</MudText>
-                    <MudText Typo="Typo.body2">
-                        Try another search term.
-                    </MudText>
-                </MudPaper>
-            }
-            else
-            {
-                <div class="package-grid">
-                    @foreach (var meal in AllMenuMeals)
-                    {
-                        <MudCard Class="food-card">
-                            <div class="@($"food-card-image {meal.ImageClass}")">
-                                <MudChip T="string"
-                                         Size="Size.Small"
-                                         Color="Color.Primary"
-                                         Variant="Variant.Filled"
-                                         Class="card-chip">
-                                    @meal.MealType
-                                </MudChip>
-                            </div>
-
-                            <MudCardContent Class="food-card-content">
-                                <MudText Typo="Typo.subtitle1" Class="card-title">@meal.Name</MudText>
-                                <MudText Typo="Typo.body2" Class="card-description">@meal.Description</MudText>
-                                <MudText Typo="Typo.caption" Class="card-meta">
-                                    Min order: @meal.MinOrderQuantity
-                                </MudText>
-                            </MudCardContent>
-
-                            <MudCardActions Class="food-card-actions">
-                                <div>
-                                    <MudText Typo="Typo.h6" Class="card-price">@ToPeso(meal.BasePrice)</MudText>
-                                    <MudText Typo="Typo.caption" Class="card-price-note">PER ORDER</MudText>
-                                </div>
-
-                                <MudIconButton Icon="@Icons.Material.Filled.Add"
-                                               Color="Color.Primary"
-                                               Class="card-add-btn"
-                                               OnClick="@(() => AddMealToCart(meal))" />
-                            </MudCardActions>
-                        </MudCard>
-                    }
-                </div>
-            }
-        </section>
-    }
-    else if (IsShortOrdersView)
-    {
-        <section class="section-block">
-            <div class="section-head">
-                <div>
-                    <MudText Typo="Typo.h4" Class="section-title">Short Orders</MudText>
-                    <MudText Typo="Typo.body2" Class="section-subtitle">
-                        Showing @FilteredMeals.Count() delicious meal option(s) for quick ordering.
-                    </MudText>
-                </div>
-            </div>
-
-            @if (!FilteredMeals.Any())
-            {
-                <MudPaper Class="footer-panel" Elevation="0">
-                    <MudText Typo="Typo.h6">No meals found</MudText>
-                    <MudText Typo="Typo.body2">
-                        Try another search term.
-                    </MudText>
-                </MudPaper>
-            }
-            else
-            {
-                <div class="package-grid">
-                    @foreach (var meal in FilteredMeals)
-                    {
-                        <MudCard Class="food-card">
-                            <div class="@($"food-card-image {meal.ImageClass}")">
-                                <MudChip T="string"
-                                         Size="Size.Small"
-                                         Color="Color.Primary"
-                                         Variant="Variant.Filled"
-                                         Class="card-chip">
-                                    @meal.MealType
-                                </MudChip>
-                            </div>
-
-                            <MudCardContent Class="food-card-content">
-                                <MudText Typo="Typo.subtitle1" Class="card-title">@meal.Name</MudText>
-                                <MudText Typo="Typo.body2" Class="card-description">@meal.Description</MudText>
-                                <MudText Typo="Typo.caption" Class="card-meta">
-                                    Min order: @meal.MinOrderQuantity
-                                </MudText>
-                            </MudCardContent>
-
-                            <MudCardActions Class="food-card-actions">
-                                <div>
-                                    <MudText Typo="Typo.h6" Class="card-price">@ToPeso(meal.BasePrice)</MudText>
-                                    <MudText Typo="Typo.caption" Class="card-price-note">PER ORDER</MudText>
-                                </div>
-
-                                <MudIconButton Icon="@Icons.Material.Filled.Add"
-                                               Color="Color.Primary"
-                                               Class="card-add-btn"
-                                               OnClick="@(() => AddMealToCart(meal))" />
-                            </MudCardActions>
-                        </MudCard>
-                    }
-                </div>
-            }
-        </section>
-    }
     else
     {
-        <section class="section-block">
-            <div class="section-head">
-                <div>
-                    <MudText Typo="Typo.h4" Class="section-title">@CurrentPackageSectionTitle</MudText>
-                    <MudText Typo="Typo.body2" Class="section-subtitle">
-                        Showing @FilteredPackages.Count() delicious package option(s) for your event.
-                    </MudText>
+        @if (_activePromos.Any())
+        {
+            <section class="section-block">
+                <div class="section-head">
+                    <div>
+                        <MudText Typo="Typo.h4" Class="section-title">Active Promos</MudText>
+                        <MudText Typo="Typo.body2" Class="section-subtitle">
+                            Use these promo codes during checkout.
+                        </MudText>
+                    </div>
                 </div>
-            </div>
 
-            @if (!FilteredPackages.Any())
-            {
-                <MudPaper Class="footer-panel" Elevation="0">
-                    <MudText Typo="Typo.h6">No packages found</MudText>
-                    <MudText Typo="Typo.body2">
-                        Try another category or search term.
-                    </MudText>
-                </MudPaper>
-            }
-            else
-            {
                 <div class="package-grid">
-                    @foreach (var packageItem in FilteredPackages)
+                    @foreach (var promo in _activePromos)
                     {
-                        <MudCard Class="food-card">
-                            <div class="@($"food-card-image {packageItem.ImageClass}")">
-                                @if (!string.IsNullOrWhiteSpace(packageItem.Badge))
-                                {
-                                    <MudChip T="string" Size="Size.Small" Color="Color.Error" Variant="Variant.Filled" Class="card-chip">
-                                        @packageItem.Badge
-                                    </MudChip>
-                                }
-                            </div>
+                        <MudPaper Class="checkout-card" Elevation="0">
+                            <MudChip T="string" Color="Color.Primary" Variant="Variant.Filled" Size="Size.Small">
+                                @promo.Code
+                            </MudChip>
 
-                            <MudCardContent Class="food-card-content">
-                                <MudText Typo="Typo.subtitle1" Class="card-title">@packageItem.Title</MudText>
-                                <MudText Typo="Typo.body2" Class="card-description">@packageItem.CardSummary</MudText>
-                                <MudText Typo="Typo.caption" Class="card-meta">@packageItem.ServesLabel</MudText>
-                            </MudCardContent>
+                            <MudText Typo="Typo.h6" Class="mt-3">@promo.Description</MudText>
 
-                            <MudCardActions Class="food-card-actions">
-                                <div>
-                                    <MudText Typo="Typo.h6" Class="card-price">@ToPeso(packageItem.Sizes.FirstOrDefault()?.Price ?? 0)</MudText>
-                                    <MudText Typo="Typo.caption" Class="card-price-note">PER PACKAGE</MudText>
-                                </div>
+                            <MudText Typo="Typo.body2" Class="mt-2">
+                                @promo.DiscountPercentageValue% off
+                            </MudText>
 
-                                <MudIconButton Icon="@Icons.Material.Filled.Add"
-                                               Color="Color.Primary"
-                                               Class="card-add-btn"
-                                               OnClick="@(() => OpenPackage(packageItem))" />
-                            </MudCardActions>
-                        </MudCard>
+                            @if (promo.MinimumOrderAmount.HasValue)
+                            {
+                                <MudText Typo="Typo.caption" Class="mt-1 d-block">
+                                    Minimum order: ₱@promo.MinimumOrderAmount.Value.ToString("N0")
+                                </MudText>
+                            }
+
+                            <MudText Typo="Typo.caption" Class="mt-1 d-block">
+                                Valid until @promo.ValidUntilUtc.ToLocalTime().ToString("MMM dd, yyyy hh:mm tt")
+                            </MudText>
+                        </MudPaper>
                     }
                 </div>
-            }
-        </section>
-    }
+            </section>
+        }
 
-    <MudPaper Class="promo-panel" Elevation="0">
-        <div>
-            <MudText Typo="Typo.h4" Class="promo-title">Planning a Large Event?</MudText>
-            <MudText Typo="Typo.body1" Class="promo-copy">
-                Our event coordinators are ready to help you customize a menu that perfectly fits your budget and taste.
-            </MudText>
+        @if (IsAllMenuView)
+        {
+            <section class="section-block">
+                <div class="section-head">
+                    <div>
+                        <MudText Typo="Typo.h4" Class="section-title">Packages</MudText>
+                        <MudText Typo="Typo.body2" Class="section-subtitle">
+                            Showing @AllMenuPackages.Count() delicious package option(s) for your event.
+                        </MudText>
+                    </div>
 
-            <div class="promo-actions">
-                <MudButton Variant="Variant.Filled"
-                           Color="Color.Primary"
-                           OnClick="RequestQuote">
-                    Get a Free Quote
-                </MudButton>
+                    <MudButton Variant="Variant.Text"
+                               EndIcon="@Icons.Material.Filled.KeyboardArrowRight"
+                               Class="view-all-btn"
+                               OnClick="@(() => SetCategory("Catering"))">
+                        View Packages
+                    </MudButton>
+                </div>
 
-                <MudButton Variant="Variant.Filled"
-                           Color="Color.Default"
-                           Class="hero-secondary-btn"
-                           OnClick="ChatWithUs">
-                    Chat with Us
-                </MudButton>
+                @if (!AllMenuPackages.Any())
+                {
+                    <MudPaper Class="footer-panel" Elevation="0">
+                        <MudText Typo="Typo.h6">No packages found</MudText>
+                        <MudText Typo="Typo.body2">
+                            Try another search term.
+                        </MudText>
+                    </MudPaper>
+                }
+                else
+                {
+                    <div class="package-grid">
+                        @foreach (var packageItem in AllMenuPackages)
+                        {
+                            <MudCard Class="food-card">
+                                <div class="@GetCardImageClass(packageItem)"
+                                     style="@GetCardImageStyle(packageItem)">
+                                    @if (!string.IsNullOrWhiteSpace(packageItem.Badge))
+                                    {
+                                        <MudChip T="string" Size="Size.Small" Color="Color.Error" Variant="Variant.Filled" Class="card-chip">
+                                            @packageItem.Badge
+                                        </MudChip>
+                                    }
+                                </div>
+
+                                <MudCardContent Class="food-card-content">
+                                    <MudText Typo="Typo.subtitle1" Class="card-title">@packageItem.Title</MudText>
+                                    <MudText Typo="Typo.body2" Class="card-description">@packageItem.CardSummary</MudText>
+                                    <MudText Typo="Typo.caption" Class="card-meta">@packageItem.ServesLabel</MudText>
+                                </MudCardContent>
+
+                                <MudCardActions Class="food-card-actions">
+                                    <div>
+                                        <MudText Typo="Typo.h6" Class="card-price">@ToPeso(packageItem.Sizes.FirstOrDefault()?.Price ?? 0)</MudText>
+                                        <MudText Typo="Typo.caption" Class="card-price-note">PER PACKAGE</MudText>
+                                    </div>
+
+                                    <MudIconButton Icon="@Icons.Material.Filled.Add"
+                                                   Color="Color.Primary"
+                                                   Class="card-add-btn"
+                                                   OnClick="@(() => OpenPackage(packageItem))" />
+                                </MudCardActions>
+                            </MudCard>
+                        }
+                    </div>
+                }
+            </section>
+
+            <section class="section-block">
+                <div class="section-head">
+                    <div>
+                        <MudText Typo="Typo.h4" Class="section-title">Short Orders</MudText>
+                        <MudText Typo="Typo.body2" Class="section-subtitle">
+                            Showing @AllMenuMeals.Count() delicious meal option(s) for quick ordering.
+                        </MudText>
+                    </div>
+
+                    <MudButton Variant="Variant.Text"
+                               EndIcon="@Icons.Material.Filled.KeyboardArrowRight"
+                               Class="view-all-btn"
+                               OnClick="@(() => SetCategory("Short Orders"))">
+                        View Short Orders
+                    </MudButton>
+                </div>
+
+                @if (!AllMenuMeals.Any())
+                {
+                    <MudPaper Class="footer-panel" Elevation="0">
+                        <MudText Typo="Typo.h6">No meals found</MudText>
+                        <MudText Typo="Typo.body2">
+                            Try another search term.
+                        </MudText>
+                    </MudPaper>
+                }
+                else
+                {
+                    <div class="package-grid">
+                        @foreach (var meal in AllMenuMeals)
+                        {
+                            <MudCard Class="food-card">
+                                <div class="@GetCardImageClass(meal)"
+                                     style="@GetCardImageStyle(meal)">
+                                    <MudChip T="string"
+                                             Size="Size.Small"
+                                             Color="Color.Primary"
+                                             Variant="Variant.Filled"
+                                             Class="card-chip">
+                                        @meal.MealType
+                                    </MudChip>
+                                </div>
+
+                                <MudCardContent Class="food-card-content">
+                                    <MudText Typo="Typo.subtitle1" Class="card-title">@meal.Name</MudText>
+                                    <MudText Typo="Typo.body2" Class="card-description">@meal.Description</MudText>
+                                    <MudText Typo="Typo.caption" Class="card-meta">
+                                        Min order: @meal.MinOrderQuantity
+                                    </MudText>
+                                </MudCardContent>
+
+                                <MudCardActions Class="food-card-actions">
+                                    <div>
+                                        <MudText Typo="Typo.h6" Class="card-price">@ToPeso(meal.BasePrice)</MudText>
+                                        <MudText Typo="Typo.caption" Class="card-price-note">PER ORDER</MudText>
+                                    </div>
+
+                                    <MudIconButton Icon="@Icons.Material.Filled.Add"
+                                                   Color="Color.Primary"
+                                                   Class="card-add-btn"
+                                                   OnClick="@(() => AddMealToCart(meal))" />
+                                </MudCardActions>
+                            </MudCard>
+                        }
+                    </div>
+                }
+            </section>
+        }
+        else if (IsShortOrdersView)
+        {
+            <section class="section-block">
+                <div class="section-head">
+                    <div>
+                        <MudText Typo="Typo.h4" Class="section-title">Short Orders</MudText>
+                        <MudText Typo="Typo.body2" Class="section-subtitle">
+                            Showing @FilteredMeals.Count() delicious meal option(s) for quick ordering.
+                        </MudText>
+                    </div>
+                </div>
+
+                @if (!FilteredMeals.Any())
+                {
+                    <MudPaper Class="footer-panel" Elevation="0">
+                        <MudText Typo="Typo.h6">No meals found</MudText>
+                        <MudText Typo="Typo.body2">
+                            Try another search term.
+                        </MudText>
+                    </MudPaper>
+                }
+                else
+                {
+                    <div class="package-grid">
+                        @foreach (var meal in FilteredMeals)
+                        {
+                            <MudCard Class="food-card">
+                                <div class="@GetCardImageClass(meal)"
+                                     style="@GetCardImageStyle(meal)">
+                                    <MudChip T="string"
+                                             Size="Size.Small"
+                                             Color="Color.Primary"
+                                             Variant="Variant.Filled"
+                                             Class="card-chip">
+                                        @meal.MealType
+                                    </MudChip>
+                                </div>
+
+                                <MudCardContent Class="food-card-content">
+                                    <MudText Typo="Typo.subtitle1" Class="card-title">@meal.Name</MudText>
+                                    <MudText Typo="Typo.body2" Class="card-description">@meal.Description</MudText>
+                                    <MudText Typo="Typo.caption" Class="card-meta">
+                                        Min order: @meal.MinOrderQuantity
+                                    </MudText>
+                                </MudCardContent>
+
+                                <MudCardActions Class="food-card-actions">
+                                    <div>
+                                        <MudText Typo="Typo.h6" Class="card-price">@ToPeso(meal.BasePrice)</MudText>
+                                        <MudText Typo="Typo.caption" Class="card-price-note">PER ORDER</MudText>
+                                    </div>
+
+                                    <MudIconButton Icon="@Icons.Material.Filled.Add"
+                                                   Color="Color.Primary"
+                                                   Class="card-add-btn"
+                                                   OnClick="@(() => AddMealToCart(meal))" />
+                                </MudCardActions>
+                            </MudCard>
+                        }
+                    </div>
+                }
+            </section>
+        }
+        else
+        {
+            <section class="section-block">
+                <div class="section-head">
+                    <div>
+                        <MudText Typo="Typo.h4" Class="section-title">@CurrentPackageSectionTitle</MudText>
+                        <MudText Typo="Typo.body2" Class="section-subtitle">
+                            Showing @FilteredPackages.Count() delicious package option(s) for your event.
+                        </MudText>
+                    </div>
+                </div>
+
+                @if (!FilteredPackages.Any())
+                {
+                    <MudPaper Class="footer-panel" Elevation="0">
+                        <MudText Typo="Typo.h6">No packages found</MudText>
+                        <MudText Typo="Typo.body2">
+                            Try another category or search term.
+                        </MudText>
+                    </MudPaper>
+                }
+                else
+                {
+                    <div class="package-grid">
+                        @foreach (var packageItem in FilteredPackages)
+                        {
+                            <MudCard Class="food-card">
+                                <div class="@GetCardImageClass(packageItem)"
+                                     style="@GetCardImageStyle(packageItem)">
+                                    @if (!string.IsNullOrWhiteSpace(packageItem.Badge))
+                                    {
+                                        <MudChip T="string" Size="Size.Small" Color="Color.Error" Variant="Variant.Filled" Class="card-chip">
+                                            @packageItem.Badge
+                                        </MudChip>
+                                    }
+                                </div>
+
+                                <MudCardContent Class="food-card-content">
+                                    <MudText Typo="Typo.subtitle1" Class="card-title">@packageItem.Title</MudText>
+                                    <MudText Typo="Typo.body2" Class="card-description">@packageItem.CardSummary</MudText>
+                                    <MudText Typo="Typo.caption" Class="card-meta">@packageItem.ServesLabel</MudText>
+                                </MudCardContent>
+
+                                <MudCardActions Class="food-card-actions">
+                                    <div>
+                                        <MudText Typo="Typo.h6" Class="card-price">@ToPeso(packageItem.Sizes.FirstOrDefault()?.Price ?? 0)</MudText>
+                                        <MudText Typo="Typo.caption" Class="card-price-note">PER PACKAGE</MudText>
+                                    </div>
+
+                                    <MudIconButton Icon="@Icons.Material.Filled.Add"
+                                                   Color="Color.Primary"
+                                                   Class="card-add-btn"
+                                                   OnClick="@(() => OpenPackage(packageItem))" />
+                                </MudCardActions>
+                            </MudCard>
+                        }
+                    </div>
+                }
+            </section>
+        }
+
+        <MudPaper Class="promo-panel" Elevation="0">
+            <div>
+                <MudText Typo="Typo.h4" Class="promo-title">Planning a Large Event?</MudText>
+                <MudText Typo="Typo.body1" Class="promo-copy">
+                    Our event coordinators are ready to help you customize a menu that perfectly fits your budget and taste.
+                </MudText>
+
+                <div class="promo-actions">
+                    <MudButton Variant="Variant.Filled"
+                               Color="Color.Primary"
+                               OnClick="RequestQuote">
+                        Get a Free Quote
+                    </MudButton>
+
+                    <MudButton Variant="Variant.Filled"
+                               Color="Color.Default"
+                               Class="hero-secondary-btn"
+                               OnClick="ChatWithUs">
+                        Chat with Us
+                    </MudButton>
+                </div>
             </div>
-        </div>
 
-        <div class="promo-image"></div>
-    </MudPaper>
+            <div class="promo-image"></div>
+        </MudPaper>
+    }
 
     <Footer />
 </MudContainer>
@@ -457,6 +509,11 @@
     private decimal? _homeMapLat;
     private decimal? _homeMapLng;
 
+    private List<ActivePromoDto> _activePromos = new();
+
+    private string _deliveryLocation = "Davao City, Davao del Sur";
+    private string _newsletterEmail = string.Empty;
+
     protected override async Task OnInitializedAsync()
     {
         StartClock();
@@ -474,9 +531,11 @@
             var categories = await CatalogService.GetCategoriesAsync();
             var packages = await CatalogService.GetPackagesAsync();
             var meals = await CatalogService.GetMealsAsync(categorySlug: "short-orders");
+            var promos = await OrderService.GetActivePromosAsync();
 
             _packages = packages.ToList();
             _meals = meals.ToList();
+            _activePromos = promos.ToList();
 
             var fetchedPackageCategories = categories
                 .Where(x => !string.IsNullOrWhiteSpace(x))
@@ -638,14 +697,12 @@
             Notes = $"Short Order • Min qty {meal.MinOrderQuantity}",
             UnitPrice = meal.BasePrice,
             Quantity = Math.Max(1, meal.MinOrderQuantity),
-            ImageClass = meal.ImageClass
+            ImageClass = meal.ImageClass,
+            ImageUrl = meal.ImageUrl
         });
 
         Snackbar.Add($"{meal.Name} added to cart.", Severity.Success);
     }
-
-    private string _deliveryLocation = "Davao City, Davao del Sur";
-    private string _newsletterEmail = string.Empty;
 
     private void RequestQuote()
     {
@@ -723,6 +780,35 @@
         catch
         {
         }
+    }
+
+    private static string GetCardImageClass(object item)
+    {
+        var imageUrl = TryGetImageUrl(item);
+        var imageClass = item.GetType().GetProperty("ImageClass", BindingFlags.Public | BindingFlags.Instance)
+            ?.GetValue(item)?.ToString();
+
+        return string.IsNullOrWhiteSpace(imageUrl)
+            ? $"food-card-image {imageClass}".Trim()
+            : "food-card-image";
+    }
+
+    private static string GetCardImageStyle(object item)
+    {
+        var imageUrl = TryGetImageUrl(item);
+
+        if (string.IsNullOrWhiteSpace(imageUrl))
+            return string.Empty;
+
+        return $"background-image: linear-gradient(135deg, rgba(31,24,20,.18), rgba(31,24,20,.04)), url('{imageUrl}'); background-size: cover; background-position: center;";
+    }
+
+    private static string? TryGetImageUrl(object item)
+    {
+        return item.GetType()
+            .GetProperty("ImageUrl", BindingFlags.Public | BindingFlags.Instance)
+            ?.GetValue(item)
+            ?.ToString();
     }
 
     public void Dispose()

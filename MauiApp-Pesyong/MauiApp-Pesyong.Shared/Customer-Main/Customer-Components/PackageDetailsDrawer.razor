@@ -14,11 +14,15 @@
     @if (DrawerState.SelectedPackage is PackageUiModel packageItem)
     {
         <div class="drawer-shell">
-            <div class="@($"drawer-hero {packageItem.ImageClass}")">
+            <div class="@GetDrawerHeroClass(packageItem)"
+                 style="@GetDrawerHeroStyle(packageItem)">
                 <div class="drawer-hero-top">
-                    <MudChip T="string" Color="Color.Primary" Variant="Variant.Filled" Size="Size.Small">
-                        @packageItem.Badge
-                    </MudChip>
+                    @if (!string.IsNullOrWhiteSpace(packageItem.Badge))
+                    {
+                        <MudChip T="string" Color="Color.Primary" Variant="Variant.Filled" Size="Size.Small">
+                            @packageItem.Badge
+                        </MudChip>
+                    }
 
                     @if (!string.IsNullOrWhiteSpace(packageItem.Notice))
                     {
@@ -241,8 +245,8 @@
     }
 
     private IEnumerable<PackageSelectionRuleUiModel> CurrentSelectionRules =>
-    SelectedSize?.SelectionRules.OrderBy(x => x.DisplayOrder)
-    ?? Enumerable.Empty<PackageSelectionRuleUiModel>();
+        SelectedSize?.SelectionRules.OrderBy(x => x.DisplayOrder)
+        ?? Enumerable.Empty<PackageSelectionRuleUiModel>();
 
     private void ResetSelections()
     {
@@ -463,11 +467,27 @@
             UnitPrice = SelectedSize.Price + SelectedAddonTotal + SelectedMealTotal,
             Quantity = _quantity,
             ImageClass = DrawerState.SelectedPackage.ImageClass,
+            ImageUrl = DrawerState.SelectedPackage.ImageUrl,
             MealSelections = selectedMealModels,
             AddonSelections = selectedAddonModels
         });
 
         return Task.CompletedTask;
+    }
+
+    private static string GetDrawerHeroClass(PackageUiModel packageItem)
+    {
+        return string.IsNullOrWhiteSpace(packageItem.ImageUrl)
+            ? $"drawer-hero {packageItem.ImageClass}".Trim()
+            : "drawer-hero";
+    }
+
+    private static string GetDrawerHeroStyle(PackageUiModel packageItem)
+    {
+        if (string.IsNullOrWhiteSpace(packageItem.ImageUrl))
+            return string.Empty;
+
+        return $"background-image: linear-gradient(135deg, rgba(31,24,20,.28), rgba(31,24,20,.10)), url('{packageItem.ImageUrl}'); background-size: cover; background-position: center;";
     }
 
     public void Dispose()

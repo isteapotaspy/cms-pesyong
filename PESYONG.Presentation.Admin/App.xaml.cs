@@ -6,9 +6,6 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using PESYONG.Presentation.Admin.Interfaces;
 using PESYONG.Presentation.Admin.Services;
-
-// FIX THIS INCONSISTENT DEPENDENCY ISSUE LATER ON PLS
-
 using PESYONG.Presentation.Admin.ViewModel;
 using PESYONG.Presentation.Admin.ViewModels;
 using PESYONG.Presentation.Admin.ViewModels.Deliveries;
@@ -16,7 +13,6 @@ using PESYONG.Presentation.Admin.Views;
 
 namespace PESYONG.Presentation.Admin;
 
-// minor changes
 public partial class App : Application
 {
     private IHost _host = default!;
@@ -32,17 +28,29 @@ public partial class App : Application
                 config.AddJsonFile("appsettings.json", optional: false, reloadOnChange: true);
             })
             .ConfigureServices((context, services) =>
-            {                var apiBaseUrl = context.Configuration["ApiBaseUrl"];
+            {
+                var apiBaseUrl = context.Configuration["ApiBaseUrl"];
 
                 if (string.IsNullOrWhiteSpace(apiBaseUrl))
                 {
-                    throw new InvalidOperationException("\n\nApiBaseUrl is missing in appsettings.json.\n\n");
+                    throw new InvalidOperationException(
+                        "\n\nApiBaseUrl is missing in appsettings.json.\n\n");
                 }
+
+                apiBaseUrl = EnsureTrailingSlash(apiBaseUrl);
 
                 services.AddHttpClient("CMSApi", client =>
                 {
                     client.BaseAddress = new Uri(apiBaseUrl);
                 });
+
+                services.AddHttpClient<IAdminAuthService, AdminAuthService>(client =>
+                {
+                    client.BaseAddress = new Uri(apiBaseUrl);
+                });
+
+                services.AddSingleton<IAdminTokenStore, AdminTokenStore>();
+                services.AddSingleton<AdminSession>();
 
                 services.AddScoped<IImageApiService, ImageApiService>();
 
@@ -64,11 +72,13 @@ public partial class App : Application
 
                 services.AddScoped<IPromoApiService, PromoApiService>();
                 services.AddTransient<PromosPageVM>();
-                services.AddTransient<PromosPage>();               
+                services.AddTransient<PromosPage>();
 
                 services.AddScoped<IOrderApiService, OrderApiService>();
                 services.AddTransient<OrderPageVM>();
                 services.AddTransient<OrdersPage>();
+
+                services.AddTransient<AdminLoginPageVM>();
 
                 services.AddTransient<LoginPage>();
                 services.AddTransient<MainWindow>();
@@ -77,7 +87,7 @@ public partial class App : Application
             .Build();
 
         await _host.StartAsync();
-        await Task.Delay(10000);
+
         await CheckApiConnectionAsync();
 
         var mainWindow = _host.Services.GetRequiredService<MainWindow>();
@@ -103,9 +113,7 @@ public partial class App : Application
         var client = httpClientFactory.CreateClient("CMSApi");
 
         if (client.BaseAddress is null)
-        {
             throw new InvalidOperationException("CMSApi HttpClient BaseAddress was not set.");
-        }
 
         try
         {
@@ -116,13 +124,19 @@ public partial class App : Application
                 throw new InvalidOperationException(
                     $"API was reached, but returned {(int)response.StatusCode} {response.ReasonPhrase}.");
             }
-
         }
         catch (HttpRequestException ex)
         {
             throw new InvalidOperationException(
-                $"Cannot connect to API at {client.BaseAddress}. Make sure the ASP.NET API is running.",
+                $"Cannot connect to API at {client.BaseAddress}. Make sure CMS.Server is running and ApiBaseUrl uses the correct HTTP/HTTPS URL and port.",
                 ex);
         }
+    }
+
+    private static string EnsureTrailingSlash(string url)
+    {
+        return url.EndsWith("/")
+            ? url
+            : url + "/";
     }
 }

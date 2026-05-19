@@ -15,7 +15,10 @@ public class PackageUiModel
     public string Notice { get; set; } = string.Empty;
     public string ServesLabel { get; set; } = string.Empty;
     public string InclusionText { get; set; } = string.Empty;
+
     public string ImageClass { get; set; } = "food-image-one";
+    public string ImageUrl { get; set; } = string.Empty;
+
     public decimal Rating { get; set; } = 4.8m;
     public int ReviewCount { get; set; } = 124;
 
@@ -79,7 +82,10 @@ public class MealOptionUiModel
     public string MealType { get; set; } = string.Empty;
     public decimal BasePrice { get; set; }
     public decimal AdditionalPrice { get; set; }
+
     public string ImageClass { get; set; } = "food-image-one";
+    public string ImageUrl { get; set; } = string.Empty;
+
     public bool IsDefault { get; set; }
 }
 
@@ -99,7 +105,9 @@ public class CartLineUiModel
 
     public decimal UnitPrice { get; set; }
     public int Quantity { get; set; } = 1;
+
     public string ImageClass { get; set; } = "food-image-one";
+    public string ImageUrl { get; set; } = string.Empty;
 
     public List<CartMealSelectionUiModel> MealSelections { get; set; } = new();
     public List<CartAddonSelectionUiModel> AddonSelections { get; set; } = new();
@@ -138,5 +146,7 @@ public class ShortOrderMealUiModel
     public int MinOrderQuantity { get; set; }
 
     public string ImageClass { get; set; } = "food-image-one";
+    public string ImageUrl { get; set; } = string.Empty;
+
     public bool IsAvailable { get; set; }
 }

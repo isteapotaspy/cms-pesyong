@@ -1,13 +1,14 @@
-﻿using System.Net;
+﻿using CMS.Contracts.Customer.Meals;
+using CMS.Contracts.Customer.Menu;
+using CMS.Contracts.Customer.Orders;
+using CMS.Contracts.Customer.Promos;
+using MauiApp_Pesyong.Shared.Customer_Main.Customer_Models;
+using MauiApp_Pesyong.Shared.Customer_Main.Customer_Vms;
+using System.Net;
 using System.Net.Http.Headers;
 using System.Net.Http.Json;
 using System.Text.Json;
 using System.Web;
-using CMS.Contracts.Customer.Meals;
-using CMS.Contracts.Customer.Menu;
-using CMS.Contracts.Customer.Orders;
-using MauiApp_Pesyong.Shared.Customer_Main.Customer_Models;
-using MauiApp_Pesyong.Shared.Customer_Main.Customer_Vms;
 
 namespace MauiApp_Pesyong.Shared.Customer_Main.Customer_Services;
 
@@ -240,6 +241,36 @@ public sealed class CustomerApiClient : ICustomerCatalogService, ICustomerOrderS
             Content = bytes
         };
     }
+
+    public async Task<PromoValidationResponse?> ValidatePromoAsync(
+    string code,
+    decimal subTotal,
+    CancellationToken cancellationToken = default)
+    {
+        var url = $"api/customer/promos/validate?code={Uri.EscapeDataString(code)}&subTotal={subTotal}";
+        using var response = await _http.GetAsync(url, cancellationToken);
+
+        if (response.StatusCode == System.Net.HttpStatusCode.NotFound)
+            return null;
+
+        if (!response.IsSuccessStatusCode)
+            throw new InvalidOperationException(await ReadErrorMessageAsync(response));
+
+        return await response.Content.ReadFromJsonAsync<PromoValidationResponse>(cancellationToken: cancellationToken);
+    }
+
+    public async Task<IReadOnlyList<ActivePromoDto>> GetActivePromosAsync(CancellationToken cancellationToken = default)
+    {
+        using var response = await _http.GetAsync("api/customer/promos/active", cancellationToken);
+
+        if (!response.IsSuccessStatusCode)
+            throw new InvalidOperationException(await ReadErrorMessageAsync(response));
+
+        var items = await response.Content.ReadFromJsonAsync<List<ActivePromoDto>>(cancellationToken: cancellationToken);
+        return items ?? new List<ActivePromoDto>();
+    }
+
+
 
 
     //==== HELPER CLASSES AND METHODS ====//

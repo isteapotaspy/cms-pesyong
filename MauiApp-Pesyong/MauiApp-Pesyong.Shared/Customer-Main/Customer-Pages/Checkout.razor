@@ -161,6 +161,14 @@
                         All orders are for <strong>@Vm.DeliverySchedule.DeliveryDate:MMMM dd, yyyy</strong>. Please select your preferred 30-minute window.
                     </MudAlert>
 
+                    <MudDatePicker Label="Delivery Date"
+                                   Variant="Variant.Outlined"
+                                   Date="Vm.DeliverySchedule.DeliveryDate"
+                                   DateChanged="OnDeliveryDateChanged"
+                                   MinDate="DateTime.Today"
+                                   Editable="false"
+                                   Class="mb-4" />
+
                     <div class="time-slot-grid">
                         @foreach (var slot in Vm.AvailableTimeSlots)
                         {
@@ -234,7 +242,9 @@
                                       Margin="Margin.Dense"
                                       @bind-Value="Vm.PromoCode" />
 
-                        <MudButton Variant="Variant.Filled" Color="Color.Default">
+                        <MudButton Variant="Variant.Filled"
+                                   Color="Color.Default"
+                                   OnClick="ApplyPromoAsync">
                             Apply
                         </MudButton>
                     </div>
@@ -447,5 +457,42 @@
 
         StateHasChanged();
         return Task.CompletedTask;
+    }
+
+    private Task OnDeliveryDateChanged(DateTime? value)
+    {
+        Vm.DeliverySchedule.DeliveryDate = value?.Date ?? DateTime.Today;
+        StateHasChanged();
+        return Task.CompletedTask;
+    }
+
+    private async Task ApplyPromoAsync()
+    {
+        try
+        {
+            if (string.IsNullOrWhiteSpace(Vm.PromoCode))
+            {
+                Vm.DiscountAmount = 0m;
+                Snackbar.Add("Enter a promo code first.", Severity.Warning);
+                return;
+            }
+
+            var result = await OrderService.ValidatePromoAsync(Vm.PromoCode, Vm.SubTotal);
+
+            if (result is null)
+            {
+                Vm.DiscountAmount = 0m;
+                Snackbar.Add("Promo code is invalid or expired.", Severity.Error);
+                return;
+            }
+
+            Vm.DiscountAmount = result.DiscountAmount;
+            Snackbar.Add($"{result.Code} applied successfully.", Severity.Success);
+            StateHasChanged();
+        }
+        catch (Exception ex)
+        {
+            Snackbar.Add(ex.Message, Severity.Error);
+        }
     }
 }
