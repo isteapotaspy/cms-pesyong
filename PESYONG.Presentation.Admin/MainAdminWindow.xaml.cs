@@ -44,7 +44,8 @@ public partial class MainAdminWindow : Window
             switch (pageName)
             {
                 case "Dashboard":
-                    MainAdminFrame.Navigate(new DashboardPage());
+                    MainAdminFrame.Navigate(
+                        _serviceProvider.GetRequiredService<DashboardPage>());
                     break;
 
                 case "Meals":

@@ -54,6 +54,10 @@ public partial class App : Application
 
                 services.AddScoped<IImageApiService, ImageApiService>();
 
+                services.AddScoped<IStatApiService, StatApiService>();
+                services.AddTransient<DashboardPageVM>();
+                services.AddTransient<DashboardPage>();
+
                 services.AddScoped<IMealApiService, MealApiService>();
                 services.AddTransient<MealPageVM>();
                 services.AddTransient<MealsPage>();

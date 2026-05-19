@@ -11,7 +11,6 @@ public class DashboardStatsDto
     public int ConfirmedOrders { get; set; }
     public int DeliveredOrders { get; set; }
 
-    public int TotalCustomers { get; set; }
     public int TotalPackages { get; set; }
     public int TotalMeals { get; set; }
 
