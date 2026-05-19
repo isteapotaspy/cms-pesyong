@@ -8,6 +8,9 @@
 @inject ICustomerOrderService OrderService
 @inject ICustomerAuthService AuthService
 @inject CustomerSession Session
+@implements IAsyncDisposable
+@inject ICustomerOrderRealtimeService RealtimeService
+@inject ISnackbar Snackbar
 
 @if (_isLoading)
 {
@@ -221,6 +224,7 @@ else
     private TrackingVm? Vm;
     private bool _isLoading = true;
     private string? _errorMessage;
+    private int? _joinedOrderId;
 
     protected override async Task OnParametersSetAsync()
     {
@@ -263,6 +267,29 @@ else
             if (Vm is null)
             {
                 _errorMessage = "Tracking details were not found for this order.";
+                return;
+            }
+
+            if (_joinedOrderId != targetOrderId.Value)
+            {
+                try
+                {
+                    RealtimeService.OrderStatusUpdated -= HandleOrderStatusUpdated;
+
+                    if (_joinedOrderId.HasValue)
+                    {
+                        await RealtimeService.LeaveOrderAsync(_joinedOrderId.Value);
+                    }
+
+                    RealtimeService.OrderStatusUpdated += HandleOrderStatusUpdated;
+                    await RealtimeService.JoinOrderAsync(targetOrderId.Value);
+
+                    _joinedOrderId = targetOrderId.Value;
+                }
+                catch (Exception ex)
+                {
+                    Snackbar.Add($"Live updates unavailable: {ex.Message}", Severity.Warning);
+                }
             }
         }
         catch (Exception ex)
@@ -273,6 +300,25 @@ else
         {
             _isLoading = false;
         }
+    }
+
+    private async void HandleOrderStatusUpdated(CMS.Contracts.Customer.Orders.OrderStatusUpdatedEvent evt)
+    {
+        if (!_joinedOrderId.HasValue || evt.OrderId != _joinedOrderId.Value)
+            return;
+
+        Snackbar.Add(
+            $"Order #{evt.OrderNumber} is now {evt.Status}.",
+            GetSnackbarSeverity(evt.Status));
+
+        await InvokeAsync(async () =>
+        {
+            if (_joinedOrderId.HasValue)
+            {
+                Vm = await OrderService.GetTrackingAsync(_joinedOrderId.Value);
+                StateHasChanged();
+            }
+        });
     }
 
     private int? ResolveOrderId()
@@ -295,4 +341,26 @@ else
         };
 
     private static string ToPeso(decimal amount) => $"₱{amount:N0}";
+
+    public async ValueTask DisposeAsync()
+    {
+        RealtimeService.OrderStatusUpdated -= HandleOrderStatusUpdated;
+
+        if (_joinedOrderId.HasValue)
+        {
+            await RealtimeService.LeaveOrderAsync(_joinedOrderId.Value);
+        }
+    }
+
+    private static Severity GetSnackbarSeverity(string? status) =>
+    status?.Trim().ToLowerInvariant() switch
+    {
+        "confirmed" => Severity.Info,
+        "preparing" => Severity.Warning,
+        "outfordelivery" => Severity.Info,
+        "out for delivery" => Severity.Info,
+        "delivered" => Severity.Success,
+        "cancelled" => Severity.Error,
+        _ => Severity.Normal
+    };
 }
