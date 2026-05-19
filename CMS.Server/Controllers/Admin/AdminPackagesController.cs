@@ -2,6 +2,7 @@
 using CMS.Domain.Entities.Packages;
 using CMS.Domain.Enums;
 using CMS.Infrastructure.Persistence;
+using CMS.Server.Services.Statistics;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 
@@ -12,10 +13,14 @@ namespace CMS.Server.Controllers.Admin;
 public sealed class AdminPackagesController : ControllerBase
 {
     private readonly CmsDbContext _dbContext;
+    private readonly IStatBroadcaster _statBroadcaster;
 
-    public AdminPackagesController(CmsDbContext dbContext)
+    public AdminPackagesController(
+        CmsDbContext dbContext,
+        IStatBroadcaster statBroadcaster)
     {
         _dbContext = dbContext;
+        _statBroadcaster = statBroadcaster;
     }
 
     [HttpGet]
@@ -118,6 +123,8 @@ public sealed class AdminPackagesController : ControllerBase
         _dbContext.Packages.Add(package);
         await _dbContext.SaveChangesAsync();
 
+        await _statBroadcaster.BroadcastDashboardStatsAsync();
+
         var createdPackage = await PackageQuery()
             .FirstAsync(existing => existing.Id == package.Id);
 
@@ -199,6 +206,8 @@ public sealed class AdminPackagesController : ControllerBase
 
         await _dbContext.SaveChangesAsync();
 
+        await _statBroadcaster.BroadcastDashboardStatsAsync();
+
         var updatedPackage = await PackageQuery()
             .FirstAsync(existing => existing.Id == id);
 
@@ -235,6 +244,8 @@ public sealed class AdminPackagesController : ControllerBase
         _dbContext.Packages.Remove(package);
 
         await _dbContext.SaveChangesAsync();
+
+        await _statBroadcaster.BroadcastDashboardStatsAsync();
 
         return NoContent();
     }

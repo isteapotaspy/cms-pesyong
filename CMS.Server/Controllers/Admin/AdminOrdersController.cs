@@ -4,6 +4,7 @@ using CMS.Domain.Entities.Orders;
 using CMS.Domain.Enums;
 using CMS.Infrastructure.Persistence;
 using CMS.Server.Hubs;
+using CMS.Server.Services.Statistics;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.SignalR;
 using Microsoft.EntityFrameworkCore;
@@ -16,13 +17,16 @@ public sealed class AdminOrdersController : ControllerBase
 {
     private readonly CmsDbContext _db;
     private readonly IHubContext<OrderHub> _hubContext;
+    private readonly IStatBroadcaster _statBroadcaster;
 
     public AdminOrdersController(
         CmsDbContext db,
-        IHubContext<OrderHub> hubContext)
+        IHubContext<OrderHub> hubContext,
+        IStatBroadcaster statBroadcaster)
     {
         _db = db;
         _hubContext = hubContext;
+        _statBroadcaster = statBroadcaster;
     }
 
     [HttpGet]
@@ -104,6 +108,8 @@ public sealed class AdminOrdersController : ControllerBase
         _db.Orders.Add(order);
         await _db.SaveChangesAsync();
 
+        await _statBroadcaster.BroadcastDashboardStatsAsync();
+
         var created = await OrdersWithChildren()
             .AsNoTracking()
             .FirstAsync(x => x.Id == order.Id);
@@ -169,6 +175,7 @@ public sealed class AdminOrdersController : ControllerBase
         await _db.SaveChangesAsync();
 
         await BroadcastOrderStatusUpdatedAsync(order);
+        await _statBroadcaster.BroadcastDashboardStatsAsync();
 
         var updated = await OrdersWithChildren()
             .AsNoTracking()
@@ -196,6 +203,8 @@ public sealed class AdminOrdersController : ControllerBase
         _db.Orders.Remove(order);
 
         await _db.SaveChangesAsync();
+
+        await _statBroadcaster.BroadcastDashboardStatsAsync();
 
         return NoContent();
     }
@@ -280,7 +289,8 @@ public sealed class AdminOrdersController : ControllerBase
         };
     }
 
-    private static Contracts.Admin.Orders.OrderItemMealSelectionRequestDto MapToDto(OrderItemMealSelection selection)
+    private static Contracts.Admin.Orders.OrderItemMealSelectionRequestDto MapToDto(
+        OrderItemMealSelection selection)
     {
         return new Contracts.Admin.Orders.OrderItemMealSelectionRequestDto
         {

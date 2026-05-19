@@ -33,6 +33,7 @@ using System.Security.Claims;
 using System.Text;
 using System.Text.RegularExpressions;
 using QuestPDF.Fluent;
+using CMS.Server.Services.Statistics;
 
 namespace CMS.Server
 {
@@ -52,6 +53,8 @@ namespace CMS.Server
             builder.Services.AddOpenApi();
 
             builder.Services.AddSignalR();
+            builder.Services.AddScoped<IStatQueryService, StatQueryService>();
+            builder.Services.AddScoped<IStatBroadcaster, SignalRStatBroadcaster>();
 
             builder.Services.AddCors(options =>
             {
@@ -152,6 +155,7 @@ namespace CMS.Server
             }
 
             app.MapHub<OrderHub>("/hubs/orders");
+            app.MapHub<DashboardStatsHub>("/hubs/admin/stats");
 
             QuestPDF.Settings.License = LicenseType.Community;
 
@@ -1549,47 +1553,6 @@ namespace CMS.Server
 
                 return Results.Ok(orders);
             }).RequireAuthorization();
-
-
-            //================================= ADMIN ENDPOINTS ================================= //
-
-            //GET dashboard stats
-            app.MapGet("/api/admin/dashboard/stats", async (CmsDbContext db) =>
-            {
-                var totalOrders = await db.Orders.CountAsync();
-                var pendingOrders = await db.Orders.CountAsync(x => x.Status == OrderStatus.Pending);
-                var confirmedOrders = await db.Orders.CountAsync(x => x.Status == OrderStatus.Confirmed);
-                var deliveredOrders = await db.Orders.CountAsync(x => x.Status == OrderStatus.Delivered);
-
-                var totalCustomers = await db.CustomerProfiles.CountAsync();
-                var totalPackages = await db.Packages.CountAsync(x => x.IsAvailable);
-                var totalMeals = await db.Meals.CountAsync(x => x.IsAvailable);
-
-                var totalRevenue = await db.Orders
-                    .Where(x => x.Status != OrderStatus.Cancelled)
-                    .SumAsync(x => (decimal?)x.GrandTotal) ?? 0m;
-
-                var averageOrderValue = totalOrders > 0
-                    ? Math.Round(totalRevenue / totalOrders, 2)
-                    : 0m;
-
-                var response = new DashboardStatsDto
-                {
-                    TotalOrders = totalOrders,
-                    PendingOrders = pendingOrders,
-                    ConfirmedOrders = confirmedOrders,
-                    DeliveredOrders = deliveredOrders,
-                    TotalCustomers = totalCustomers,
-                    TotalPackages = totalPackages,
-                    TotalMeals = totalMeals,
-                    TotalRevenue = totalRevenue,
-                    AverageOrderValue = averageOrderValue
-                };
-
-                return Results.Ok(response);
-            });
-
-
 
             app.MapControllers();
             await app.RunAsync();

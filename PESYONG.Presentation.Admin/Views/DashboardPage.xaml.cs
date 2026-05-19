@@ -10,6 +10,7 @@ using System.Windows.Media;
 using System.Windows.Media.Imaging;
 using System.Windows.Navigation;
 using System.Windows.Shapes;
+using PESYONG.Presentation.Admin.ViewModels;
 
 namespace PESYONG.Presentation.Admin.Views;
 
@@ -18,8 +19,49 @@ namespace PESYONG.Presentation.Admin.Views;
 /// </summary>
 public partial class DashboardPage : Page
 {
-    public DashboardPage()
+    private readonly DashboardPageVM _viewModel;
+    private bool _hasLoaded;
+
+    public DashboardPage(DashboardPageVM viewModel)
     {
         InitializeComponent();
+
+        _viewModel = viewModel;
+        DataContext = _viewModel;
+
+        Loaded += DashboardPage_Loaded;
+        Unloaded += DashboardPage_Unloaded;
+    }
+
+    private async void DashboardPage_Loaded(object sender, RoutedEventArgs e)
+    {
+        if (_hasLoaded)
+            return;
+
+        _hasLoaded = true;
+
+        try
+        {
+            await _viewModel.LoadAsync();
+        }
+        catch (Exception ex)
+        {
+            MessageBox.Show(
+                $"Failed to load dashboard stats.\n\n{ex.Message}",
+                "Dashboard Error",
+                MessageBoxButton.OK,
+                MessageBoxImage.Error);
+        }
+    }
+
+    private async void DashboardPage_Unloaded(object sender, RoutedEventArgs e)
+    {
+        try
+        {
+            await _viewModel.DisposeAsync();
+        }
+        catch
+        {
+        }
     }
 }

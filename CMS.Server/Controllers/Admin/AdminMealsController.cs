@@ -2,6 +2,7 @@
 using CMS.Domain.Entities.Menu;
 using CMS.Domain.Enums;
 using CMS.Infrastructure.Persistence;
+using CMS.Server.Services.Statistics;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 
@@ -12,10 +13,14 @@ namespace CMS.Server.Controllers.Admin;
 public sealed class AdminMealsController : ControllerBase
 {
     private readonly CmsDbContext _db;
+    private readonly IStatBroadcaster _statBroadcaster;
 
-    public AdminMealsController(CmsDbContext db)
+    public AdminMealsController(
+        CmsDbContext db,
+        IStatBroadcaster statBroadcaster)
     {
         _db = db;
+        _statBroadcaster = statBroadcaster;
     }
 
     [HttpGet]
@@ -111,6 +116,8 @@ public sealed class AdminMealsController : ControllerBase
         _db.Meals.Add(meal);
         await _db.SaveChangesAsync();
 
+        await _statBroadcaster.BroadcastDashboardStatsAsync();
+
         var createdMeal = await GetMealDtoById(meal.Id);
 
         return CreatedAtAction(
@@ -152,6 +159,8 @@ public sealed class AdminMealsController : ControllerBase
 
         await _db.SaveChangesAsync();
 
+        await _statBroadcaster.BroadcastDashboardStatsAsync();
+
         var updatedMeal = await GetMealDtoById(meal.Id);
 
         return Ok(updatedMeal);
@@ -169,6 +178,8 @@ public sealed class AdminMealsController : ControllerBase
 
         _db.Meals.Remove(meal);
         await _db.SaveChangesAsync();
+
+        await _statBroadcaster.BroadcastDashboardStatsAsync();
 
         return NoContent();
     }
