@@ -1,4 +1,5 @@
 ﻿using System.Windows.Controls;
+using CommunityToolkit.Mvvm.Input;
 using PESYONG.Presentation.Admin.ViewModel;
 
 namespace PESYONG.Presentation.Admin.Views;
@@ -16,12 +17,17 @@ public partial class MealsPage : Page
 
         Loaded += MealsPage_Loaded;
     }
-
+    
     private async void MealsPage_Loaded(object sender, System.Windows.RoutedEventArgs e)
     {
-        if (_viewModel.LoadCommand.CanExecute(null))
+
+        //_viewModel.LoadCommand is IAsyncRelayCommand loadCommand &&
+        //    loadCommand.CanExecute(null)
+
+        if (_viewModel.LoadCommand is IAsyncRelayCommand loadCommand &&
+              loadCommand.CanExecute(null))
         {
-            await _viewModel.LoadCommand.ExecuteAsync(null);
+            await loadCommand.ExecuteAsync(null);
         }
     }
 }

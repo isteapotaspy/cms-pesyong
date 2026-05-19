@@ -11,9 +11,9 @@ public sealed class MealApiService : IMealApiService
 
     private const string BaseRoute = "api/admin/meals";
 
-    public MealApiService(HttpClient httpClient)
+    public MealApiService(IHttpClientFactory httpClientFactory)
     {
-        _httpClient = httpClient;
+        _httpClient = httpClientFactory.CreateClient("CMSApi");
     }
 
     public async Task<IReadOnlyList<MealDto>> GetMealsAsync(
