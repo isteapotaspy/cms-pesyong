@@ -1,0 +1,353 @@
+﻿@page "/verify-email"
+@layout CustomerLayout
+@inject ICustomerAuthService AuthService
+@inject NavigationManager NavManager
+
+<MudContainer MaxWidth="MaxWidth.False" Class="verify-page-shell">
+    <div class="verify-page-bg"></div>
+
+    <MudContainer MaxWidth="MaxWidth.Large" Class="verify-content-wrap">
+        <MudGrid Spacing="4" AlignItems="AlignItems.Center" Justify="Justify.Center">
+            <MudItem xs="12" md="6">
+                <div class="verify-welcome-panel">
+                    <MudChip T="string"
+                             Variant="Variant.Filled"
+                             Size="Size.Small"
+                             Class="verify-chip">
+                        Almost there
+                    </MudChip>
+
+                    <MudText Typo="Typo.h2" Class="verify-title">
+                        Check your email
+                    </MudText>
+
+                    <MudText Typo="Typo.h6" Class="verify-subtitle">
+                        We sent a 6-digit verification code to your email. Enter it below to finish creating your Pesyong account.
+                    </MudText>
+
+                    <div class="verify-feature-list">
+                        <div class="verify-feature-item">
+                            <MudIcon Icon="@Icons.Material.Filled.MarkEmailRead" />
+                            <span>Use the code sent to your inbox</span>
+                        </div>
+
+                        <div class="verify-feature-item">
+                            <MudIcon Icon="@Icons.Material.Filled.Timer" />
+                            <span>The code expires in a few minutes</span>
+                        </div>
+
+                        <div class="verify-feature-item">
+                            <MudIcon Icon="@Icons.Material.Filled.Lock" />
+                            <span>This helps keep your account secure</span>
+                        </div>
+                    </div>
+                </div>
+            </MudItem>
+
+            <MudItem xs="12" md="6">
+                <MudPaper Class="verify-card" Elevation="0">
+                    <div class="verify-card-top">
+                        <MudText Typo="Typo.h4" Class="verify-card-title">
+                            Verify your email
+                        </MudText>
+
+                        <MudText Typo="Typo.body2" Class="verify-card-copy">
+                            Enter the verification code to continue.
+                        </MudText>
+                    </div>
+
+                    @if (!string.IsNullOrWhiteSpace(_successMessage))
+                    {
+                        <MudAlert Severity="Severity.Success" Variant="Variant.Filled" Class="mb-4">
+                            @_successMessage
+                        </MudAlert>
+                    }
+
+                    @if (!string.IsNullOrWhiteSpace(_errorMessage))
+                    {
+                        <MudAlert Severity="Severity.Error" Variant="Variant.Filled" Class="mb-4">
+                            @_errorMessage
+                        </MudAlert>
+                    }
+
+                    <MudGrid Spacing="2">
+                        <MudItem xs="12">
+                            <MudTextField T="string"
+                                          Label="Email Address"
+                                          Variant="Variant.Outlined"
+                                          Adornment="Adornment.Start"
+                                          AdornmentIcon="@Icons.Material.Filled.Email"
+                                          Class="verify-input"
+                                          @bind-Value="_vm.Email" />
+                        </MudItem>
+
+                        <MudItem xs="12">
+                            <MudTextField T="string"
+                                          Label="Verification Code"
+                                          Variant="Variant.Outlined"
+                                          Adornment="Adornment.Start"
+                                          AdornmentIcon="@Icons.Material.Filled.Password"
+                                          Class="verify-input"
+                                          @bind-Value="_vm.Code" />
+                        </MudItem>
+
+                        <MudItem xs="12">
+                            <MudButton Variant="Variant.Filled"
+                                       FullWidth="true"
+                                       Disabled="_isVerifying"
+                                       Class="verify-btn"
+                                       OnClick="VerifyAsync">
+                                @(_isVerifying ? "Verifying..." : "Verify Email")
+                            </MudButton>
+                        </MudItem>
+
+                        <MudItem xs="12">
+                            <MudButton Variant="Variant.Text"
+                                       FullWidth="true"
+                                       Disabled="_isResending"
+                                       Class="verify-resend-btn"
+                                       OnClick="ResendAsync">
+                                @(_isResending ? "Sending..." : "Resend Code")
+                            </MudButton>
+                        </MudItem>
+                    </MudGrid>
+
+                    <MudDivider Class="my-5" />
+
+                    <div class="verify-back-row">
+                        <MudText Typo="Typo.body2" Class="verify-back-text">
+                            Entered the wrong email?
+                        </MudText>
+
+                        <MudButton Variant="Variant.Text"
+                                   Class="verify-back-link"
+                                   OnClick="@(() => NavManager.NavigateTo("/customer-register"))">
+                            Go back
+                        </MudButton>
+                    </div>
+                </MudPaper>
+            </MudItem>
+        </MudGrid>
+    </MudContainer>
+</MudContainer>
+
+<style>
+    .verify-page-shell {
+        position: relative;
+        min-height: calc(100vh - 64px);
+        overflow: hidden;
+        padding: 2rem 1rem;
+    }
+
+    .verify-page-bg {
+        position: absolute;
+        inset: 0;
+        background:
+            radial-gradient(circle at top left, rgba(255, 188, 122, 0.26), transparent 32%),
+            radial-gradient(circle at bottom right, rgba(255, 134, 61, 0.18), transparent 28%),
+            linear-gradient(135deg, #fff8f2 0%, #fff3e7 40%, #fffaf6 100%);
+        z-index: 0;
+    }
+
+    .verify-content-wrap {
+        position: relative;
+        z-index: 1;
+        min-height: calc(100vh - 120px);
+        display: flex;
+        align-items: center;
+    }
+
+    .verify-welcome-panel {
+        padding: 1rem 1rem 1rem 0.5rem;
+    }
+
+    .verify-chip {
+        background: linear-gradient(90deg, #f18a3b 0%, #de6d1d 100%) !important;
+        color: white !important;
+        font-weight: 600;
+        margin-bottom: 1rem;
+    }
+
+    .verify-title {
+        font-weight: 800;
+        color: #2f1a0f;
+        line-height: 1.05;
+        margin-bottom: 0.75rem;
+    }
+
+    .verify-subtitle {
+        color: #74492e;
+        font-weight: 400;
+        line-height: 1.5;
+        max-width: 32rem;
+        margin-bottom: 1.5rem;
+    }
+
+    .verify-feature-list {
+        display: flex;
+        flex-direction: column;
+        gap: 0.9rem;
+    }
+
+    .verify-feature-item {
+        display: flex;
+        align-items: center;
+        gap: 0.75rem;
+        color: #5f3822;
+        font-size: 0.98rem;
+        font-weight: 500;
+    }
+
+    .verify-feature-item .mud-icon-root {
+        color: #dc6f27;
+        background: rgba(255, 170, 102, 0.18);
+        border-radius: 999px;
+        padding: 0.45rem;
+        font-size: 1.2rem;
+    }
+
+    .verify-card {
+        padding: 2rem;
+        border-radius: 28px;
+        background: rgba(255, 255, 255, 0.94);
+        border: 1px solid rgba(240, 162, 104, 0.25);
+        box-shadow: 0 20px 50px rgba(118, 63, 24, 0.12);
+        backdrop-filter: blur(12px);
+    }
+
+    .verify-card-top {
+        margin-bottom: 1.2rem;
+    }
+
+    .verify-card-title {
+        color: #2e1b10;
+        font-weight: 800;
+        margin-bottom: 0.35rem;
+    }
+
+    .verify-card-copy {
+        color: #7a5237;
+    }
+
+    .verify-input .mud-input-control {
+        background: rgba(255, 248, 242, 0.75);
+        border-radius: 16px;
+    }
+
+    .verify-btn {
+        height: 52px;
+        border-radius: 16px !important;
+        background: linear-gradient(90deg, #f08a3d 0%, #dd6b1d 100%) !important;
+        color: white !important;
+        font-weight: 700 !important;
+        text-transform: none !important;
+        box-shadow: 0 10px 24px rgba(223, 107, 29, 0.28);
+    }
+
+    .verify-resend-btn {
+        color: #d86b23 !important;
+        font-weight: 700 !important;
+        text-transform: none !important;
+    }
+
+    .verify-back-row {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 0.25rem;
+    }
+
+    .verify-back-text {
+        color: #7a5237;
+    }
+
+    .verify-back-link {
+        color: #d86b23 !important;
+        font-weight: 700 !important;
+        text-transform: none !important;
+    }
+
+    @@media (max-width: 960px) {
+        .verify-page-shell {
+            padding: 1.25rem 0.75rem 2rem;
+        }
+
+        .verify-content-wrap {
+            min-height: auto;
+        }
+
+        .verify-welcome-panel {
+            padding: 0 0 0.5rem 0;
+        }
+
+        .verify-title {
+            font-size: 2.3rem !important;
+        }
+
+        .verify-card {
+            padding: 1.35rem;
+        }
+    }
+</style>
+
+@code {
+    [SupplyParameterFromQuery]
+    public string? Email { get; set; }
+
+    private readonly VerifyEmailVm _vm = new();
+    private bool _isVerifying;
+    private bool _isResending;
+    private string? _errorMessage;
+    private string? _successMessage;
+
+    protected override void OnParametersSet()
+    {
+        if (!string.IsNullOrWhiteSpace(Email) && string.IsNullOrWhiteSpace(_vm.Email))
+        {
+            _vm.Email = Email;
+        }
+    }
+
+    private async Task VerifyAsync()
+    {
+        try
+        {
+            _isVerifying = true;
+            _errorMessage = null;
+            _successMessage = null;
+
+            await AuthService.VerifyEmailAsync(_vm.ToVerifyRequest());
+            NavManager.NavigateTo("/customer-home", true);
+        }
+        catch (Exception ex)
+        {
+            _errorMessage = ex.Message;
+        }
+        finally
+        {
+            _isVerifying = false;
+        }
+    }
+
+    private async Task ResendAsync()
+    {
+        try
+        {
+            _isResending = true;
+            _errorMessage = null;
+            _successMessage = null;
+
+            var message = await AuthService.ResendVerificationCodeAsync(_vm.ToResendRequest());
+
+            _successMessage = message;
+        }
+        catch (Exception ex)
+        {
+            _errorMessage = ex.Message;
+        }
+        finally
+        {
+            _isResending = false;
+        }
+    }
+}

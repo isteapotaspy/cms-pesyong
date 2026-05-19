@@ -1,0 +1,275 @@
+﻿@page "/saved-addresses"
+@layout CustomerLayout
+@using MauiApp_Pesyong.Shared.Customer_Main.Customer_Vms
+@inject ICustomerAuthService AuthService
+@inject CustomerSession Session
+@inject NavigationManager NavManager
+
+<MudContainer MaxWidth="MaxWidth.Large" Class="py-6">
+    <MudText Typo="Typo.h4" Class="mb-2">Saved Delivery Addresses</MudText>
+    <MudText Typo="Typo.body2" Class="mb-4">Save your usual delivery locations for faster checkout.</MudText>
+
+    @if (!string.IsNullOrWhiteSpace(_successMessage))
+    {
+        <MudAlert Severity="Severity.Success" Variant="Variant.Filled" Class="mb-4">@_successMessage</MudAlert>
+    }
+
+    @if (!string.IsNullOrWhiteSpace(_errorMessage))
+    {
+        <MudAlert Severity="Severity.Error" Variant="Variant.Filled" Class="mb-4">@_errorMessage</MudAlert>
+    }
+
+    <MudGrid Spacing="3">
+        <MudItem xs="12" md="7">
+            <MudPaper Class="pa-4" Elevation="0">
+                <div class="d-flex justify-space-between align-center mb-3">
+                    <MudText Typo="Typo.h6">My Addresses</MudText>
+
+                    <MudButton Variant="Variant.Outlined"
+                               OnClick="NewAddress">
+                        New Address
+                    </MudButton>
+                </div>
+
+                @if (_isLoading)
+                {
+                    <MudProgressCircular Indeterminate="true" Color="Color.Primary" />
+                }
+                else if (Addresses.Count == 0)
+                {
+                    <MudText Typo="Typo.body2">No saved addresses yet.</MudText>
+                }
+                else
+                {
+                    @foreach (var address in Addresses)
+                    {
+                        <MudPaper Class="pa-3 mb-3" Elevation="0" Style="border:1px solid rgba(0,0,0,0.08); border-radius:16px;">
+                            <div class="d-flex justify-space-between align-start">
+                                <div>
+                                    <MudText Typo="Typo.subtitle1">@address.Summary</MudText>
+
+                                    @if (!string.IsNullOrWhiteSpace(address.Landmark))
+                                    {
+                                        <MudText Typo="Typo.body2">Landmark: @address.Landmark</MudText>
+                                    }
+
+                                    @if (address.IsDefault)
+                                    {
+                                        <MudChip T="string" Color="Color.Primary" Variant="Variant.Filled" Size="Size.Small" Class="mt-2">
+                                            Default
+                                        </MudChip>
+                                    }
+                                </div>
+
+                                <div class="d-flex flex-column gap-1">
+                                    <MudButton Variant="Variant.Text" Size="Size.Small" OnClick="@(() => EditAddress(address))">
+                                        Edit
+                                    </MudButton>
+
+                                    @if (!address.IsDefault)
+                                    {
+                                        <MudButton Variant="Variant.Text" Size="Size.Small" OnClick="@(() => SetDefaultAsync(address.Id))">
+                                            Set Default
+                                        </MudButton>
+                                    }
+
+                                    <MudButton Variant="Variant.Text" Color="Color.Error" Size="Size.Small" OnClick="@(() => DeleteAsync(address.Id))">
+                                        Delete
+                                    </MudButton>
+                                </div>
+                            </div>
+                        </MudPaper>
+                    }
+                }
+            </MudPaper>
+        </MudItem>
+
+        <MudItem xs="12" md="5">
+            <MudPaper Class="pa-4" Elevation="0">
+                <MudText Typo="Typo.h6" Class="mb-3">@(_editingId.HasValue ? "Edit Address" : "New Address")</MudText>
+
+                <MudGrid Spacing="2">
+                    <MudItem xs="12">
+                        <MudTextField T="string" Label="Street Address / Unit No." Variant="Variant.Outlined" @bind-Value="Editor.StreetAddress" />
+                    </MudItem>
+
+                    <MudItem xs="12" sm="6">
+                        <MudTextField T="string" Label="City" Variant="Variant.Outlined" @bind-Value="Editor.City" />
+                    </MudItem>
+
+                    <MudItem xs="12" sm="6">
+                        <MudTextField T="string" Label="Barangay" Variant="Variant.Outlined" @bind-Value="Editor.Barangay" />
+                    </MudItem>
+
+                    <MudItem xs="12">
+                        <MudTextField T="string" Label="Landmark" Variant="Variant.Outlined" @bind-Value="Editor.Landmark" />
+                    </MudItem>
+
+                    <MudItem xs="12">
+                        <MudCheckBox T="bool" Label="Set as default address" @bind-Value="Editor.IsDefault" />
+                    </MudItem>
+
+                    <MudItem xs="12">
+                        <div class="d-flex gap-2 justify-end">
+                            <MudButton Variant="Variant.Outlined" OnClick="NewAddress">Clear</MudButton>
+
+                            <MudButton Variant="Variant.Outlined"
+                                       Class="profile-back-btn"
+                                       OnClick="@(() => NavManager.NavigateTo("/customer-profile"))">
+                                Back
+                            </MudButton>
+
+                            <MudButton Variant="Variant.Filled"
+                                       Color="Color.Primary"
+                                       Disabled="_isSaving"
+                                       OnClick="SaveAsync">
+                                @(_isSaving ? "Saving..." : "Save Address")
+                            </MudButton>
+                        </div>
+                    </MudItem>
+                </MudGrid>
+            </MudPaper>
+        </MudItem>
+    </MudGrid>
+</MudContainer>
+
+@code {
+    private List<CustomerAddressVm> Addresses { get; set; } = new();
+    private CustomerAddressVm Editor { get; set; } = CustomerAddressVm.Empty();
+    private int? _editingId;
+    private bool _isLoading = true;
+    private bool _isSaving;
+    private string? _errorMessage;
+    private string? _successMessage;
+
+    protected override async Task OnInitializedAsync()
+    {
+        var restored = await AuthService.TryRestoreSessionAsync();
+
+        if (!restored || !Session.IsAuthenticated)
+        {
+            NavManager.NavigateTo("/customer-login?returnUrl=%2Fsaved-addresses", true);
+            return;
+        }
+
+        await LoadAsync();
+    }
+
+    private async Task LoadAsync()
+    {
+        _isLoading = true;
+        _errorMessage = null;
+
+        try
+        {
+            var items = await AuthService.GetSavedAddressesAsync();
+            Addresses = items.Select(CustomerAddressVm.FromDto).ToList();
+        }
+        catch (Exception ex)
+        {
+            _errorMessage = ex.Message;
+        }
+        finally
+        {
+            _isLoading = false;
+        }
+    }
+
+    private void NewAddress()
+    {
+        _editingId = null;
+        Editor = CustomerAddressVm.Empty();
+        _errorMessage = null;
+        _successMessage = null;
+    }
+
+    private void EditAddress(CustomerAddressVm address)
+    {
+        _editingId = address.Id;
+        Editor = new CustomerAddressVm
+        {
+            Id = address.Id,
+            StreetAddress = address.StreetAddress,
+            City = address.City,
+            Barangay = address.Barangay,
+            Landmark = address.Landmark,
+            Latitude = address.Latitude,
+            Longitude = address.Longitude,
+            IsDefault = address.IsDefault
+        };
+
+        _errorMessage = null;
+        _successMessage = null;
+    }
+
+    private async Task SaveAsync()
+    {
+        try
+        {
+            _isSaving = true;
+            _errorMessage = null;
+            _successMessage = null;
+
+            if (_editingId.HasValue)
+            {
+                await AuthService.UpdateAddressAsync(_editingId.Value, Editor.ToRequest());
+                _successMessage = "Address updated successfully.";
+            }
+            else
+            {
+                await AuthService.CreateAddressAsync(Editor.ToRequest());
+                _successMessage = "Address saved successfully.";
+            }
+
+            await LoadAsync();
+            NewAddress();
+        }
+        catch (Exception ex)
+        {
+            _errorMessage = ex.Message;
+        }
+        finally
+        {
+            _isSaving = false;
+        }
+    }
+
+    private async Task SetDefaultAsync(int addressId)
+    {
+        try
+        {
+            _errorMessage = null;
+            _successMessage = null;
+
+            await AuthService.SetDefaultAddressAsync(addressId);
+            _successMessage = "Default address updated.";
+            await LoadAsync();
+        }
+        catch (Exception ex)
+        {
+            _errorMessage = ex.Message;
+        }
+    }
+
+    private async Task DeleteAsync(int addressId)
+    {
+        try
+        {
+            _errorMessage = null;
+            _successMessage = null;
+
+            await AuthService.DeleteAddressAsync(addressId);
+            _successMessage = "Address deleted.";
+            await LoadAsync();
+
+            if (_editingId == addressId)
+            {
+                NewAddress();
+            }
+        }
+        catch (Exception ex)
+        {
+            _errorMessage = ex.Message;
+        }
+    }
+}

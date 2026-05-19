@@ -1,5 +1,4 @@
-﻿using CMS.Domain.Entities;
-using CMS.Domain.Entities.Packages;
+﻿using CMS.Domain.Entities.Packages;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
 

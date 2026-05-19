@@ -1,29 +1,34 @@
-﻿using System.Windows;
+﻿using System;
+using System.Windows;
 using System.Windows.Controls;
+using Microsoft.Extensions.DependencyInjection;
 using PESYONG.Presentation.Admin.Views;
 
 namespace PESYONG.Presentation.Admin;
 
 public partial class MainAdminWindow : Window
 {
-    public MainAdminWindow()
+    private readonly IServiceProvider _serviceProvider;
+
+    public MainAdminWindow(IServiceProvider serviceProvider)
     {
         InitializeComponent();
+
+        _serviceProvider = serviceProvider;
+
+        Loaded += MainAdminWindow_Loaded;
     }
 
     private void MainAdminWindow_Loaded(object sender, RoutedEventArgs e)
     {
-        // Load default page
         NavigateToPage("Dashboard");
     }
 
     private void NavigateMenuItem_Click(object sender, RoutedEventArgs e)
     {
-        var menuItem = sender as MenuItem;
-        if (menuItem?.Tag != null)
+        if (sender is MenuItem menuItem && menuItem.Tag is not null)
         {
-            string pageName = menuItem?.Tag?.ToString();
-            NavigateToPage(pageName);
+            NavigateToPage(menuItem.Tag.ToString()!);
         }
     }
 
@@ -41,39 +46,48 @@ public partial class MainAdminWindow : Window
                 case "Dashboard":
                     MainAdminFrame.Navigate(new DashboardPage());
                     break;
+
                 case "Meals":
-                    MainAdminFrame.Navigate(new MealsPage());
+                    MainAdminFrame.Navigate(
+                        _serviceProvider.GetRequiredService<MealsPage>());
                     break;
-                case "Packs":
-                    MainAdminFrame.Navigate(new PacksPage());
+
+                case "Packages":
+                    MainAdminFrame.Navigate(
+                        _serviceProvider.GetRequiredService<PackagesPage>());
                     break;
+
+                case "Payments":
+
+                    MainAdminFrame.Navigate(
+                        _serviceProvider.GetRequiredService<PaymentsPage>());
+                    break;
+
+                case "Promos":
+                    MainAdminFrame.Navigate(
+                        _serviceProvider.GetRequiredService<PromosPage>());
+                    break;
+
                 case "Orders":
-                    MainAdminFrame.Navigate(new OrdersPage());
+                    MainAdminFrame.Navigate(
+                       _serviceProvider.GetRequiredService<OrdersPage>());
                     break;
-                case "Receipts":
-                    MainAdminFrame.Navigate(new ReceiptsPage());
-                    break;
+
                 case "Deliveries":
-                    MainAdminFrame.Navigate(new DeliveryPage());
+                    MainAdminFrame.Navigate(
+                        _serviceProvider.GetRequiredService<DeliveryPage>());
                     break;
-                case "Customers":
-                    //MainAdminFrame.Navigate(new CustomersPage());
+
+                case "Receipts":
+                    MainAdminFrame.Navigate(new TextBlock
+                    {
+                        Text = "Receipts page not implemented yet",
+                        HorizontalAlignment = HorizontalAlignment.Center,
+                        VerticalAlignment = VerticalAlignment.Center,
+                        FontSize = 18
+                    });
                     break;
-                case "ReissueReceipt":
-                    //MainAdminFrame.Navigate(new ReissueReceiptPage());
-                    break;
-                case "SalesReport":
-                    //MainAdminFrame.Navigate(new SalesReportPage());
-                    break;
-                case "InventoryReport":
-                    //MainAdminFrame.Navigate(new InventoryReportPage());
-                    break;
-                case "UserManagement":
-                    //MainAdminFrame.Navigate(new UserManagementPage());
-                    break;
-                case "SystemPreferences":
-                    //MainAdminFrame.Navigate(new SystemPreferencesPage());
-                    break;
+
                 default:
                     MainAdminFrame.Navigate(new TextBlock
                     {
@@ -85,11 +99,12 @@ public partial class MainAdminWindow : Window
                     break;
             }
         }
-        catch (System.Exception ex)
+        catch (Exception ex)
         {
             MessageBox.Show($"Error loading page {pageName}: {ex.Message}");
         }
     }
+
     private void MealsMenuItem_Click(object sender, RoutedEventArgs e)
     {
         NavigateToPage("Meals");
@@ -102,12 +117,17 @@ public partial class MainAdminWindow : Window
 
     private void PacksMenuItem_Click(object sender, RoutedEventArgs e)
     {
-        NavigateToPage("Packs");
+        NavigateToPage("Packages");
+    }
+
+    private void PackagesMenuItem_Click(object sender, RoutedEventArgs e)
+    {
+        NavigateToPage("Packages");
     }
 
     private void OrdersMenuItem_Click(object sender, RoutedEventArgs e)
     {
-            NavigateToPage("Orders");
+        NavigateToPage("Orders");
     }
 
     private void ReceiptsMenuItem_Click(object sender, RoutedEventArgs e)
@@ -118,5 +138,15 @@ public partial class MainAdminWindow : Window
     private void DeliveriesMenuItem_Click(object sender, RoutedEventArgs e)
     {
         NavigateToPage("Deliveries");
+    }
+
+    private void PromosMenuItem_Click(object sender, RoutedEventArgs e)
+    {
+        NavigateToPage("Promos");
+    }
+
+    private void PaymentsMenuItem_Click(object sender, RoutedEventArgs e)
+    {
+        NavigateToPage("Payments");
     }
 }

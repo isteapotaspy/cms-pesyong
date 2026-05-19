@@ -1,5 +1,4 @@
-﻿using CMS.Domain.Entities;
-using CMS.Domain.Entities.Packages;
+﻿using CMS.Domain.Entities.Packages;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
 
@@ -20,9 +19,9 @@ public class PackageSelectionRuleConfiguration : IEntityTypeConfiguration<Packag
         builder.Property(x => x.Description)
             .HasMaxLength(500);
 
-        builder.HasOne(x => x.Package)
+        builder.HasOne(x => x.PackageSize)
             .WithMany(x => x.SelectionRules)
-            .HasForeignKey(x => x.PackageId)
+            .HasForeignKey(x => x.PackageSizeId)
             .OnDelete(DeleteBehavior.Cascade);
     }
 }

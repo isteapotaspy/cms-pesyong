@@ -1,8 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Text;
-
-namespace CMS.Contracts.Customer.Menu;
+﻿namespace CMS.Contracts.Customer.Menu;
 
 public class MenuPackageDto
 {
@@ -28,5 +24,4 @@ public class MenuPackageDto
 
     public List<PackageSizeDto> Sizes { get; set; } = new();
     public List<AddonDto> Addons { get; set; } = new();
-    public List<PackageSelectionRuleDto> SelectionRules { get; set; } = new();
 }

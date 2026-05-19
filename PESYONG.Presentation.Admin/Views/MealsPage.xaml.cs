@@ -1,27 +1,33 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Text;
-using System.Windows;
-using System.Windows.Controls;
-using System.Windows.Data;
-using System.Windows.Documents;
-using System.Windows.Input;
-using System.Windows.Media;
-using System.Windows.Media.Imaging;
-using System.Windows.Navigation;
-using System.Windows.Shapes;
+﻿using System.Windows.Controls;
+using CommunityToolkit.Mvvm.Input;
+using PESYONG.Presentation.Admin.ViewModel;
 
 namespace PESYONG.Presentation.Admin.Views;
 
 public partial class MealsPage : Page
 {
-    public MealsPage()
+    private readonly MealPageVM _viewModel;
+
+    public MealsPage(MealPageVM viewModel)
     {
         InitializeComponent();
-    }
 
-    private void ListView_SelectionChanged(object sender, SelectionChangedEventArgs e)
+        _viewModel = viewModel;
+        DataContext = _viewModel;
+
+        Loaded += MealsPage_Loaded;
+    }
+    
+    private async void MealsPage_Loaded(object sender, System.Windows.RoutedEventArgs e)
     {
 
+        //_viewModel.LoadCommand is IAsyncRelayCommand loadCommand &&
+        //    loadCommand.CanExecute(null)
+
+        if (_viewModel.LoadCommand is IAsyncRelayCommand loadCommand &&
+              loadCommand.CanExecute(null))
+        {
+            await loadCommand.ExecuteAsync(null);
+        }
     }
 }

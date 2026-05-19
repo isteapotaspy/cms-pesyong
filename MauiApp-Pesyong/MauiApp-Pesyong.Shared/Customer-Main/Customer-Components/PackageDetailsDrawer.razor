@@ -94,11 +94,11 @@
                     </div>
                 }
 
-                @if (packageItem.SelectionRules.Any())
+                @if (CurrentSelectionRules.Any())
                 {
                     <MudDivider Class="my-4" />
 
-                    @foreach (var rule in packageItem.SelectionRules.OrderBy(x => x.DisplayOrder))
+                    @foreach (var rule in CurrentSelectionRules)
                     {
                         <div class="drawer-section-head">
                             <div>
@@ -240,6 +240,10 @@
         InvokeAsync(StateHasChanged);
     }
 
+    private IEnumerable<PackageSelectionRuleUiModel> CurrentSelectionRules =>
+    SelectedSize?.SelectionRules.OrderBy(x => x.DisplayOrder)
+    ?? Enumerable.Empty<PackageSelectionRuleUiModel>();
+
     private void ResetSelections()
     {
         _selectedAddonIds.Clear();
@@ -247,12 +251,12 @@
         _quantity = 1;
 
         var package = DrawerState.SelectedPackage;
-        _selectedSizeIndex = package is not null && package.Sizes.Count > 1 ? 1 : 0;
+        _selectedSizeIndex = 0;
 
-        if (package is null)
+        if (package is null || !package.Sizes.Any())
             return;
 
-        foreach (var rule in package.SelectionRules)
+        foreach (var rule in package.Sizes[_selectedSizeIndex].SelectionRules)
         {
             var defaults = rule.Options
                 .Where(x => x.IsDefault)
@@ -285,11 +289,7 @@
 
     private IEnumerable<PackageSelectionOptionUiModel> GetSelectedMealOptions()
     {
-        var package = DrawerState.SelectedPackage;
-        if (package is null)
-            return Enumerable.Empty<PackageSelectionOptionUiModel>();
-
-        return package.SelectionRules
+        return CurrentSelectionRules
             .SelectMany(rule => rule.Options.Where(option => IsMealSelected(rule.Id, option.MealId)));
     }
 
@@ -302,7 +302,26 @@
         return Task.CompletedTask;
     }
 
-    private void SelectSize(int index) => _selectedSizeIndex = index;
+    private void SelectSize(int index)
+    {
+        _selectedSizeIndex = index;
+        _selectedMealIdsByRule.Clear();
+
+        var selectedSize = SelectedSize;
+        if (selectedSize is null)
+            return;
+
+        foreach (var rule in selectedSize.SelectionRules)
+        {
+            var defaults = rule.Options
+                .Where(x => x.IsDefault)
+                .Take(rule.MaxSelections > 0 ? rule.MaxSelections : int.MaxValue)
+                .Select(x => x.MealId)
+                .ToHashSet();
+
+            _selectedMealIdsByRule[rule.Id] = defaults;
+        }
+    }
 
     private void ToggleAddon(int addonId, bool isSelected)
     {
@@ -382,7 +401,7 @@
         if (DrawerState.SelectedPackage is null || SelectedSize is null)
             return Task.CompletedTask;
 
-        foreach (var rule in DrawerState.SelectedPackage.SelectionRules.Where(x => x.IsRequired))
+        foreach (var rule in CurrentSelectionRules.Where(x => x.IsRequired))
         {
             var selectedCount = _selectedMealIdsByRule.TryGetValue(rule.Id, out var meals)
                 ? meals.Count
@@ -405,7 +424,7 @@
             })
             .ToList();
 
-        var selectedMealModels = DrawerState.SelectedPackage.SelectionRules
+        var selectedMealModels = CurrentSelectionRules
             .SelectMany(rule =>
             {
                 if (!_selectedMealIdsByRule.TryGetValue(rule.Id, out var selectedMealIds))

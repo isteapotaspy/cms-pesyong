@@ -10,6 +10,8 @@ public class PackageSize : BaseEntity
     public string Subtitle { get; set; } = string.Empty;
     public int PaxCount { get; set; }
     public decimal Price { get; set; }
+    public bool IsAvailable { get; set; } = true;
 
     public Package Package { get; set; } = default!;
+    public ICollection<PackageSelectionRule> SelectionRules { get; set; } = new List<PackageSelectionRule>();
 }

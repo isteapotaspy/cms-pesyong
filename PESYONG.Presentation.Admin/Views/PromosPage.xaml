@@ -1,0 +1,313 @@
+﻿<Page x:Class="PESYONG.Presentation.Admin.Views.PromosPage"
+      xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+      xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+      xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+      xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+      xmlns:converters="clr-namespace:PESYONG.Presentation.Admin.Converters"
+      mc:Ignorable="d"
+      d:DesignHeight="450"
+      d:DesignWidth="800"
+      Title="PromosPage">
+
+    <Page.Resources>
+        <converters:ZeroToVisibleConverter x:Key="ZeroToVisibleConverter"/>
+    </Page.Resources>
+
+    <Grid Margin="12">
+        <Grid.ColumnDefinitions>
+            <ColumnDefinition Width="220"/>
+            <ColumnDefinition Width="12"/>
+            <ColumnDefinition Width="*"/>
+        </Grid.ColumnDefinitions>
+
+        <!-- LEFT: Promo list -->
+        <ListView Grid.Column="0"
+                  MinHeight="100"
+                  ItemsSource="{Binding Promos}"
+                  SelectedItem="{Binding SelectedPromo, Mode=TwoWay}"
+                  SelectionMode="Single">
+            <ListView.ItemTemplate>
+                <DataTemplate>
+                    <Grid Margin="8,0">
+                        <Grid.RowDefinitions>
+                            <RowDefinition Height="*"/>
+                            <RowDefinition Height="*"/>
+                        </Grid.RowDefinitions>
+
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="Auto"/>
+                            <ColumnDefinition Width="*"/>
+                        </Grid.ColumnDefinitions>
+
+                        <Ellipse Grid.RowSpan="2"
+                                 Width="32"
+                                 Height="32"
+                                 Margin="6"
+                                 HorizontalAlignment="Center"
+                                 VerticalAlignment="Center"/>
+
+                        <TextBlock Grid.Row="0"
+                                   Grid.Column="1"
+                                   Margin="12,6,0,0"
+                                   FontWeight="Bold"
+                                   Text="{Binding Code, Mode=OneWay}"/>
+
+                        <TextBlock Grid.Row="1"
+                                   Grid.Column="1"
+                                   Margin="12,0,0,6"
+                                   Text="{Binding IsActive, StringFormat=Active: {0}, Mode=OneWay}"/>
+                    </Grid>
+                </DataTemplate>
+            </ListView.ItemTemplate>
+        </ListView>
+
+        <TextBlock Grid.Column="0"
+                   Text="No promos found."
+                   HorizontalAlignment="Center"
+                   VerticalAlignment="Center"
+                   Foreground="White"
+                   Visibility="{Binding Promos.Count, Converter={StaticResource ZeroToVisibleConverter}}"/>
+
+        <!-- RIGHT: Promo details -->
+        <Grid Grid.Column="2">
+            <Grid.RowDefinitions>
+                <RowDefinition Height="Auto"/>
+                <RowDefinition Height="8"/>
+                <RowDefinition Height="*"/>
+            </Grid.RowDefinitions>
+
+            <!-- Header -->
+            <Grid Grid.Row="0">
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="*"/>
+                    <ColumnDefinition Width="Auto"/>
+                </Grid.ColumnDefinitions>
+
+                <TextBlock Grid.Column="0"
+                           Text="Promo Details"
+                           FontSize="20"
+                           FontWeight="SemiBold"
+                           Foreground="White"
+                           VerticalAlignment="Center"/>
+
+                <StackPanel Grid.Column="1"
+                            Orientation="Horizontal">
+                    <Button Content="New"
+                            Command="{Binding NewPromoCommand}"
+                            Margin="0,0,8,0"/>
+
+                    <Button Content="{Binding EditSaveButtonText}"
+                            Command="{Binding EditOrSaveCommand}"
+                            Margin="0,0,8,0"/>
+
+                    <Button Content="Delete"
+                            Command="{Binding DeleteCommand}"/>
+                </StackPanel>
+            </Grid>
+
+            <TabControl Grid.Row="2">
+
+                <!-- GENERAL TAB -->
+                <TabItem Header="General">
+                    <ScrollViewer VerticalScrollBarVisibility="Auto">
+                        <StackPanel Margin="0,8,8,8">
+
+                            <TextBlock Text="{Binding ErrorMessage}"
+                                       Margin="0,0,0,8"
+                                       TextWrapping="Wrap"/>
+
+                            <!-- Metadata -->
+                            <StackPanel>
+                                <Grid Margin="8">
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="80"/>
+                                        <ColumnDefinition Width="80"/>
+                                        <ColumnDefinition Width="80"/>
+                                        <ColumnDefinition Width="*"/>
+                                    </Grid.ColumnDefinitions>
+
+                                    <TextBlock Grid.Column="0"
+                                               Text="ID:"/>
+
+                                    <TextBlock Grid.Column="1"
+                                               Text="{Binding SelectedPromo.Id}"/>
+
+                                    <TextBlock Grid.Column="2"
+                                               Text="Used:"/>
+
+                                    <TextBlock Grid.Column="3"
+                                               Text="{Binding SelectedPromo.UsedCount}"/>
+                                </Grid>
+                            </StackPanel>
+
+                            <!-- Promo Information -->
+                            <GroupBox Header="Promo Information"
+                                      Margin="0,0,0,8">
+                                <Grid Margin="8">
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="120"/>
+                                        <ColumnDefinition Width="*"/>
+                                    </Grid.ColumnDefinitions>
+
+                                    <Grid.RowDefinitions>
+                                        <RowDefinition Height="Auto"/>
+                                        <RowDefinition Height="8"/>
+                                        <RowDefinition Height="Auto"/>
+                                    </Grid.RowDefinitions>
+
+                                    <TextBlock Grid.Row="0"
+                                               Grid.Column="0"
+                                               Text="Code"
+                                               VerticalAlignment="Center"/>
+
+                                    <TextBox Grid.Row="0"
+                                             Grid.Column="1"
+                                             IsReadOnly="{Binding IsNotEditing}"
+                                             Text="{Binding SelectedPromo.Code, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"/>
+
+                                    <TextBlock Grid.Row="2"
+                                               Grid.Column="0"
+                                               Text="Description"
+                                               VerticalAlignment="Top"/>
+
+                                    <TextBox Grid.Row="2"
+                                             Grid.Column="1"
+                                             MinHeight="56"
+                                             IsReadOnly="{Binding IsNotEditing}"
+                                             TextWrapping="Wrap"
+                                             AcceptsReturn="True"
+                                             Text="{Binding SelectedPromo.Description, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"/>
+                                </Grid>
+                            </GroupBox>
+
+                            <!-- Discount Details -->
+                            <GroupBox Header="Discount Details"
+                                      Margin="0,0,0,8">
+                                <Grid Margin="8">
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="120"/>
+                                        <ColumnDefinition Width="*"/>
+                                    </Grid.ColumnDefinitions>
+
+                                    <Grid.RowDefinitions>
+                                        <RowDefinition Height="Auto"/>
+                                        <RowDefinition Height="8"/>
+                                        <RowDefinition Height="Auto"/>
+                                    </Grid.RowDefinitions>
+
+                                    <TextBlock Grid.Row="0"
+                                               Grid.Column="0"
+                                               Text="Discount %"
+                                               VerticalAlignment="Center"/>
+
+                                    <TextBox Grid.Row="0"
+                                             Grid.Column="1"
+                                             IsReadOnly="{Binding IsNotEditing}"
+                                             Text="{Binding SelectedPromo.DiscountPercentageValue, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"/>
+
+                                    <TextBlock Grid.Row="2"
+                                               Grid.Column="0"
+                                               Text="Minimum Order"
+                                               VerticalAlignment="Center"/>
+
+                                    <TextBox Grid.Row="2"
+                                             Grid.Column="1"
+                                             IsReadOnly="{Binding IsNotEditing}"
+                                             Text="{Binding SelectedPromo.MinimumOrderAmount, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"/>
+                                </Grid>
+                            </GroupBox>
+
+                            <!-- Validity -->
+                            <GroupBox Header="Validity"
+                                      Margin="0,0,0,8">
+                                <Grid Margin="8">
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="120"/>
+                                        <ColumnDefinition Width="*"/>
+                                    </Grid.ColumnDefinitions>
+
+                                    <Grid.RowDefinitions>
+                                        <RowDefinition Height="Auto"/>
+                                        <RowDefinition Height="8"/>
+                                        <RowDefinition Height="Auto"/>
+                                    </Grid.RowDefinitions>
+
+                                    <TextBlock Grid.Row="0"
+                                               Grid.Column="0"
+                                               Text="Valid From"
+                                               VerticalAlignment="Center"/>
+
+                                    <DatePicker Grid.Row="0"
+                                                Grid.Column="1"
+                                                IsHitTestVisible="{Binding IsEditing}"
+                                                Focusable="{Binding IsEditing}"
+                                                SelectedDate="{Binding SelectedPromo.ValidFromUtc, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"/>
+
+                                    <TextBlock Grid.Row="2"
+                                               Grid.Column="0"
+                                               Text="Valid Until"
+                                               VerticalAlignment="Center"/>
+
+                                    <DatePicker Grid.Row="2"
+                                                Grid.Column="1"
+                                                IsHitTestVisible="{Binding IsEditing}"
+                                                Focusable="{Binding IsEditing}"
+                                                SelectedDate="{Binding SelectedPromo.ValidUntilUtc, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"/>
+                                </Grid>
+                            </GroupBox>
+
+                            <!-- Usage -->
+                            <GroupBox Header="Usage">
+                                <Grid Margin="8">
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="120"/>
+                                        <ColumnDefinition Width="*"/>
+                                    </Grid.ColumnDefinitions>
+
+                                    <Grid.RowDefinitions>
+                                        <RowDefinition Height="Auto"/>
+                                        <RowDefinition Height="8"/>
+                                        <RowDefinition Height="Auto"/>
+                                        <RowDefinition Height="8"/>
+                                        <RowDefinition Height="Auto"/>
+                                    </Grid.RowDefinitions>
+
+                                    <TextBlock Grid.Row="0"
+                                               Grid.Column="0"
+                                               Text="Usage Limit"
+                                               VerticalAlignment="Center"/>
+
+                                    <TextBox Grid.Row="0"
+                                             Grid.Column="1"
+                                             IsReadOnly="{Binding IsNotEditing}"
+                                             Text="{Binding SelectedPromo.UsageLimit, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"/>
+
+                                    <TextBlock Grid.Row="2"
+                                               Grid.Column="0"
+                                               Text="Used Count"
+                                               VerticalAlignment="Center"/>
+
+                                    <TextBox Grid.Row="2"
+                                             Grid.Column="1"
+                                             IsReadOnly="{Binding IsNotEditing}"
+                                             Text="{Binding SelectedPromo.UsedCount, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"/>
+
+                                    <TextBlock Grid.Row="4"
+                                               Grid.Column="0"
+                                               Text="Active"
+                                               VerticalAlignment="Center"/>
+
+                                    <CheckBox Grid.Row="4"
+                                              Grid.Column="1"
+                                              IsHitTestVisible="False"
+                                              Focusable="False"
+                                              IsChecked="{Binding SelectedPromo.IsActive, Mode=OneWay}"/>
+                                </Grid>
+                            </GroupBox>
+                        </StackPanel>
+                    </ScrollViewer>
+                </TabItem>
+            </TabControl>
+        </Grid>
+    </Grid>
+</Page>
