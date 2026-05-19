@@ -2,11 +2,13 @@
 @layout CustomerLayout
 @using MauiApp_Pesyong.Shared.Customer_Main.Customer_Services
 @using MauiApp_Pesyong.Shared.Customer_Main.Customer_Vms
+@using CMS.Contracts.Customer.Profile
 @inject CustomerDrawerState DrawerState
 @inject NavigationManager NavManager
 @inject ICustomerOrderService OrderService
 @inject ICustomerAuthService AuthService
 @inject CustomerSession Session
+@inject ISnackbar Snackbar
 
 <MudContainer MaxWidth="MaxWidth.False" Class="customer-page">
     <TopBar />
@@ -66,44 +68,40 @@
                         <MudText Typo="Typo.h6">Delivery Details</MudText>
                     </div>
 
-                    @if (SavedAddresses.Count > 0)
+                    @if (_loadedSavedAddress)
                     {
-                        <MudItem xs="12">
+                        <MudAlert Severity="Severity.Info"
+                                  Variant="Variant.Outlined"
+                                  Dense="true"
+                                  Class="mb-4">
+                            Your default saved delivery address has been loaded into checkout.
+                        </MudAlert>
+                    }
+
+                    @if (_savedAddresses.Any())
+                    {
+                        <MudPaper Class="saved-address-picker mb-4" Elevation="0">
+                            <MudText Typo="Typo.subtitle2" Class="mb-2">Saved Addresses</MudText>
+
                             <MudSelect T="int?"
-                                       Label="Saved Address"
+                                       Label="Choose a saved address"
                                        Variant="Variant.Outlined"
                                        Value="_selectedSavedAddressId"
-                                       ValueChanged="OnSavedAddressChanged">
-                                @foreach (var address in SavedAddresses)
+                                       ValueChanged="OnSavedAddressSelected">
+                                @foreach (var address in _savedAddresses)
                                 {
                                     <MudSelectItem T="int?" Value="@address.Id">
-                                        @(address.IsDefault ? $"[Default] {address.Summary}" : address.Summary)
+                                        @FormatSavedAddress(address)
                                     </MudSelectItem>
                                 }
                             </MudSelect>
+                        </MudPaper>
+                    }
 
-                            <MudButton Variant="Variant.Text"
-                                       Class="mt-2"
-                                       OnClick="@(() => NavManager.NavigateTo("/saved-addresses"))">
-                                Manage saved addresses
-                            </MudButton>
-                        </MudItem>
-                    }
-                    else
-                    {
-                        <MudItem xs="12">
-                            <MudButton Variant="Variant.Text"
-                                       OnClick="@(() => NavManager.NavigateTo("/saved-addresses"))">
-                                Add a saved address
-                            </MudButton>
-                        </MudItem>
-                    }
-                        
                     <MudGrid Spacing="2">
                         <MudItem xs="12">
                             <MudTextField T="string"
                                           Label="Street Address / Unit No."
-                                          Placeholder="Moon Street, Unit 4A"
                                           Variant="Variant.Outlined"
                                           @bind-Value="Vm.DeliveryAddress.StreetAddress" />
                         </MudItem>
@@ -112,37 +110,38 @@
                             <MudSelect T="string"
                                        Label="City"
                                        Variant="Variant.Outlined"
-                                       Placeholder="Davao City"
-                                       Value="@Vm.DeliveryAddress.City"
-                                       ValueChanged="OnCityChanged"
-                                       Required="true">
-                                @foreach (var city in Vm.AvailableCities)
-                                {
-                                    <MudSelectItem T="string" Value="@city">@city</MudSelectItem>
-                                }
+                                       @bind-Value="Vm.DeliveryAddress.City">
+                                <MudSelectItem Value="@("Davao City")">Davao City</MudSelectItem>
+                                <MudSelectItem Value="@("Quezon City")">Quezon City</MudSelectItem>
+                                <MudSelectItem Value="@("Makati")">Makati</MudSelectItem>
+                                <MudSelectItem Value="@("Pasig")">Pasig</MudSelectItem>
+                                <MudSelectItem Value="@("Taguig")">Taguig</MudSelectItem>
                             </MudSelect>
                         </MudItem>
 
                         <MudItem xs="12" sm="6">
                             <MudTextField T="string"
                                           Label="Barangay"
-                                          Placeholder="Barangay 2A"
                                           Variant="Variant.Outlined"
                                           @bind-Value="Vm.DeliveryAddress.Barangay" />
                         </MudItem>
 
                         <MudItem xs="12">
-                            <div class="map-placeholder">
-                                <div class="map-badge">Delivery Pin</div>
-                                <div class="map-copy">Map preview placeholder</div>
-                                <div class="map-subcopy">Drag the map to refine your pin location</div>
+                            <div class="checkout-map-shell">
+                                <LocationPickerMap Latitude="Vm.DeliveryAddress.Latitude"
+                                                   Longitude="Vm.DeliveryAddress.Longitude"
+                                                   Height="260px"
+                                                   OnLocationPicked="OnLocationPicked" />
                             </div>
+
+                            <MudText Typo="Typo.caption" Class="mt-2">
+                                Tap the map or drag the marker to set your delivery pin.
+                            </MudText>
                         </MudItem>
 
                         <MudItem xs="12">
                             <MudTextField T="string"
                                           Label="Delivery Notes / Landmark"
-                                          Placeholder="Near school, church, gate, or building"
                                           Variant="Variant.Outlined"
                                           @bind-Value="Vm.DeliveryAddress.Landmark" />
                         </MudItem>
@@ -260,7 +259,6 @@
                         <MudText Typo="Typo.h5">@ToPeso(Vm.GrandTotal)</MudText>
                     </div>
 
-
                     <MudButton Variant="Variant.Filled"
                                Color="Color.Primary"
                                FullWidth="true"
@@ -294,32 +292,42 @@
     private CheckoutVm Vm = new();
     private bool _isPlacingOrder;
     private string? _errorMessage;
-
-    private List<CustomerAddressVm> SavedAddresses = new();
+    private bool _loadedSavedAddress;
+    private List<CustomerAddressDto> _savedAddresses = new();
     private int? _selectedSavedAddressId;
 
     protected override async Task OnInitializedAsync()
     {
         Vm = CheckoutVm.FromCart(DrawerState.CartItems);
 
-        var restored = await AuthService.TryRestoreSessionAsync();
+        await TryLoadProfileAsync();
+        await TryLoadDefaultSavedAddressAsync();
+    }
 
-        if (!restored || !Session.IsAuthenticated || Session.Profile is null)
+    private async Task TryLoadDefaultSavedAddressAsync()
+    {
+        try
         {
-            NavManager.NavigateTo("/customer-login?returnUrl=%2Fcheckout", true);
-            return;
+            var restored = await AuthService.TryRestoreSessionAsync();
+
+            if (!restored || !Session.IsAuthenticated)
+                return;
+
+            var addresses = await AuthService.GetSavedAddressesAsync();
+            _savedAddresses = addresses.ToList();
+
+            var selected = _savedAddresses.FirstOrDefault(x => x.IsDefault) ?? _savedAddresses.FirstOrDefault();
+
+            if (selected is null)
+                return;
+
+            _selectedSavedAddressId = selected.Id;
+            ApplySavedAddress(selected);
+            _loadedSavedAddress = true;
         }
-
-        Vm.ApplyCustomerProfile(Session.Profile);
-
-        var addresses = await AuthService.GetSavedAddressesAsync();
-        SavedAddresses = addresses.Select(CustomerAddressVm.FromDto).ToList();
-
-        var defaultAddress = SavedAddresses.FirstOrDefault(x => x.IsDefault) ?? SavedAddresses.FirstOrDefault();
-        if (defaultAddress is not null)
+        catch
         {
-            _selectedSavedAddressId = defaultAddress.Id;
-            ApplySavedAddress(defaultAddress);
+            // Keep checkout usable even if saved addresses fail to load.
         }
     }
 
@@ -347,39 +355,97 @@
         }
     }
 
-    private Task OnCityChanged(string? value)
+    private async Task TryLoadProfileAsync()
     {
-        Vm.DeliveryAddress.City = value ?? string.Empty;
-        StateHasChanged();
-        return Task.CompletedTask;
-    }
-
-    private Task OnSavedAddressChanged(int? addressId)
-    {
-        _selectedSavedAddressId = addressId;
-
-        var selected = SavedAddresses.FirstOrDefault(x => x.Id == addressId);
-        if (selected is not null)
+        try
         {
-            ApplySavedAddress(selected);
+            var restored = await AuthService.TryRestoreSessionAsync();
+
+            if (!restored || !Session.IsAuthenticated)
+                return;
+
+            var me = Session.Profile ?? await AuthService.GetMeAsync();
+
+            if (me is null)
+                return;
+
+            Vm.ContactInfo.FullName = me.FullName ?? string.Empty;
+            Vm.ContactInfo.EmailAddress = me.Email ?? string.Empty;
+            Vm.ContactInfo.MobileNumber = me.MobileNumber ?? string.Empty;
         }
-
-        StateHasChanged();
-        return Task.CompletedTask;
-    }
-
-    private void ApplySavedAddress(CustomerAddressVm address)
-    {
-        Vm.DeliveryAddress.StreetAddress = address.StreetAddress;
-        Vm.DeliveryAddress.City = address.City;
-        Vm.DeliveryAddress.Barangay = address.Barangay;
-        Vm.DeliveryAddress.Landmark = address.Landmark;
-        Vm.DeliveryAddress.Latitude = address.Latitude;
-        Vm.DeliveryAddress.Longitude = address.Longitude;
+        catch
+        {
+            // Keep checkout usable even if profile loading fails.
+        }
     }
 
     private static string ToPeso(decimal amount) => $"₱{amount:N0}";
 
-    [SupplyParameterFromQuery]
-    public string? ReturnUrl { get; set; }
+    private Task OnSavedAddressSelected(int? addressId)
+    {
+        _selectedSavedAddressId = addressId;
+
+        if (!addressId.HasValue)
+            return Task.CompletedTask;
+
+        var selected = _savedAddresses.FirstOrDefault(x => x.Id == addressId.Value);
+        if (selected is null)
+        {
+            Snackbar.Add("Saved address not found.", Severity.Warning);
+            return Task.CompletedTask;
+        }
+
+        ApplySavedAddress(selected);
+        Snackbar.Add("Saved address applied to checkout.", Severity.Success);
+
+        StateHasChanged();
+        return Task.CompletedTask;
+    }
+
+    private void ApplySavedAddress(CustomerAddressDto selected)
+    {
+        Vm.DeliveryAddress.StreetAddress = selected.StreetAddress ?? string.Empty;
+        Vm.DeliveryAddress.City = selected.City ?? string.Empty;
+        Vm.DeliveryAddress.Barangay = selected.Barangay ?? string.Empty;
+        Vm.DeliveryAddress.Landmark = selected.Landmark ?? string.Empty;
+        Vm.DeliveryAddress.Latitude = selected.Latitude;
+        Vm.DeliveryAddress.Longitude = selected.Longitude;
+
+        _loadedSavedAddress = true;
+    }
+
+    private static string FormatSavedAddress(CustomerAddressDto address)
+    {
+        var parts = new[]
+        {
+        address.StreetAddress,
+        address.Barangay,
+        address.City
+    }
+        .Where(x => !string.IsNullOrWhiteSpace(x));
+
+        var text = string.Join(", ", parts);
+
+        return address.IsDefault
+            ? $"{text} (Default)"
+            : text;
+    }
+
+    private Task OnLocationPicked(PickedLocationVm location)
+    {
+        Vm.DeliveryAddress.Latitude = location.Latitude;
+        Vm.DeliveryAddress.Longitude = location.Longitude;
+
+        if (!string.IsNullOrWhiteSpace(location.StreetAddress))
+            Vm.DeliveryAddress.StreetAddress = location.StreetAddress;
+
+        if (!string.IsNullOrWhiteSpace(location.Barangay))
+            Vm.DeliveryAddress.Barangay = location.Barangay;
+
+        if (!string.IsNullOrWhiteSpace(location.City))
+            Vm.DeliveryAddress.City = location.City;
+
+        StateHasChanged();
+        return Task.CompletedTask;
+    }
 }

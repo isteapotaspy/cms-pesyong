@@ -6,6 +6,9 @@
 @inject CustomerDrawerState DrawerState
 @inject ICustomerCatalogService CatalogService
 @inject ISnackbar Snackbar
+@implements IDisposable
+@inject ICustomerAuthService AuthService
+@inject CustomerSession Session
 
 <MudContainer MaxWidth="MaxWidth.False" Class="customer-page">
     <TopBar SearchText="@_searchText"
@@ -77,7 +80,7 @@
                 <MudIcon Icon="@Icons.Material.Filled.LocationOn" Size="Size.Small" />
                 <div>
                     <MudText Typo="Typo.caption">DELIVER TO</MudText>
-                    <MudText Typo="Typo.body2">Quezon City, Metro Manila</MudText>
+                    <MudText Typo="Typo.body2">@_homeLocationLabel</MudText>
                 </div>
             </MudPaper>
 
@@ -85,7 +88,7 @@
                 <MudIcon Icon="@Icons.Material.Filled.AccessTime" Size="Size.Small" />
                 <div>
                     <MudText Typo="Typo.caption">DELIVERY TIME</MudText>
-                    <MudText Typo="Typo.body2">Today, 6:00 PM</MudText>
+                    <MudText Typo="Typo.body2">@_now.ToString("ddd, MMM dd • hh:mm tt")</MudText>
                 </div>
             </MudPaper>
         </div>
@@ -108,6 +111,23 @@
             </MudButton>
         </div>
     </div>
+
+    @if (_homeMapLat.HasValue && _homeMapLng.HasValue)
+    {
+        <MudPaper Class="home-map-card" Elevation="0">
+            <MudText Typo="Typo.h6" Class="home-map-title">Delivery Map</MudText>
+            <MudText Typo="Typo.body2" Class="home-map-copy">
+                Showing your current saved delivery location.
+            </MudText>
+
+            <div class="home-map-shell">
+                <LocationMap Latitude="_homeMapLat"
+                             Longitude="_homeMapLng"
+                             Label="Saved Delivery Address"
+                             Height="260px" />
+            </div>
+        </MudPaper>
+    }
 
     @if (_isLoading)
     {
@@ -335,7 +355,6 @@
                         Showing @FilteredPackages.Count() delicious package option(s) for your event.
                     </MudText>
                 </div>
-
             </div>
 
             @if (!FilteredPackages.Any())
@@ -431,8 +450,17 @@
     private bool _isLoading = true;
     private string? _errorMessage;
 
+    private DateTime _now = DateTime.Now;
+    private CancellationTokenSource? _clockCts;
+
+    private string _homeLocationLabel = "No saved delivery address";
+    private decimal? _homeMapLat;
+    private decimal? _homeMapLng;
+
     protected override async Task OnInitializedAsync()
     {
+        StartClock();
+        await LoadHomeLocationAsync();
         await LoadDataAsync();
     }
 
@@ -619,7 +647,6 @@
     private string _deliveryLocation = "Davao City, Davao del Sur";
     private string _newsletterEmail = string.Empty;
 
-
     private void RequestQuote()
     {
         Snackbar.Add("Quote request feature will open soon.", Severity.Info);
@@ -640,5 +667,67 @@
 
         Snackbar.Add("Thanks for joining our newsletter!", Severity.Success);
         _newsletterEmail = string.Empty;
+    }
+
+    private void StartClock()
+    {
+        _clockCts = new CancellationTokenSource();
+        _ = RunClockAsync(_clockCts.Token);
+    }
+
+    private async Task RunClockAsync(CancellationToken cancellationToken)
+    {
+        using var timer = new PeriodicTimer(TimeSpan.FromSeconds(1));
+
+        try
+        {
+            while (await timer.WaitForNextTickAsync(cancellationToken))
+            {
+                _now = DateTime.Now;
+                await InvokeAsync(StateHasChanged);
+            }
+        }
+        catch (OperationCanceledException)
+        {
+        }
+    }
+
+    private async Task LoadHomeLocationAsync()
+    {
+        var restored = await AuthService.TryRestoreSessionAsync();
+
+        if (!restored || !Session.IsAuthenticated)
+            return;
+
+        try
+        {
+            var addresses = await AuthService.GetSavedAddressesAsync();
+            var selected = addresses.FirstOrDefault(x => x.IsDefault) ?? addresses.FirstOrDefault();
+
+            if (selected is null)
+                return;
+
+            _homeLocationLabel = string.Join(", ",
+                new[]
+                {
+                    selected.StreetAddress,
+                    selected.Barangay,
+                    selected.City
+                }.Where(x => !string.IsNullOrWhiteSpace(x)));
+
+            _homeMapLat = selected.Latitude;
+            _homeMapLng = selected.Longitude;
+
+            _deliveryLocation = _homeLocationLabel;
+        }
+        catch
+        {
+        }
+    }
+
+    public void Dispose()
+    {
+        _clockCts?.Cancel();
+        _clockCts?.Dispose();
     }
 }

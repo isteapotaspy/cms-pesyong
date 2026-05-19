@@ -1,10 +1,7 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Text;
+﻿namespace CMS.Contracts.Customer.Orders;
 
-namespace CMS.Contracts.Customer.Orders;
 
-public class RiderDto
+public class TrackingRiderDto
 {
     public string Name { get; set; } = string.Empty;
     public string Vehicle { get; set; } = string.Empty;
@@ -12,4 +9,8 @@ public class RiderDto
     public decimal Rating { get; set; }
     public int TotalTrips { get; set; }
     public string ContactNumber { get; set; } = string.Empty;
+
+    public decimal? Latitude { get; set; }
+    public decimal? Longitude { get; set; }
+    public DateTime? LastUpdatedAtUtc { get; set; }
 }

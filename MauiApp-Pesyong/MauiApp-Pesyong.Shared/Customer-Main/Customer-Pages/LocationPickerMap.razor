@@ -1,0 +1,91 @@
+﻿@using Microsoft.JSInterop
+@using MauiApp_Pesyong.Shared.Customer_Main.Customer_Vms
+@inject IJSRuntime JS
+@implements IAsyncDisposable
+
+<div id="@_mapId" style="height:@Height; width:100%; border-radius:18px; overflow:hidden;"></div>
+
+@code {
+    [Parameter] public decimal? Latitude { get; set; }
+    [Parameter] public decimal? Longitude { get; set; }
+    [Parameter] public EventCallback<PickedLocationVm> OnLocationPicked { get; set; }
+    [Parameter] public string Height { get; set; } = "260px";
+
+    private readonly string _mapId = $"picker_map_{Guid.NewGuid():N}";
+    private IJSObjectReference? _module;
+    private DotNetObjectReference<LocationPickerMap>? _dotNetRef;
+    private bool _needsRender = true;
+
+    protected override void OnParametersSet()
+    {
+        _needsRender = true;
+    }
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (firstRender)
+        {
+            _module = await JS.InvokeAsync<IJSObjectReference>(
+                     "import",
+                     "/_content/MauiApp-Pesyong.Shared/js/locationPickerMap.js");
+            _dotNetRef = DotNetObjectReference.Create(this);
+        }
+
+        if (_module is not null && _needsRender)
+        {
+            _needsRender = false;
+
+            await _module.InvokeVoidAsync(
+                "renderLocationPickerMap",
+                _mapId,
+                Latitude,
+                Longitude,
+                _dotNetRef);
+        }
+    }
+
+    [JSInvokable]
+    public async Task SetPickedLocation(
+        decimal latitude,
+        decimal longitude,
+        string streetAddress,
+        string barangay,
+        string city,
+        string displayName)
+    {
+        Latitude = latitude;
+        Longitude = longitude;
+
+        if (OnLocationPicked.HasDelegate)
+        {
+            await OnLocationPicked.InvokeAsync(new PickedLocationVm
+            {
+                Latitude = latitude,
+                Longitude = longitude,
+                StreetAddress = streetAddress ?? string.Empty,
+                Barangay = barangay ?? string.Empty,
+                City = city ?? string.Empty,
+                DisplayName = displayName ?? string.Empty
+            });
+        }
+    }
+
+    public async ValueTask DisposeAsync()
+    {
+        try
+        {
+            if (_module is not null)
+            {
+                await _module.InvokeVoidAsync("disposeLocationPickerMap", _mapId);
+                await _module.DisposeAsync();
+            }
+        }
+        catch (JSDisconnectedException)
+        {
+        }
+        finally
+        {
+            _dotNetRef?.Dispose();
+        }
+    }
+}
