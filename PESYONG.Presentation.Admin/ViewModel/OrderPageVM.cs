@@ -27,7 +27,7 @@ public partial class OrderPageVM : ObservableObject
         "Preparing",
         "ReadyForDelivery",
         "OutForDelivery",
-        "Completed",
+        "Delivered",
         "Cancelled"
     ];
 

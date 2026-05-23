@@ -395,7 +395,10 @@ namespace CMS.Server
 
 
             //POST place order
-            app.MapPost("/api/customer/orders", async (PlaceOrderRequest request, CmsDbContext db) =>
+            app.MapPost("/api/customer/orders", async (
+                PlaceOrderRequest request,
+                ClaimsPrincipal claims,
+                CmsDbContext db) =>
             {
                 if (request.Items is null || request.Items.Count == 0)
                 {
@@ -415,19 +418,15 @@ namespace CMS.Server
                     });
                 }
 
-                CustomerProfile? customerProfile;
+                var appUserIdClaim = claims.FindFirstValue(ClaimTypes.NameIdentifier);
 
-                if (request.CustomerProfileId.HasValue)
+                if (!int.TryParse(appUserIdClaim, out var appUserId))
                 {
-                    customerProfile = await db.CustomerProfiles
-                        .FirstOrDefaultAsync(x => x.Id == request.CustomerProfileId.Value);
+                    return Results.Unauthorized();
                 }
-                else
-                {
-                    customerProfile = await db.CustomerProfiles
-                        .OrderBy(x => x.Id)
-                        .FirstOrDefaultAsync();
-                }
+
+                var customerProfile = await db.CustomerProfiles
+                    .FirstOrDefaultAsync(x => x.AppUserId == appUserId);
 
                 if (customerProfile is null)
                 {
@@ -566,7 +565,7 @@ namespace CMS.Server
                     var orderItemMealSelections = new List<OrderItemMealSelection>();
                     var orderItemAddonSelections = new List<OrderItemAddonSelection>();
 
-                    var requestMealSelections = item.MealSelections ;
+                    var requestMealSelections = item.MealSelections;
                     var requestAddonSelections = item.AddonSelections ?? new List<OrderItemAddonSelectionRequestDto>();
 
                     var consumedMealSelections = 0;
@@ -753,7 +752,7 @@ namespace CMS.Server
                 };
 
                 return Results.Created($"/api/customer/orders/{order.Id}/tracking", response);
-            });
+            }).RequireAuthorization();
 
 
             //Get order tracking details

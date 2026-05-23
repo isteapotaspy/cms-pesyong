@@ -1,13 +1,14 @@
 ﻿@page "/customer-orders"
 @layout CustomerLayout
 @using MauiApp_Pesyong.Shared.Customer_Main.Customer_Vms
+@using CMS.Contracts.Customer.Orders
 @inject ICustomerAuthService AuthService
 @inject ICustomerOrderService OrderService
 @inject CustomerSession Session
 @inject NavigationManager NavManager
-@implements IAsyncDisposable
 @inject ICustomerOrderRealtimeService RealtimeService
 @inject ISnackbar Snackbar
+@implements IAsyncDisposable
 
 <MudContainer MaxWidth="MaxWidth.False" Class="customer-page orders-page">
     <TopBar />
@@ -32,9 +33,26 @@
         </div>
 
         <div class="orders-hero-actions">
+            <MudButton Variant="Variant.Filled"
+                       Color="Color.Primary"
+                       Class="orders-secondary-btn"
+                       Disabled="@_isRefreshing"
+                       OnClick="RefreshOrdersAsync">
+                @if (_isRefreshing)
+                {
+                    <MudProgressCircular Size="Size.Small" Indeterminate="true" Class="me-2" />
+                    <span>Refreshing...</span>
+                }
+                else
+                {
+                    <MudIcon Icon="@Icons.Material.Filled.Refresh" Class="me-1" />
+                    <span>Refresh</span>
+                }
+            </MudButton>
+
             <MudButton Variant="Variant.Outlined"
                        Class="orders-secondary-btn"
-                       OnClick="@(() => NavManager.NavigateTo("/customer-home"))">
+                       OnClick="GoToCustomerHome">
                 Back to Menu
             </MudButton>
         </div>
@@ -66,7 +84,7 @@
             <MudButton Variant="Variant.Filled"
                        Color="Color.Primary"
                        Class="mt-3"
-                       OnClick="@(() => NavManager.NavigateTo("/customer-home"))">
+                       OnClick="GoToCustomerHome">
                 Start Ordering
             </MudButton>
         </MudPaper>
@@ -84,7 +102,7 @@
                             </MudText>
 
                             <MudText Typo="Typo.caption" Class="order-date">
-                                @order.OrderedAtUtc.ToLocalTime():MMM dd, yyyy • hh:mm tt
+                                @FormatOrderedDate(order.OrderedAtUtc)
                             </MudText>
                         </div>
 
@@ -101,7 +119,9 @@
                     <div class="order-meta-list">
                         <div class="order-meta-row">
                             <span class="order-meta-label">Delivery</span>
-                            <span class="order-meta-value">@order.DeliveryDate:MMMM dd, yyyy • @order.DeliveryTimeSlot</span>
+                            <span class="order-meta-value">
+                                @FormatDeliverySchedule(order.DeliveryDate, order.DeliveryTimeSlot)
+                            </span>
                         </div>
 
                         <div class="order-meta-row">
@@ -126,7 +146,7 @@
                         <MudButton Variant="Variant.Filled"
                                    Color="Color.Primary"
                                    Class="order-track-btn"
-                                   OnClick="@(() => NavManager.NavigateTo($"/tracking?orderId={order.Id}"))">
+                                   OnClick="@(() => GoToTracking(order.Id))">
                             View Tracking
                         </MudButton>
                     </div>
@@ -177,6 +197,8 @@
         display: flex;
         align-items: center;
         justify-content: flex-end;
+        gap: 0.6rem;
+        flex-wrap: wrap;
     }
 
     .orders-secondary-btn {
@@ -345,7 +367,11 @@
 
 @code {
     private List<CustomerOrderListItemVm> Orders { get; set; } = new();
+
     private bool _isLoading = true;
+    private bool _isRefreshing;
+    private bool _isDisposed;
+    private bool _hasJoinedRealtime;
     private string? _errorMessage;
 
     protected override async Task OnInitializedAsync()
@@ -361,19 +387,7 @@
         try
         {
             await LoadOrdersAsync();
-
-            if (Session.Profile is not null)
-            {
-                try
-                {
-                    RealtimeService.OrderStatusUpdated += HandleOrderStatusUpdated;
-                    await RealtimeService.JoinCustomerAsync(Session.Profile.CustomerProfileId);
-                }
-                catch (Exception ex)
-                {
-                    Snackbar.Add($"Live updates unavailable: {ex.Message}", Severity.Warning);
-                }
-            }
+            await ConnectRealtimeAsync();
         }
         catch (Exception ex)
         {
@@ -385,62 +399,166 @@
         }
     }
 
+    private async Task ConnectRealtimeAsync()
+    {
+        if (Session.Profile is null || _hasJoinedRealtime)
+            return;
+
+        try
+        {
+            RealtimeService.OrderStatusUpdated -= HandleOrderStatusUpdated;
+            RealtimeService.OrderStatusUpdated += HandleOrderStatusUpdated;
+
+            await RealtimeService.JoinCustomerAsync(Session.Profile.CustomerProfileId);
+
+            _hasJoinedRealtime = true;
+        }
+        catch (Exception ex)
+        {
+            Snackbar.Add($"Live updates unavailable: {ex.Message}", Severity.Warning);
+        }
+    }
+
     private async Task LoadOrdersAsync()
     {
         var items = await OrderService.GetMyOrdersAsync();
+
         Orders = items
             .Select(CustomerOrderListItemVm.FromDto)
             .OrderByDescending(x => x.OrderedAtUtc)
             .ToList();
     }
 
-    private void HandleOrderStatusUpdated(CMS.Contracts.Customer.Orders.OrderStatusUpdatedEvent evt)
+    private async Task RefreshOrdersAsync()
     {
-        var existing = Orders.FirstOrDefault(x => x.Id == evt.OrderId);
-        if (existing is null)
+        if (_isRefreshing)
             return;
 
-        existing.Status = evt.Status;
-        existing.PaymentStatus = evt.PaymentStatus;
+        try
+        {
+            _isRefreshing = true;
+            _errorMessage = null;
 
-        Snackbar.Add(
-            $"Order #{evt.OrderNumber} is now {evt.Status}.",
-            GetSnackbarSeverity(evt.Status));
+            await LoadOrdersAsync();
 
-        InvokeAsync(StateHasChanged);
+            Snackbar.Add("Orders refreshed.", Severity.Success);
+        }
+        catch (Exception ex)
+        {
+            _errorMessage = ex.Message;
+            Snackbar.Add($"Failed to refresh orders: {ex.Message}", Severity.Error);
+        }
+        finally
+        {
+            _isRefreshing = false;
+            await InvokeAsync(StateHasChanged);
+        }
+    }
+
+    private void HandleOrderStatusUpdated(OrderStatusUpdatedEvent evt)
+    {
+        _ = InvokeAsync(async () =>
+        {
+            if (_isDisposed)
+                return;
+
+            var existing = Orders.FirstOrDefault(x => x.Id == evt.OrderId);
+
+            if (existing is null)
+            {
+                await LoadOrdersAsync();
+
+                Snackbar.Add(
+                    $"Order #{evt.OrderNumber} has a new update.",
+                    GetSnackbarSeverity(evt.Status));
+
+                StateHasChanged();
+                return;
+            }
+
+            existing.Status = evt.Status;
+            existing.PaymentStatus = evt.PaymentStatus;
+
+            Orders = Orders
+                .OrderByDescending(x => x.OrderedAtUtc)
+                .ToList();
+
+            Snackbar.Add(
+                $"Order #{evt.OrderNumber} is now {evt.Status}.",
+                GetSnackbarSeverity(evt.Status));
+
+            StateHasChanged();
+        });
+    }
+
+    private void GoToCustomerHome()
+    {
+        NavManager.NavigateTo("/customer-home");
+    }
+
+    private void GoToTracking(int orderId)
+    {
+        NavManager.NavigateTo($"/tracking?orderId={orderId}");
+    }
+
+    private static string FormatOrderedDate(DateTime orderedAtUtc)
+    {
+        return orderedAtUtc.ToLocalTime().ToString("MMM dd, yyyy • hh:mm tt");
+    }
+
+    private static string FormatDeliverySchedule(DateTime deliveryDate, string? deliveryTimeSlot)
+    {
+        var slot = string.IsNullOrWhiteSpace(deliveryTimeSlot)
+            ? "No time slot"
+            : deliveryTimeSlot;
+
+        return $"{deliveryDate:MMMM dd, yyyy} • {slot}";
     }
 
     private static Color GetStatusColor(string? status) =>
         status?.Trim().ToLowerInvariant() switch
         {
+            "pending" => Color.Default,
             "confirmed" => Color.Primary,
             "preparing" => Color.Warning,
             "outfordelivery" => Color.Info,
             "out for delivery" => Color.Info,
             "delivered" => Color.Success,
             "cancelled" => Color.Error,
+            "canceled" => Color.Error,
             _ => Color.Default
+        };
+
+    private static Severity GetSnackbarSeverity(string? status) =>
+        status?.Trim().ToLowerInvariant() switch
+        {
+            "pending" => Severity.Normal,
+            "confirmed" => Severity.Info,
+            "preparing" => Severity.Warning,
+            "outfordelivery" => Severity.Info,
+            "out for delivery" => Severity.Info,
+            "delivered" => Severity.Success,
+            "cancelled" => Severity.Error,
+            "canceled" => Severity.Error,
+            _ => Severity.Normal
         };
 
     public async ValueTask DisposeAsync()
     {
+        _isDisposed = true;
+
         RealtimeService.OrderStatusUpdated -= HandleOrderStatusUpdated;
 
-        if (Session.Profile is not null)
+        if (_hasJoinedRealtime && Session.Profile is not null)
         {
-            await RealtimeService.LeaveCustomerAsync(Session.Profile.CustomerProfileId);
+            try
+            {
+                await RealtimeService.LeaveCustomerAsync(Session.Profile.CustomerProfileId);
+            }
+            catch
+            {
+                // Ignore dispose-time realtime errors.
+            }
         }
     }
-
-    private static Severity GetSnackbarSeverity(string? status) =>
-    status?.Trim().ToLowerInvariant() switch
-    {
-        "confirmed" => Severity.Info,
-        "preparing" => Severity.Warning,
-        "outfordelivery" => Severity.Info,
-        "out for delivery" => Severity.Info,
-        "delivered" => Severity.Success,
-        "cancelled" => Severity.Error,
-        _ => Severity.Normal
-    };
 }
